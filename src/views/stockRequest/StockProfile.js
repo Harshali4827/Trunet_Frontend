@@ -151,7 +151,7 @@ const handleApprove = async () => {
 // Reject
 const handleReject = async () => {
   try {
-    const response = await axiosInstance.post(`/stockrequest/${id}`, { status: 'Rejected' });
+    const response = await axiosInstance.put(`/stockrequest/${id}`, { status: 'Rejected' });
     if (response.data.success) {
       setAlert({ type: 'success', message: 'Stock request rejected successfully', visible: true });
       setTimeout(() => window.location.reload(), 1000);

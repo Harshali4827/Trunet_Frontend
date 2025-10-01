@@ -80,11 +80,6 @@ const _nav = [
         name: 'Center',
          to:'/center-list'
       },
-      {
-        component: CNavItem,
-        name: 'Warehouse',
-         to:'/warehouse-list'
-      },
        {
         component: CNavItem,
         name: 'Challan',

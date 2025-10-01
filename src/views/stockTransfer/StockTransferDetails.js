@@ -38,7 +38,7 @@ const StockTransferDetails = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axiosInstance.get(`/stockrequest/${id}`);
+        const response = await axiosInstance.get(`/stocktransfer/${id}`);
         if (response.data.success) {
           setData(response.data.data);
           const initialApproved = response.data.data.products.map(item => ({

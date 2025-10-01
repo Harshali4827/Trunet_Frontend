@@ -29,6 +29,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
+import { formatDate } from 'src/utils/FormatDateTime';
 // import SearchStockModel from './SearchStockModel';
 
 const StockTransfer = () => {
@@ -58,7 +59,7 @@ const StockTransfer = () => {
         params.append('center', searchParams.center);
       }
 
-      const url = params.toString() ? `/stockrequest?${params.toString()}` : '/stockrequest';
+      const url = params.toString() ? `/stocktransfer?${params.toString()}` : '/stocktransfer';
       const response = await axiosInstance.get(url);
       
       if (response.data.success) {
@@ -141,10 +142,6 @@ const StockTransfer = () => {
     setSearchTerm('');
     fetchData();
   };
-  
-  const handleUsernameClick = (customerId) => {
-    navigate(`/customer-profile/${customerId}`);
-  };
 
   const filteredCustomers = customers.filter(customer => {
     if (activeSearch.keyword || activeSearch.center) {
@@ -160,21 +157,21 @@ const StockTransfer = () => {
     });
   });
 
-  const handleDeleteCustomer = async (customerId) => {
+  const handleDeleteData = async (itemId) => {
     const result = await confirmDelete();
     if (result.isConfirmed) {
       try {
-        await axiosInstance.delete(`/customers/${customerId}`);
-        setCustomers((prev) => prev.filter((c) => c._id !== customerId));
-        showSuccess('Customer deleted successfully!');
+        await axiosInstance.delete(`/stocktransfer/${itemId}`);
+        setCustomers((prev) => prev.filter((c) => c._id !== itemId));
+        showSuccess('Data deleted successfully!');
       } catch (error) {
-        console.error('Error deleting customer:', error);
+        console.error('Error deleting date:', error);
       }
     }
   };
   
-  const handleEditCustomer = (customerId) => {
-    navigate(`/edit-stockRequest/${customerId}`)
+  const handleEditData = (itemId) => {
+    navigate(`/edit-stockTransfer/${itemId}`)
   };
 
   const toggleDropdown = (id) => {
@@ -183,30 +180,6 @@ const StockTransfer = () => {
       [id]: !prev[id]
     }));
   };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      const newDropdownState = {};
-      let shouldUpdate = false;
-      
-      Object.keys(dropdownRefs.current).forEach(key => {
-        if (dropdownRefs.current[key] && !dropdownRefs.current[key].contains(event.target)) {
-          newDropdownState[key] = false;
-          shouldUpdate = true;
-        }
-      });
-      
-      if (shouldUpdate) {
-        setDropdownOpen(prev => ({ ...prev, ...newDropdownState }));
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
@@ -261,18 +234,18 @@ const StockTransfer = () => {
           {filteredCustomers.length > 0 ? (
             filteredCustomers.map((item) => (
               <CTableRow key={item._id}>
-                <CTableDataCell>{item.date}</CTableDataCell>
+                <CTableDataCell>{formatDate(item.date)}</CTableDataCell>
                 <CTableDataCell>
                   <button 
                     className="btn btn-link p-0 text-decoration-none"
                     onClick={() => handleClick(item._id)}
                     style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
                   >
-                    {item.orderNumber}
+                    {item.transferNumber}
                   </button>
                   </CTableDataCell>
-                <CTableDataCell>{item.warehouse.warehouseName}</CTableDataCell>
-                <CTableDataCell>{item.center?.centerName || 'N/A'}</CTableDataCell>
+                <CTableDataCell>{item.warehouse?.warehouseName}</CTableDataCell>
+                <CTableDataCell>{item.toCenter?.centerName || 'N/A'}</CTableDataCell>
                 <CTableDataCell>
   {item.createdBy?.email || 'N/A'} 
   {item.createdAt && ` At ${new Date(item.createdAt).toLocaleTimeString('en-US', { 
@@ -297,13 +270,13 @@ const StockTransfer = () => {
                       <div className="dropdown-menu show">
                         <button 
                           className="dropdown-item"
-                          onClick={() => handleEditCustomer(item._id)}
+                          onClick={() => handleEditData(item._id)}
                         >
                           <CIcon icon={cilPencil} className="me-2" /> Edit
                         </button>
                         <button 
                           className="dropdown-item"
-                          onClick={() => handleDeleteCustomer(item._id)}
+                          onClick={() => handleDeleteData(item._id)}
                         >
                           <CIcon icon={cilTrash} className="me-2" /> Delete
                         </button>

@@ -214,6 +214,9 @@
 .status-badge.shipped {
   background-color: #72dbdb;
 }
+.status-badge.draft {
+  background-color: #999999; 
+}
 
 .print-btn {
   background-color: #2759a2;

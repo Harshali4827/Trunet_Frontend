@@ -24,6 +24,7 @@ import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
 import SearchUserModel from './SearchUserModel';
+import Pagination from 'src/utils/Pagination';
 
 const UserList = () => {
   const [customers, setCustomers] = useState([]);
@@ -35,11 +36,13 @@ const UserList = () => {
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [activeSearch, setActiveSearch] = useState({ keyword: '', center: '' });
   const [dropdownOpen, setDropdownOpen] = useState({});
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
 
-  const fetchCustomers = async (searchParams = {}) => {
+  const fetchCustomers = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -50,12 +53,14 @@ const UserList = () => {
       if (searchParams.center) {
         params.append('center', searchParams.center);
       }
-
+      params.append('page', page);
       const url = params.toString() ? `/customers?${params.toString()}` : '/customers';
       const response = await axiosInstance.get(url);
       
       if (response.data.success) {
         setCustomers(response.data.data);
+        setCurrentPage(response.data.pagination.currentPage);
+        setTotalPages(response.data.pagination.totalPages);
       } else {
         throw new Error('API returned unsuccessful response');
       }
@@ -82,6 +87,11 @@ const UserList = () => {
     fetchCustomers();
     fetchCenters();
   }, []);
+ 
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    fetchCustomers(activeSearch, page);
+  };
 
   const handleSort = (key) => {
     let direction = 'ascending';
@@ -126,17 +136,13 @@ const UserList = () => {
 
   const handleSearch = (searchData) => {
     setActiveSearch(searchData);
-    fetchCustomers(searchData);
+    fetchCustomers(searchData,1);
   };
 
   const handleResetSearch = () => {
     setActiveSearch({ keyword: '', center: '' });
     setSearchTerm('');
-    fetchCustomers();
-  };
-  
-  const handleUsernameClick = (customerId) => {
-    navigate(`/customer-profile/${customerId}`);
+    fetchCustomers({},1);
   };
 
   const filteredCustomers = customers.filter(customer => {
@@ -256,13 +262,11 @@ const UserList = () => {
           </div>
           
           <div>
-            <CPagination size="sm" aria-label="Page navigation">
-              <CPaginationItem>First</CPaginationItem>
-              <CPaginationItem>&lt;</CPaginationItem>
-              <CPaginationItem>1</CPaginationItem>
-              <CPaginationItem>&gt;</CPaginationItem>
-              <CPaginationItem>Last</CPaginationItem>
-            </CPagination>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
           </div>
         </CCardHeader>
         

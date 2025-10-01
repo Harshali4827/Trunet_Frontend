@@ -1,121 +1,3 @@
-// import React, { useState, useEffect } from 'react'
-// import {
-//   CModal,
-//   CModalHeader,
-//   CModalTitle,
-//   CModalBody,
-//   CModalFooter,
-//   CFormInput,
-//   CButton
-// } from '@coreui/react'
-// import PropTypes from 'prop-types'
-// import axiosInstance from 'src/axiosInstance'
-// import { showSuccess, showError } from 'src/utils/sweetAlerts'
-// import '../../../css/form.css'
-// const AddProductCategory = ({ visible, onClose, onCategoryAdded, category }) => {
-//   const [productCategory, setProductCategory] = useState('')
-//   const [remark, setRemark] = useState('')
-
-//   useEffect(() => {
-//     if (category) {
-//       setProductCategory(category.productCategory || '')
-//       setRemark(category.remark || '')
-//     } else {
-//       setProductCategory('')
-//       setRemark('')
-//     }
-//   }, [category])
-
-//   const handleSubmit = async () => {
-//     if (!productCategory.trim()) {
-//       showError('Product Category is required')
-//       return
-//     }
-
-//     try {
-//       let response
-//       if (category) {
-//         response = await axiosInstance.put(`/product-category/${category._id}`, {
-//           productCategory,
-//           remark
-//         })
-//         if (response.data.success) {
-//           showSuccess('Product Category updated successfully!')
-//           onCategoryAdded(response.data.data, true)
-//         }
-//       } else {
-//         response = await axiosInstance.post('/product-category', {
-//           productCategory,
-//           remark
-//         })
-//         if (response.data.success) {
-//           showSuccess('Product Category added successfully!')
-//           onCategoryAdded(response.data.data, false)
-//         }
-//       }
-//       setProductCategory('')
-//       setRemark('')
-//       onClose()
-//     } catch (error) {
-//       console.error('Error saving product category:', error)
-//       showError('Failed to save product category')
-//     }
-//   }
-
-//   return (
-//     <CModal size="lg" visible={visible} onClose={onClose}>
-//       <CModalHeader className="d-flex justify-content-between align-items-center">
-//         <CModalTitle>{category ? 'Edit Product Category' : 'Add Product Category'}</CModalTitle>
-//       </CModalHeader>
-
-//       <CModalBody>
-//         <div className="form-row">
-//           <div className="form-group">
-//             <label className="form-label">
-//               Product Category <span style={{ color: 'red' }}>*</span>
-//             </label>
-//             <CFormInput
-//               type="text"
-//               placeholder="Product Category"
-//               value={productCategory}
-//               onChange={(e) => setProductCategory(e.target.value)}
-//               className="no-radius-input"
-//               required
-//             />
-//           </div>
-//           <div className="form-group">
-//             <label className="form-label">Remark</label>
-//             <CFormInput
-//               type="text"
-//               placeholder="Product category remark"
-//               value={remark}
-//               onChange={(e) => setRemark(e.target.value)}
-//               className="no-radius-input"
-//             />
-//           </div>
-//         </div>
-//       </CModalBody>
-
-//       <CModalFooter>
-//         <CButton className="submit-button" onClick={handleSubmit}>
-//           Submit
-//         </CButton>
-//       </CModalFooter>
-//     </CModal>
-//   )
-// }
-
-// AddProductCategory.propTypes = {
-//   visible: PropTypes.bool.isRequired,
-//   onClose: PropTypes.func.isRequired,
-//   onCategoryAdded: PropTypes.func.isRequired,
-//   category: PropTypes.object
-// }
-
-// export default AddProductCategory
-
-
-
 import React, { useState, useEffect } from 'react'
 import {
   CModal,
@@ -124,17 +6,18 @@ import {
   CModalBody,
   CModalFooter,
   CFormInput,
-  CButton
+  CButton,
+  CAlert
 } from '@coreui/react'
 import PropTypes from 'prop-types'
 import axiosInstance from 'src/axiosInstance'
-import { showSuccess, showError } from 'src/utils/sweetAlerts'
 import '../../../css/form.css'
 
 const AddProductCategory = ({ visible, onClose, onCategoryAdded, category }) => {
   const [productCategory, setProductCategory] = useState('')
   const [remark, setRemark] = useState('')
   const [errors, setErrors] = useState({})
+  const [alert, setAlert] = useState({ type: '', message: '' })
 
   useEffect(() => {
     if (category) {
@@ -145,6 +28,7 @@ const AddProductCategory = ({ visible, onClose, onCategoryAdded, category }) => 
       setRemark('')
     }
     setErrors({})
+    setAlert({ type: '', message: '' })
   }, [category, visible])
 
   const validateForm = () => {
@@ -164,28 +48,41 @@ const AddProductCategory = ({ visible, onClose, onCategoryAdded, category }) => 
       if (category) {
         response = await axiosInstance.put(`/product-category/${category._id}`, {
           productCategory,
-          remark
+          remark,
         })
         if (response.data.success) {
-          showSuccess('Product Category updated successfully!')
+          setAlert({ type: 'success', message: 'Product Category updated successfully!' })
           if (onCategoryAdded) onCategoryAdded(response.data.data, true)
         }
       } else {
         response = await axiosInstance.post('/product-category', {
           productCategory,
-          remark
+          remark,
         })
         if (response.data.success) {
-          showSuccess('Product Category added successfully!')
+          setAlert({ type: 'success', message: 'Product Category added successfully!' })
           if (onCategoryAdded) onCategoryAdded(response.data.data, false)
         }
       }
       setProductCategory('')
       setRemark('')
-      onClose()
+      setTimeout(() => onClose(), 1500)
     } catch (error) {
       console.error('Error saving product category:', error)
-      showError('Failed to save product category')
+     
+      if (error.response?.data?.errors) {
+        const backendErrors = {}
+        error.response.data.errors.forEach((err) => {
+          backendErrors[err.path] = err.msg
+        })
+        setErrors(backendErrors)
+      } else {
+        const msg =
+          error.response?.data?.message ||
+          error.message ||
+          'Failed to save product category'
+        setAlert({ type: 'danger', message: msg })
+      }
     }
   }
 
@@ -196,6 +93,16 @@ const AddProductCategory = ({ visible, onClose, onCategoryAdded, category }) => 
       </CModalHeader>
 
       <CModalBody>
+        {alert.message && (
+          <CAlert
+            color={alert.type}
+            dismissible
+            onClose={() => setAlert({ type: '', message: '' })}
+          >
+            {alert.message}
+          </CAlert>
+        )}
+
         <div className="form-row">
           <div className="form-group">
             <label

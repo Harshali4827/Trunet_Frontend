@@ -24,6 +24,7 @@ import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
 import SearchVendorModel from './SearchVendorModel';
+import Pagination from 'src/utils/Pagination';
 
 const VendorList = () => {
   const [customers, setCustomers] = useState([]);
@@ -34,23 +35,27 @@ const VendorList = () => {
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [activeSearch, setActiveSearch] = useState({ keyword: '', center: '' });
   const [dropdownOpen, setDropdownOpen] = useState({});
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const dropdownRefs = useRef({});
 
  const navigate = useNavigate();
 
-    const fetchVendors= async (searchParams = {}) => {
+    const fetchVendors= async (searchParams = {}, page=1) => {
       try {
         setLoading(true);
         const params = new URLSearchParams();
         if (searchParams.keyword) {
           params.append('search', searchParams.keyword);
         }
+        params.append('page', page);
         const url = params.toString() ? `/vendor?${params.toString()}` : '/vendor';
         const response = await axiosInstance.get(url);
         
         if (response.data.success) {
           setCustomers(response.data.data);
+          setCurrentPage(response.data.pagination.currentPage);
+          setTotalPages(response.data.pagination.totalPages);
         } else {
           throw new Error('API returned unsuccessful response');
         }
@@ -65,6 +70,11 @@ const VendorList = () => {
   useEffect(() => {
     fetchVendors();
   }, []);
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    fetchVendors(activeSearch, page);
+  };
 
   const handleSort = (key) => {
     let direction = 'ascending';
@@ -110,13 +120,13 @@ const VendorList = () => {
 
   const handleSearch = (searchData) => {
     setActiveSearch(searchData);
-    fetchVendors(searchData);
+    fetchVendors(searchData, 1);
   };
 
   const handleResetSearch = () => {
     setActiveSearch({ keyword: ''});
     setSearchTerm('');
-    fetchVendors();
+    fetchVendors({},1);
   };
 
   const filteredCustomers = customers.filter(customer =>
@@ -227,13 +237,11 @@ const VendorList = () => {
           </div>
           
           <div>
-            <CPagination size="sm" aria-label="Page navigation">
-              <CPaginationItem>First</CPaginationItem>
-              <CPaginationItem>&lt;</CPaginationItem>
-              <CPaginationItem>1</CPaginationItem>
-              <CPaginationItem>&gt;</CPaginationItem>
-              <CPaginationItem>Last</CPaginationItem>
-            </CPagination>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
           </div>
         </CCardHeader>
         

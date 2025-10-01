@@ -75,7 +75,7 @@ const AddStockPurchase = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await axiosInstance.get('/stockpurchase/products-with-stock');
+      const res = await axiosInstance.get('/stockpurchase/products/with-stock');
       if (res.data.success) {
         setProducts(res.data.data);
       }
@@ -681,7 +681,7 @@ const AddStockPurchase = () => {
                                 className={`form-input ${errors[`quantity_${p._id}`] ? 'error' : ''}`}
                                 style={{ width: '100px', height: '32px' }}
                                 min="1"
-                                max={p.stock?.totalAvailable || 0}
+                                // max={p.stock?.totalAvailable || 0}
                               />
                               ) : (
                               ''

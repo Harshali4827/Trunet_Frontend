@@ -35,9 +35,6 @@ const ControlRoomProfile = React.lazy(() => import('./views/Master/control-room/
 const CenterList = React.lazy(() => import('./views/Master/center/CenterList'));
 const AddCenter = React.lazy(() => import('./views/Master/center/AddCenter'));
 
-const AddWarehouse = React.lazy(() => import('./views/Master/warehouse/AddWarehouse'));
-const WarehouseList = React.lazy(() => import('./views/Master/warehouse/WarehouseList'));
-
 const ProductCategoryList = React.lazy(() => import('./views/Settings/product-category/ProductCategoryList'))
 
 const AddProduct = React.lazy(() => import('./views/Settings/products/AddProducts'));
@@ -168,18 +165,6 @@ const routes = [
     element: AddCenter,
   },
 
-  { 
-    path:'/add-warehouse', 
-    exact:true, 
-    name:<Translation>{(t) => t('Add Warehouse')}</Translation>,
-    element: AddWarehouse,
-  },
-  { 
-    path:'/warehouse-list', 
-    exact:true, 
-    name:<Translation>{(t) => t('Warehouse List')}</Translation>,
-    element: WarehouseList,
-  },
   //***********************   SETTINGS    **********************************//
   { 
     path:'/product-category', 

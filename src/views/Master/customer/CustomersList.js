@@ -13,8 +13,6 @@ import {
   CCardHeader,
   CButton,
   CFormInput,
-  CPaginationItem,
-  CPagination,
   CSpinner
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
@@ -24,6 +22,7 @@ import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
 import SearchCustomerModel from './SearchCustomerModel';
+import Pagination from 'src/utils/Pagination';
 
 const CustomersList = () => {
   const [customers, setCustomers] = useState([]);
@@ -35,38 +34,37 @@ const CustomersList = () => {
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [activeSearch, setActiveSearch] = useState({ keyword: '', center: '' });
   const [dropdownOpen, setDropdownOpen] = useState({});
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
 
-  const fetchCustomers = async (searchParams = {}) => {
+  const fetchCustomers = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      
-      if (searchParams.keyword) {
-        params.append('search', searchParams.keyword);
-      }
-      if (searchParams.center) {
-        params.append('center', searchParams.center);
-      }
-
+  
+      if (searchParams.keyword) params.append('search', searchParams.keyword);
+      if (searchParams.center) params.append('center', searchParams.center);
+  
+      params.append('page', page);
+  
       const url = params.toString() ? `/customers?${params.toString()}` : '/customers';
       const response = await axiosInstance.get(url);
-      
+  
       if (response.data.success) {
         setCustomers(response.data.data);
-      } else {
-        throw new Error('API returned unsuccessful response');
+        setCurrentPage(response.data.pagination.currentPage);
+        setTotalPages(response.data.pagination.totalPages);
       }
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching customers:', err);
     } finally {
       setLoading(false);
     }
-  };
-
+  };  
+  
   const fetchCenters = async () => {
     try {
       const response = await axiosInstance.get('/centers');
@@ -82,6 +80,12 @@ const CustomersList = () => {
     fetchCustomers();
     fetchCenters();
   }, []);
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    fetchCustomers(activeSearch, page);
+  };
+  
 
   const handleSort = (key) => {
     let direction = 'ascending';
@@ -126,13 +130,13 @@ const CustomersList = () => {
 
   const handleSearch = (searchData) => {
     setActiveSearch(searchData);
-    fetchCustomers(searchData);
+    fetchCustomers(searchData, 1);
   };
 
   const handleResetSearch = () => {
     setActiveSearch({ keyword: '', center: '' });
     setSearchTerm('');
-    fetchCustomers();
+    fetchCustomers({}, 1); 
   };
   
   const handleUsernameClick = (customerId) => {
@@ -256,13 +260,14 @@ const CustomersList = () => {
           </div>
           
           <div>
-            <CPagination size="sm" aria-label="Page navigation">
-              <CPaginationItem>First</CPaginationItem>
-              <CPaginationItem>&lt;</CPaginationItem>
-              <CPaginationItem>1</CPaginationItem>
-              <CPaginationItem>&gt;</CPaginationItem>
-              <CPaginationItem>Last</CPaginationItem>
-            </CPagination>
+   
+          
+          <Pagination 
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={handlePageChange}
+    />
+
           </div>
         </CCardHeader>
         
@@ -287,28 +292,52 @@ const CustomersList = () => {
             <CTableHead>
               <CTableRow>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('username')} className="sortable-header">
-                  User Name {getSortIcon('username')}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span>User Name</span>
+                    {getSortIcon('username')}
+                  </div>
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('name')} className="sortable-header">
-                 Name {getSortIcon('name')}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span>Name</span>
+                    {getSortIcon('name')}
+                  </div>
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
-                  Center {getSortIcon('center.centerName')}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span>Center</span>
+                    {getSortIcon('center.centerName')}
+                  </div>
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.partner.partnerName')} className="sortable-header">
-                  Partner {getSortIcon('center.partner.partnerName')}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span>Partner</span>
+                    {getSortIcon('center.partner.partnerName')}
+                  </div>
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.area.areaName')} className="sortable-header">
-                  Area {getSortIcon('center.area.areaName')}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span>Area</span>
+                    {getSortIcon('center.area.areaName')}
+                  </div>
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('mobile')} className="sortable-header">
-                  Mobile {getSortIcon('mobile')}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span>Mobile</span>
+                    {getSortIcon('mobile')}
+                  </div>
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('email')} className="sortable-header">
-                  Email {getSortIcon('email')}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span>Email</span>
+                    {getSortIcon('email')}
+                  </div>
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('city')} className="sortable-header">
-                  City {getSortIcon('city')}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span>City</span>
+                    {getSortIcon('city')}
+                  </div>
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col">
                   Action
@@ -382,4 +411,3 @@ const CustomersList = () => {
 };
 
 export default CustomersList;
-

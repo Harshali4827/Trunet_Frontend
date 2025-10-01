@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../../css/form.css';
+import { CAlert } from '@coreui/react';
 
 const AddVendor = () => {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ const AddVendor = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [alert, setAlert] = useState({ type: '', message: '' })
 
   useEffect(() => {
     if (id) {
@@ -59,13 +61,27 @@ const AddVendor = () => {
     try {
       if (id) {
         await axiosInstance.put(`/vendor/${id}`, formData);
+        setAlert({ type: 'success', message: 'Data updated successfully!' })
       } else {
         await axiosInstance.post('/vendor', formData);
+        setAlert({ type: 'success', message: 'Data added successfully!' })
       }
-      navigate('/vendor-list');
+      setTimeout(() =>navigate('/vendor-list'),1500);
     } catch (error) {
-      console.error('Error saving vendors:', error);
-    }
+      console.error('Error saving Data:', error)
+    
+      let message = 'Failed to save Data. Please try again!'
+    
+      if (error.response) {
+        message = error.response.data?.message || error.response.data?.error || message
+      } else if (error.request) {
+        message = 'No response from server. Please check your connection.'
+      } else {
+        message = error.message
+      }
+    
+      setAlert({ type: 'danger', message })
+    }    
   };
 
   const handleReset = () => {
@@ -90,6 +106,11 @@ const AddVendor = () => {
       <div className="title">{id ? 'Edit' : 'Add'} Vendor</div>
       <div className="form-card">
         <div className="form-body">
+        {alert.message && (
+  <CAlert color={alert.type} dismissible onClose={() => setAlert({ type: '', message: '' })}>
+    {alert.message}
+  </CAlert>
+)}
           <form onSubmit={handleSubmit}>
             <div className="form-row">
               <div className="form-group">

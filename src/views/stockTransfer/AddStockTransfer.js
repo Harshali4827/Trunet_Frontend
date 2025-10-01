@@ -81,7 +81,7 @@ const AddStockTransfer = () => {
 
   const fetchProducts = async () => {
     try {
-      const res = await axiosInstance.get('/stockpurchase/products-with-stock');
+      const res = await axiosInstance.get('/stockpurchase/products/with-stock');
       if (res.data.success) {
         setProducts(res.data.data);
       }

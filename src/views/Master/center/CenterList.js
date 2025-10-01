@@ -23,6 +23,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
+import Pagination from 'src/utils/Pagination';
 
 const CenterList = () => {
   const [customers, setCustomers] = useState([]);
@@ -31,18 +32,20 @@ const CenterList = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [searchTerm, setSearchTerm] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState({});
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const dropdownRefs = useRef({});
 
  const navigate = useNavigate();
-  useEffect(() => {
-    const fetchCustomers = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         const response = await axiosInstance.get('/centers');
         
         if (response.data.success) {
           setCustomers(response.data.data);
+          setCurrentPage(response.data.pagination.currentPage);
+          setTotalPages(response.data.pagination.totalPages);
         } else {
           throw new Error('API returned unsuccessful response');
         }
@@ -54,8 +57,14 @@ const CenterList = () => {
       }
     };
 
-    fetchCustomers();
-  }, []);
+    useEffect(() => {
+      fetchData(1);
+    }, []);
+
+ const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    fetchData(page);
+  };
 
   const handleSort = (key) => {
     let direction = 'ascending';
@@ -188,13 +197,11 @@ const CenterList = () => {
           </div>
           
           <div>
-            <CPagination size="sm" aria-label="Page navigation">
-              <CPaginationItem>First</CPaginationItem>
-              <CPaginationItem>&lt;</CPaginationItem>
-              <CPaginationItem>1</CPaginationItem>
-              <CPaginationItem>&gt;</CPaginationItem>
-              <CPaginationItem>Last</CPaginationItem>
-            </CPagination>
+              <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+              />
           </div>
         </CCardHeader>
         

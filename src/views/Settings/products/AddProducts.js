@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../../css/form.css';
+import { useAlert } from 'src/context/AlertContext';
+import { CAlert } from '@coreui/react';
 
 const AddProducts = () => {
   const navigate = useNavigate();
@@ -25,7 +27,9 @@ const AddProducts = () => {
   const [errors, setErrors] = useState({});
   const [categories, setCategories] = useState([]);
   const [filteredCategories, setFilteredCategories] = useState([]);
+  const [alert, setAlert] = useState({ type: '', message: '' })
   const [showDropdown, setShowDropdown] = useState(false);
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     fetchCategories();
@@ -102,15 +106,28 @@ const AddProducts = () => {
     try {
       if (id) {
         await axiosInstance.put(`/products/${id}`, formData);
+        setAlert({ type: 'success', message: 'Data updated successfully!' })
       } else {
         await axiosInstance.post('/products', formData);
+        setAlert({ type: 'success', message: 'Data added successfully!' })
       }
-      navigate('/product-list');
-    } catch (error) {
-      console.error('Error saving product:', error);
-    }
+       setTimeout(() => navigate('/product-list'), 1500)
+    }  catch (error) {
+      console.error('Error saving data:', error)
+    
+      let message = 'Failed to save data. Please try again!'
+    
+      if (error.response) {
+        message = error.response.data?.message || error.response.data?.error || message
+      } else if (error.request) {
+        message = 'No response from server. Please check your connection.'
+      } else {
+        message = error.message
+      }
+    
+      setAlert({ type: 'danger', message })
+    }    
   };
-
   const handleReset = () => {
     setFormData({
       productCategory: '',
@@ -134,6 +151,11 @@ const AddProducts = () => {
       <div className="title">{id ? 'Edit' : 'Add'} Product</div>
       <div className="form-card">
         <div className="form-body">
+        {alert.message && (
+  <CAlert color={alert.type} dismissible onClose={() => setAlert({ type: '', message: '' })}>
+    {alert.message}
+  </CAlert>
+)}
           <form onSubmit={handleSubmit}>
             <div className="form-row">
               <div className="form-group">

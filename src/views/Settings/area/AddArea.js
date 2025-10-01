@@ -7,7 +7,8 @@ import {
   CModalFooter,
   CFormInput,
   CFormSelect,
-  CButton
+  CButton,
+  CAlert
 } from '@coreui/react'
 import PropTypes from 'prop-types'
 import axiosInstance from 'src/axiosInstance'
@@ -20,6 +21,7 @@ const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
     areaName: ''
   })
   const [errors, setErrors] = useState({})
+  const [alert, setAlert] = useState({ type: '', message: '' }) 
 
   useEffect(() => {
     const fetchPartners = async () => {
@@ -45,7 +47,8 @@ const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
       setFormData({ partnerId: '', areaName: '' })
     }
     setErrors({})
-  }, [area])
+    setAlert({ type: '', message: '' })
+  }, [area, visible])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -68,20 +71,26 @@ const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
       if (area) {
         response = await axiosInstance.put(`/areas/${area._id}`, formData)
         if (response.data.success) {
+          setAlert({ type: 'success', message: 'Area updated successfully!' })
           onAreaAdded(response.data.data, true)
         }
       } else {
         response = await axiosInstance.post('/areas', formData)
         if (response.data.success) {
+          setAlert({ type: 'success', message: 'Area added successfully!' })
           onAreaAdded(response.data.data, false)
         }
       }
 
       setFormData({ partnerId: '', areaName: '' })
       setErrors({})
-      onClose()
+      setTimeout(() => {
+        setAlert({ type: '', message: '' })
+        onClose()
+      }, 1500)
     } catch (error) {
       console.error('Error saving area:', error)
+      setAlert({ type: 'danger', message: 'Failed to save area' })
     }
   }
 
@@ -92,6 +101,12 @@ const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
       </CModalHeader>
 
       <CModalBody>
+        {alert.message && (
+          <CAlert color={alert.type} dismissible onClose={() => setAlert({ type: '', message: '' })}>
+            {alert.message}
+          </CAlert>
+        )}
+
         <div className="form-row">
           <div className="form-group">
             <label

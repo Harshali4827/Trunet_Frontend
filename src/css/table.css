@@ -1,5 +1,4 @@
-
-.table-container {
+ .table-container {
     border-radius: 2px;
     border: none;
     border-top: 4px solid #2759a2;
@@ -9,8 +8,8 @@
     max-height: 400px;
     overflow-y: auto;
     position: relative;
-  }
-
+  } 
+   
   .responsive-table {
     width: 100%;
     border-collapse: collapse;

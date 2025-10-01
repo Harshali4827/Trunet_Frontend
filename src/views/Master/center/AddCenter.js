@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../../css/form.css';
+import { CAlert } from '@coreui/react'
 
 const AddCenter = () => {
   const navigate = useNavigate();
@@ -27,7 +28,7 @@ const AddCenter = () => {
   const [partners, setPartners] = useState([]);
   const [areas, setAreas] = useState([]);
   const [errors, setErrors] = useState({});
-
+  const [alert, setAlert] = useState({ type: '', message: '' })
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,12 +58,28 @@ const AddCenter = () => {
   const fetchCenter = async (centerId) => {
     try {
       const res = await axiosInstance.get(`/centers/${centerId}`);
-      setFormData(res.data.data);
+      const data = res.data.data;
+  
+      setFormData({
+        centerType: data.centerType || '',
+        centerName: data.centerName || '',
+        centerCode: data.centerCode || '',
+        email: data.email || '',
+        mobile: data.mobile || '',
+        status: data.status || '',
+        addressLine1: data.addressLine1 || '',
+        addressLine2: data.addressLine2 || '',
+        city: data.city || '',
+        state: data.state || '',
+        stockVerified: data.stockVerified || '',
+        partnerId: data.partner?._id || '',  
+        areaId: data.area?._id || ''         
+      });
     } catch (error) {
       console.error('Error fetching center:', error);
     }
   };
-
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -83,14 +100,28 @@ const AddCenter = () => {
 
     try {
       if (id) {
-        await axiosInstance.put(`/centers/${id}`, formData);
+        await axiosInstance.put(`/centers/${id}`, formData)
+        setAlert({ type: 'success', message: 'Center updated successfully!' })
       } else {
-        await axiosInstance.post('/centers', formData);
+        await axiosInstance.post('/centers', formData)
+        setAlert({ type: 'success', message: 'Center added successfully!' })
       }
-      navigate('/center-list');
+      setTimeout(() => navigate('/center-list'), 1500)
     } catch (error) {
-      console.error('Error saving center:', error);
-    }
+      console.error('Error saving center:', error)
+    
+      let message = 'Failed to save center. Please try again!'
+    
+      if (error.response) {
+        message = error.response.data?.message || error.response.data?.error || message
+      } else if (error.request) {
+        message = 'No response from server. Please check your connection.'
+      } else {
+        message = error.message
+      }
+    
+      setAlert({ type: 'danger', message })
+    }    
   };
 
   const handleReset = () => {
@@ -120,6 +151,11 @@ const AddCenter = () => {
           Center
         </div>
         <div className="form-body">
+        {alert.message && (
+  <CAlert color={alert.type} dismissible onClose={() => setAlert({ type: '', message: '' })}>
+    {alert.message}
+  </CAlert>
+)}
           <form onSubmit={handleSubmit}>
             <div className="form-row">
               <div className="form-group">

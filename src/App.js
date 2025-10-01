@@ -7,6 +7,7 @@ import './scss/style.scss'
 
 import './scss/examples.scss'
 import ProtectedRoute from './utils/ProtectedRoutes';
+import { AlertProvider } from './context/AlertContext';
 
 
 const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'))
@@ -20,6 +21,7 @@ const EmailApp = React.lazy(() => import('./views/apps/email/EmailApp'))
 
 const App = () => {
   return (
+    <AlertProvider>
     <HashRouter>
       <Suspense
         fallback={
@@ -34,12 +36,12 @@ const App = () => {
           <Route exact path="/404" name="Page 404" element={<Page404 />} />
           <Route exact path="/500" name="Page 500" element={<Page500 />} />
           <Route path="/apps/email/*" name="Email App" element={<EmailApp />} />
-          {/* <Route path="*" name="Home" element={<DefaultLayout />} /> */}
 
           <Route path="*" element={<ProtectedRoute><DefaultLayout /></ProtectedRoute>} />
         </Routes>
       </Suspense>
     </HashRouter>
+    </AlertProvider>
   )
 }
 

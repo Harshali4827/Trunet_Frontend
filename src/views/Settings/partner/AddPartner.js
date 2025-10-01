@@ -1,100 +1,3 @@
-// import React, { useState, useEffect } from 'react'
-// import {
-//   CModal,
-//   CModalHeader,
-//   CModalTitle,
-//   CModalBody,
-//   CModalFooter,
-//   CFormInput,
-//   CButton
-// } from '@coreui/react'
-// import PropTypes from 'prop-types'
-// import axiosInstance from 'src/axiosInstance'
-// import { showSuccess, showError } from 'src/utils/sweetAlerts'
-
-// const AddPartner = ({ visible, onClose, onPartnerAdded, partner }) => {
-//   const [partnerName, setPartnerName] = useState('')
-
-//   useEffect(() => {
-//     if (partner) {
-//       setPartnerName(partner.partnerName || '')
-//     } else {
-//       setPartnerName('')
-//     }
-//   }, [partner])
-
-//   const handleSubmit = async () => {
-//     if (!partnerName.trim()) {
-//       showError('Partner name is required')
-//       return
-//     }
-
-//     try {
-//       let response
-//       if (partner) {
-//         response = await axiosInstance.put(`/partners/${partner._id}`, { partnerName })
-//         if (response.data.success) {
-//           showSuccess('Partner updated successfully!')
-//           onPartnerAdded(response.data.data, true)
-//         }
-//       } else {
-//         response = await axiosInstance.post('/partners', { partnerName })
-//         if (response.data.success) {
-//           showSuccess('Partner added successfully!')
-//           onPartnerAdded(response.data.data, false)
-//         }
-//       }
-
-//       setPartnerName('')
-//       onClose()
-//     } catch (error) {
-//       console.error('Error saving partner:', error)
-//       showError('Failed to save partner')
-//     }
-//   }
-
-//   return (
-//     <CModal size="lg" visible={visible} onClose={onClose}>
-//       <CModalHeader className="d-flex justify-content-between align-items-center">
-//         <CModalTitle>{partner ? 'Edit Partner' : 'Add Partner'}</CModalTitle>
-//       </CModalHeader>
-
-//       <CModalBody>
-//         <div className="mb-3">
-//           <label className="form-label">
-//             Partner Name <span style={{ color: 'red' }}>*</span>
-//           </label>
-//           <CFormInput
-//             type="text"
-//             placeholder="Enter partner name"
-//             value={partnerName}
-//             onChange={(e) => setPartnerName(e.target.value)}
-//             className="no-radius-input"
-//             style={{ width: '60%' }}
-//             required
-//           />
-//         </div>
-//       </CModalBody>
-
-//       <CModalFooter>
-//         <CButton className="submit-button" onClick={handleSubmit}>
-//           Submit
-//         </CButton>
-//       </CModalFooter>
-//     </CModal>
-//   )
-// }
-
-// AddPartner.propTypes = {
-//   visible: PropTypes.bool.isRequired,
-//   onClose: PropTypes.func.isRequired,
-//   onPartnerAdded: PropTypes.func.isRequired,
-//   partner: PropTypes.object
-// }
-
-// export default AddPartner
-
-
 import React, { useState, useEffect } from 'react'
 import {
   CModal,
@@ -103,17 +6,17 @@ import {
   CModalBody,
   CModalFooter,
   CFormInput,
-  CButton
+  CButton,
+  CAlert
 } from '@coreui/react'
 import PropTypes from 'prop-types'
 import axiosInstance from 'src/axiosInstance'
-import { showSuccess, showError } from 'src/utils/sweetAlerts'
-import '../../../css/form.css'   // <-- make sure this has .error, .error-input, .valid-input classes
+import '../../../css/form.css'
 
 const AddPartner = ({ visible, onClose, onPartnerAdded, partner }) => {
   const [partnerName, setPartnerName] = useState('')
   const [errors, setErrors] = useState({})
-
+  const [alert, setAlert] = useState({ type: '', message: '' })
   useEffect(() => {
     if (partner) {
       setPartnerName(partner.partnerName || '')
@@ -121,6 +24,7 @@ const AddPartner = ({ visible, onClose, onPartnerAdded, partner }) => {
       setPartnerName('')
     }
     setErrors({})
+    setAlert({ type: '', message: '' })
   }, [partner, visible])
 
   const validateForm = () => {
@@ -140,22 +44,25 @@ const AddPartner = ({ visible, onClose, onPartnerAdded, partner }) => {
       if (partner) {
         response = await axiosInstance.put(`/partners/${partner._id}`, { partnerName })
         if (response.data.success) {
-          showSuccess('Partner updated successfully!')
+          setAlert({ type: 'success', message: 'Partner updated successfully!' })
           if (onPartnerAdded) onPartnerAdded(response.data.data, true)
         }
       } else {
         response = await axiosInstance.post('/partners', { partnerName })
         if (response.data.success) {
-          showSuccess('Partner added successfully!')
+          setAlert({ type: 'success', message: 'Partner added successfully!' })
           if (onPartnerAdded) onPartnerAdded(response.data.data, false)
         }
       }
 
       setPartnerName('')
-      onClose()
+      setTimeout(() => {
+        setAlert({ type: '', message: '' })
+        onClose()
+      }, 1500)
     } catch (error) {
       console.error('Error saving partner:', error)
-      showError('Failed to save partner')
+      setAlert({ type: 'danger', message: 'Failed to save partner' })
     }
   }
 
@@ -166,6 +73,12 @@ const AddPartner = ({ visible, onClose, onPartnerAdded, partner }) => {
       </CModalHeader>
 
       <CModalBody>
+        {alert.message && (
+          <CAlert color={alert.type} dismissible onClose={() => setAlert({ type: '', message: '' })}>
+            {alert.message}
+          </CAlert>
+        )}
+
         <div className="mb-3">
           <label
             className={`form-label ${

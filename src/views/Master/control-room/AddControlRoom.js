@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../../css/form.css';
+import { CAlert } from '@coreui/react';
 
 const AddControlRoom = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const AddControlRoom = () => {
 
   const [centers, setCenters] = useState([]);
   const [errors, setErrors] = useState({});
+  const [alert, setAlert] = useState({ type: '', message: '' })
 
   useEffect(() => {
     const fetchCenters = async () => {
@@ -38,15 +40,6 @@ const AddControlRoom = () => {
       fetchData(id);
     }
   }, [id]);
-
-  // const fetchData = async (controlRoomId) => {
-  //   try {
-  //     const res = await axiosInstance.get(`/controlRooms/${controlRoomId}`);
-  //     setFormData(res.data.data);
-  //   } catch (error) {
-  //     console.error('Error fetching controlRoom:', error);
-  //   }
-  // };
 
   const fetchData = async (controlRoomId) => {
     try {
@@ -89,13 +82,27 @@ const AddControlRoom = () => {
     try {
       if (id) {
         await axiosInstance.put(`/controlRooms/${id}`, formData);
+        setAlert({ type: 'success', message: 'Data updated successfully!' })
       } else {
         await axiosInstance.post('/controlRooms', formData);
+        setAlert({ type: 'success', message: 'Data added successfully!' })
       }
-      navigate('/controlRoom-list');
+      setTimeout(() => navigate('/controlRoom-list'),1500);
     } catch (error) {
-      console.error('Error saving controlRoom:', error);
-    }
+      console.error('Error saving Data:', error)
+    
+      let message = 'Failed to save Data. Please try again!'
+    
+      if (error.response) {
+        message = error.response.data?.message || error.response.data?.error || message
+      } else if (error.request) {
+        message = 'No response from server. Please check your connection.'
+      } else {
+        message = error.message
+      }
+    
+      setAlert({ type: 'danger', message })
+    }    
   };
 
   const handleReset = () => {
@@ -116,6 +123,11 @@ const AddControlRoom = () => {
       <div className="title">{id ? 'Edit' : 'Add'} Control Room</div>
       <div className="form-card">
         <div className="form-body">
+        {alert.message && (
+  <CAlert color={alert.type} dismissible onClose={() => setAlert({ type: '', message: '' })}>
+    {alert.message}
+  </CAlert>
+)}
           <form onSubmit={handleSubmit}>
             <div className="form-row">
             <div className="form-group">

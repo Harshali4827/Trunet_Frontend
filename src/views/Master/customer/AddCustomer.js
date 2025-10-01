@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../../css/form.css';
+import { CAlert } from '@coreui/react';
 
 const AddCustomer = () => {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ const AddCustomer = () => {
 
   const [centers, setCenters] = useState([]);
   const [errors, setErrors] = useState({});
-
+  const [alert, setAlert] = useState({ type: '', message: '' })
  
   useEffect(() => {
     const fetchCenters = async () => {
@@ -44,11 +45,23 @@ const AddCustomer = () => {
   const fetchCustomer = async (customerId) => {
     try {
       const res = await axiosInstance.get(`/customers/${customerId}`);
-      setFormData(res.data.data);
+      const data = res.data.data;
+  
+      setFormData({
+        username: data.username || '',
+        name: data.name || '',
+        mobile: data.mobile || '',
+        email: data.email || '',
+        centerId: data.center?._id || '',
+        address1: data.address1 || '',
+        address2: data.address2 || '',
+        city: data.city || '',
+        state: data.state || '',
+      });
     } catch (error) {
-     console.log("error fetching customers", error)
+      console.log("error fetching customers", error)
     }
-  };
+  };  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -72,13 +85,27 @@ const AddCustomer = () => {
     try {
       if (id) {
         await axiosInstance.put(`/customers/${id}`, formData);
+        setAlert({ type: 'success', message: 'Data updated successfully!' })
       } else {
         await axiosInstance.post('/customers', formData);
+        setAlert({ type: 'success', message: 'Data added successfully!' })
       }
-      navigate('/customers-list');
+      setTimeout(() =>navigate('/customers-list'),1500);
     } catch (error) {
-      console.error('Error saving customer:', error);
-    }
+      console.error('Error saving Data:', error)
+    
+      let message = 'Failed to save Data. Please try again!'
+    
+      if (error.response) {
+        message = error.response.data?.message || error.response.data?.error || message
+      } else if (error.request) {
+        message = 'No response from server. Please check your connection.'
+      } else {
+        message = error.message
+      }
+    
+      setAlert({ type: 'danger', message })
+    }    
   };
 
   const handleReset = () => {
@@ -101,6 +128,11 @@ const AddCustomer = () => {
       <div className="title">{id ? 'Edit' : 'Add'} Customer</div>
       <div className="form-card">
         <div className="form-body">
+        {alert.message && (
+  <CAlert color={alert.type} dismissible onClose={() => setAlert({ type: '', message: '' })}>
+    {alert.message}
+  </CAlert>
+)}
           <form onSubmit={handleSubmit}>
             <div className="form-row">
               <div className="form-group">

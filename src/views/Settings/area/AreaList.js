@@ -123,15 +123,33 @@ const AreaList = () => {
     }
   };
  
-  const handleAreaAdded = (partner, isEdit) => {
+  // const handleAreaAdded = (partner, isEdit) => {
+  //   if (isEdit) {
+  //     setAreas((prev) =>
+  //       prev.map((p) => (p._id === partner._id ? partner : p))
+  //     )
+  //   } else {
+  //     setAreas((prev) => [...prev, partner])
+  //   }
+  // }
+  const handleAreaAdded = async (newArea, isEdit) => {
     if (isEdit) {
       setAreas((prev) =>
-        prev.map((p) => (p._id === partner._id ? partner : p))
+        prev.map((p) => (p._id === newArea._id ? newArea : p))
       )
     } else {
-      setAreas((prev) => [...prev, partner])
+      try {
+        const response = await axiosInstance.get('/areas')
+        if (response.data.success) {
+          setAreas(response.data.data)
+        }
+      } catch (err) {
+        console.error('Error refreshing areas:', err)
+        setAreas((prev) => [...prev, newArea])
+      }
     }
   }
+  
 
   const handleEditPartner = (partner) => {
    setEditingArea(partner)

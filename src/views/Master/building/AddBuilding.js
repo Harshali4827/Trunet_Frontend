@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../../css/form.css';
+import { CAlert } from '@coreui/react';
 const AddBuilding = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -18,6 +19,7 @@ const AddBuilding = () => {
 
   const [centers, setCenters] = useState([]);
   const [errors, setErrors] = useState({});
+  const [alert, setAlert] = useState({ type: '', message: '' })
 
   useEffect(() => {
     const fetchCenters = async () => {
@@ -69,14 +71,28 @@ const AddBuilding = () => {
     try {
       if (id) {
         await axiosInstance.put(`/buildings/${id}`, formData);
+        setAlert({ type: 'success', message: 'Data updated successfully!' })
       } else {
         await axiosInstance.post('/buildings', formData);
+        setAlert({ type: 'success', message: 'Data added successfully!' })
       }
-      navigate('/building-list');
+      setTimeout(() => navigate('/building-list'),1500);
      
     } catch (error) {
-      console.error('Error saving building:', error);
-    }
+      console.error('Error saving Data:', error)
+    
+      let message = 'Failed to save Data. Please try again!'
+    
+      if (error.response) {
+        message = error.response.data?.message || error.response.data?.error || message
+      } else if (error.request) {
+        message = 'No response from server. Please check your connection.'
+      } else {
+        message = error.message
+      }
+    
+      setAlert({ type: 'danger', message })
+    }    
   };
 
   const handleReset = () => {
@@ -97,6 +113,11 @@ const AddBuilding = () => {
       <div className="title">Building {id ? 'Edit' : 'Add'}</div>
       <div className="form-card">
         <div className="form-body">
+        {alert.message && (
+  <CAlert color={alert.type} dismissible onClose={() => setAlert({ type: '', message: '' })}>
+    {alert.message}
+  </CAlert>
+)}
           <form onSubmit={handleSubmit}>
             <div className="form-row">
             <div className="form-group">

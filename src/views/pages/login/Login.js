@@ -81,10 +81,7 @@ const Login = () => {
               localStorage.setItem('userCenter', JSON.stringify(response.data.data.user.center))
             }
           }
-  
-          setTimeout(() => {
-            navigate('/')
-          }, 1000)
+          navigate('/');
         } else {
           setError(response.data.message || 'Login failed')
         }
@@ -282,9 +279,9 @@ const Login = () => {
                     <CRow>
                       <p className="footer-text">
                         Design and Developed by{' '}
-                        <a href="https://www.gordinateur.com/">
+                        <a href="https://softcrowdtechnologies.com/">
                           <span className="sub-footer">
-                            G-Ordinateur Pvt. Ltd.
+                            Softcrowd Technologies
                           </span>
                         </a>
                       </p>

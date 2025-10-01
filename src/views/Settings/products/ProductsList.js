@@ -13,8 +13,6 @@ import {
   CCardHeader,
   CButton,
   CFormInput,
-  CPaginationItem,
-  CPagination,
   CSpinner
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
@@ -24,6 +22,7 @@ import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
 import SearchProductModel from './SearchProductModel';
+import Pagination from 'src/utils/Pagination';
 
 const ProductList = () => {
   const [customers, setCustomers] = useState([]);
@@ -35,12 +34,14 @@ const ProductList = () => {
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [activeSearch, setActiveSearch] = useState({ keyword: '', center: '' });
   const [dropdownOpen, setDropdownOpen] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   
   const dropdownRefs = useRef({});
 
  const navigate = useNavigate();
 
- const fetchProducts = async (searchParams = {}) => {
+ const fetchProducts = async (searchParams = {}, page = 1) => {
   try {
     setLoading(true);
     const params = new URLSearchParams();
@@ -48,12 +49,14 @@ const ProductList = () => {
     if (searchParams.keyword) params.append('search', searchParams.keyword);
     if (searchParams.category) params.append('category', searchParams.category);
     if (searchParams.status) params.append('status', searchParams.status);
-
+    params.append('page', page);
     const url = params.toString() ? `/products?${params.toString()}` : '/products';
     const response = await axiosInstance.get(url);
 
     if (response.data.success) {
       setCustomers(response.data.data);
+      setCurrentPage(response.data.pagination.currentPage);
+      setTotalPages(response.data.pagination.totalPages);
     } else {
       throw new Error('API returned unsuccessful response');
     }
@@ -80,6 +83,12 @@ const ProductList = () => {
       fetchProducts();
       fetchCategories();
     }, []);
+
+    const handlePageChange = (page) => {
+      if (page < 1 || page > totalPages) return;
+      fetchProducts(activeSearch, page);
+    };
+  
 
   const handleSort = (key) => {
     let direction = 'ascending';
@@ -124,13 +133,13 @@ const ProductList = () => {
 
   const handleSearch = (searchData) => {
     setActiveSearch(searchData);
-    fetchProducts(searchData);
+    fetchProducts(searchData,1);
   };
   
   const handleResetSearch = () => {
     setActiveSearch({ keyword: '', category: '', status: '' });
     setSearchTerm('');
-    fetchProducts();
+    fetchProducts({},1);
   };
   
 
@@ -145,22 +154,22 @@ const ProductList = () => {
     })
   );
 
-  const handleDeleteCenter = async (customerId) => {
+  const handleDeleteData= async (itemId) => {
     const result = await confirmDelete();
     if (result.isConfirmed) {
       try {
-        await axiosInstance.delete(`/centers/${customerId}`);
-        setCustomers((prev) => prev.filter((c) => c._id !== customerId));
+        await axiosInstance.delete(`/products/${itemId}`);
+        setCustomers((prev) => prev.filter((c) => c._id !== itemId));
   
-        showSuccess('Center deleted successfully!');
+        showSuccess('Data deleted successfully!');
       } catch (error) {
-        console.error('Error deleting center:', error);
+        console.error('Error deleting Data:', error);
       }
     }
   };
   
-  const handleEditCustomer = (customerId) => {
-     navigate(`/edit-product/${customerId}`)
+  const handleEditData = (itemId) => {
+     navigate(`/edit-product/${itemId}`)
   };
 
   const toggleDropdown = (id) => {
@@ -169,28 +178,25 @@ const ProductList = () => {
       [id]: !prev[id]
     }));
   };
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       const newDropdownState = {};
       let shouldUpdate = false;
-      
+
       Object.keys(dropdownRefs.current).forEach(key => {
         if (dropdownRefs.current[key] && !dropdownRefs.current[key].contains(event.target)) {
           newDropdownState[key] = false;
           shouldUpdate = true;
         }
       });
-      
+
       if (shouldUpdate) {
         setDropdownOpen(prev => ({ ...prev, ...newDropdownState }));
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   if (loading) {
@@ -243,13 +249,12 @@ const ProductList = () => {
           </div>
           
           <div>
-            <CPagination size="sm" aria-label="Page navigation">
-              <CPaginationItem>First</CPaginationItem>
-              <CPaginationItem>&lt;</CPaginationItem>
-              <CPaginationItem>1</CPaginationItem>
-              <CPaginationItem>&gt;</CPaginationItem>
-              <CPaginationItem>Last</CPaginationItem>
-            </CPagination>
+              <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+              />
+
           </div>
         </CCardHeader>
         
@@ -324,13 +329,13 @@ const ProductList = () => {
                           <div className="dropdown-menu show">
                             <button 
                               className="dropdown-item"
-                              onClick={() => handleEditCustomer(product._id)}
+                              onClick={() => handleEditData(product._id)}
                             >
                               <CIcon icon={cilPencil} className="me-2" /> Edit
                             </button>
                             <button 
                               className="dropdown-item"
-                              onClick={() => handleDeleteCenter(product._id)}
+                              onClick={() => handleDeleteData(product._id)}
                             >
                               <CIcon icon={cilTrash} className="me-2" /> Delete
                             </button>
