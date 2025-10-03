@@ -59,7 +59,10 @@ const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
 const StockUsage = React.lazy(() => import('./views/stockUsage/StockUsage'))
 const AddStockUsage = React.lazy(() => import('./views/stockUsage/AddStockUsage'))
 
+const AddRole = React.lazy(() => import('./views/Settings/role/AddRole'))
+const RoleList = React.lazy(() => import('./views/Settings/role/RoleList'))
 const Cards = React.lazy(() => import('./views/base/cards/Cards'))
+
 
 
 const routes = [
@@ -241,13 +244,19 @@ const routes = [
   { 
     path:'/add-user', 
     exact:true, 
-    name:<Translation>{(t) => t('Add Area')}</Translation>,
+    name:<Translation>{(t) => t('Edit User')}</Translation>,
+    element: AddUser,
+  },
+  { 
+    path:'/edit-user/:id', 
+    exact:true, 
+    name:<Translation>{(t) => t('Edit User')}</Translation>,
     element: AddUser,
   },
   { 
     path:'/user-list', 
     exact:true, 
-    name:<Translation>{(t) => t('Area List')}</Translation>,
+    name:<Translation>{(t) => t('User List')}</Translation>,
     element: UserList,
   },
   { 
@@ -375,6 +384,25 @@ const routes = [
     path:'/master',
     name: <Translation>{(t) => t('master')}</Translation>,
     element: Cards,
+    exact: true,
+  },
+
+  {
+    path: '/add-role',
+    name: <Translation>{(t) => t('Add Role')}</Translation>,
+    element: AddRole,
+    exact: true,
+  },
+  {
+    path: '/edit-role/:id',
+    name: <Translation>{(t) => t('Add Role')}</Translation>,
+    element: AddRole,
+    exact: true,
+  },
+  {
+    path:'/role-list',
+    name: <Translation>{(t) => t('Role List')}</Translation>,
+    element: RoleList,
     exact: true,
   }
 ]

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../../css/form.css';
+import { CAlert } from '@coreui/react';
 
 const AddUser = () => {
   const navigate = useNavigate();
@@ -19,10 +20,9 @@ const AddUser = () => {
   });
 
   const [centers, setCenters] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [errors, setErrors] = useState({});
-
- 
-  useEffect(() => {
+  const [alert, setAlert] = useState({ type: '', message: '' })
     const fetchCenters = async () => {
       try {
         const res = await axiosInstance.get('/centers');
@@ -31,21 +31,31 @@ const AddUser = () => {
        console.log(error)
       }
     };
-    fetchCenters();
-  }, []);
+
+    const fetchRoles = async () => {
+      try {
+        const res = await axiosInstance.get('/role');
+        setRoles(res.data.data || []);
+      } catch (error) {
+       console.log(error)
+      }
+    };
+
 
   useEffect(() => {
     if (id) {
     fetchData(id);
     }
+    fetchRoles();
+    fetchCenters();
   }, [id]);
 
-  const fetchData = async (customerId) => {
+  const fetchData = async (itemId) => {
     try {
-      const res = await axiosInstance.get(`/customers/${customerId}`);
+      const res = await axiosInstance.get(`/auth/${itemId}`);
       setFormData(res.data.data);
     } catch (error) {
-     console.log("error fetching customers", error)
+     console.log("error fetching data", error)
     }
   };
 
@@ -71,13 +81,27 @@ const AddUser = () => {
     try {
       if (id) {
         await axiosInstance.put(`/auth/register/${id}`, formData);
+        setAlert({ type: 'success', message: 'Data updated successfully!' })
       } else {
         await axiosInstance.post('/auth/register', formData);
+        setAlert({ type: 'success', message: 'Data saved successfully!' })
       }
-      navigate('/user-list');
+      setTimeout(() => navigate('/user-list'),1500);
     } catch (error) {
-      console.error('Error saving data:', error);
-    }
+      console.error('Error saving Data:', error)
+    
+      let message = 'Failed to save Data. Please try again!'
+    
+      if (error.response) {
+        message = error.response.data?.message || error.response.data?.error || message
+      } else if (error.request) {
+        message = 'No response from server. Please check your connection.'
+      } else {
+        message = error.message
+      }
+    
+      setAlert({ type: 'danger', message })
+    }    
   };
 
   const handleReset = () => {
@@ -99,6 +123,11 @@ const AddUser = () => {
       <div className="title">{id ? 'Edit' : 'Add'} User</div>
       <div className="form-card">
         <div className="form-body">
+          {alert.message && (
+            <CAlert color={alert.type} dismissible onClose={() => setAlert({ type: '', message: '' })}>
+               {alert.message}
+            </CAlert>
+          )}
           <form onSubmit={handleSubmit}>
             <div className="form-row">
               <div className="form-group">
@@ -108,7 +137,7 @@ const AddUser = () => {
                 htmlFor="role">
                   Role <span className="required">*</span>
                 </label>
-                <input
+                <select
                   type="text"
                   id="role"
                   name="role"
@@ -116,7 +145,16 @@ const AddUser = () => {
                   ${errors.role ? 'error-input' : formData.role ? 'valid-input' : ''}`}
                   value={formData.role}
                   onChange={handleChange}
-                />
+                >
+                  <option value="">SELECT</option>
+                  {
+                    roles.map((role) =>(
+                      <option key={role._id} value={role._id}>
+                        {role.roleTitle}
+                      </option>
+                    ))
+                  }
+                  </select>
                 {errors.role && <span className="error">{errors.role}</span>}
               </div>
               <div className="form-group">

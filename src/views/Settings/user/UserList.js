@@ -13,8 +13,6 @@ import {
   CCardHeader,
   CButton,
   CFormInput,
-  CPaginationItem,
-  CPagination,
   CSpinner
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
@@ -27,7 +25,7 @@ import SearchUserModel from './SearchUserModel';
 import Pagination from 'src/utils/Pagination';
 
 const UserList = () => {
-  const [customers, setCustomers] = useState([]);
+  const [data, setData] = useState([]);
   const [centers, setCenters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -42,7 +40,7 @@ const UserList = () => {
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
 
-  const fetchCustomers = async (searchParams = {}, page = 1) => {
+  const fetchData = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -54,19 +52,19 @@ const UserList = () => {
         params.append('center', searchParams.center);
       }
       params.append('page', page);
-      const url = params.toString() ? `/customers?${params.toString()}` : '/customers';
+      const url = params.toString() ? `/auth?${params.toString()}` : '/auth';
       const response = await axiosInstance.get(url);
       
       if (response.data.success) {
-        setCustomers(response.data.data);
-        setCurrentPage(response.data.pagination.currentPage);
-        setTotalPages(response.data.pagination.totalPages);
+        setData(response.data.data.users);
+        setCurrentPage(response.data.data.pagination.currentPage);
+        setTotalPages(response.data.data.pagination.totalPages);
       } else {
         throw new Error('API returned unsuccessful response');
       }
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching customers:', err);
+      console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
@@ -84,13 +82,13 @@ const UserList = () => {
   };
 
   useEffect(() => {
-    fetchCustomers();
+    fetchData();
     fetchCenters();
   }, []);
  
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
-    fetchCustomers(activeSearch, page);
+    fetchData(activeSearch, page);
   };
 
   const handleSort = (key) => {
@@ -100,7 +98,7 @@ const UserList = () => {
     }
     setSortConfig({ key, direction });
 
-    const sortedCustomers = [...customers].sort((a, b) => {
+    const sortedData = [...data].sort((a, b) => {
       let aValue = a;
       let bValue = b;
       
@@ -122,7 +120,7 @@ const UserList = () => {
       return 0;
     });
 
-    setCustomers(sortedCustomers);
+    setData(sortedData);
   };
 
   const getSortIcon = (key) => {
@@ -136,20 +134,20 @@ const UserList = () => {
 
   const handleSearch = (searchData) => {
     setActiveSearch(searchData);
-    fetchCustomers(searchData,1);
+    fetchData(searchData,1);
   };
 
   const handleResetSearch = () => {
     setActiveSearch({ keyword: '', center: '' });
     setSearchTerm('');
-    fetchCustomers({},1);
+    fetchData({},1);
   };
 
-  const filteredCustomers = customers.filter(customer => {
+  const filteredData = data.filter(item => {
     if (activeSearch.keyword || activeSearch.center) {
       return true;
     }
-    return Object.values(customer).some(value => {
+    return Object.values(item).some(value => {
       if (typeof value === 'object' && value !== null) {
         return Object.values(value).some(nestedValue => 
           nestedValue && nestedValue.toString().toLowerCase().includes(searchTerm.toLowerCase())
@@ -159,21 +157,21 @@ const UserList = () => {
     });
   });
 
-  const handleDeleteCustomer = async (customerId) => {
+  const handleDeleteUser = async (itemId) => {
     const result = await confirmDelete();
     if (result.isConfirmed) {
       try {
-        await axiosInstance.delete(`/customers/${customerId}`);
-        setCustomers((prev) => prev.filter((c) => c._id !== customerId));
-        showSuccess('Customer deleted successfully!');
+        await axiosInstance.delete(`/auth/${itemId}`);
+        setData((prev) => prev.filter((c) => c._id !== itemId));
+        showSuccess('Data deleted successfully!');
       } catch (error) {
-        console.error('Error deleting customer:', error);
+        console.error('Error deleting data:', error);
       }
     }
   };
   
-  const handleEditCustomer = (customerId) => {
-    navigate(`/edit-customer/${customerId}`)
+  const handleEditData = (itemId) => {
+    navigate(`/edit-user/${itemId}`)
   };
 
   const toggleDropdown = (id) => {
@@ -217,7 +215,7 @@ const UserList = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading customers: {error}
+        Error loading data: {error}
       </div>
     );
   }
@@ -282,8 +280,6 @@ const UserList = () => {
                 className="d-inline-block square-search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                // disabled={!!(activeSearch.keyword || activeSearch.center)} 
-                // placeholder={activeSearch.keyword || activeSearch.center ? "Disabled during advanced search" : " "}
               />
             </div>
           </div>
@@ -292,11 +288,11 @@ const UserList = () => {
           <CTable striped bordered hover responsive className='responsive-table'>
             <CTableHead>
               <CTableRow>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('username')} className="sortable-header">
-                 Name {getSortIcon('username')}
+                <CTableHeaderCell scope="col" onClick={() => handleSort('fullName')} className="sortable-header">
+                 Name {getSortIcon('fullName')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('name')} className="sortable-header">
-                 Role {getSortIcon('name')}
+                 Role {getSortIcon('role.roleTitle')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
                   Center {getSortIcon('center.centerName')}
@@ -313,35 +309,51 @@ const UserList = () => {
               </CTableRow>
             </CTableHead>
             <CTableBody>
-              {filteredCustomers.length > 0 ? (
-                filteredCustomers.map((customer) => (
-                  <CTableRow key={customer._id}>
-                    <CTableDataCell>{customer.username}</CTableDataCell>
-                    <CTableDataCell>{customer.name}</CTableDataCell>
-                    <CTableDataCell>{customer.center?.centerName || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{customer.email}</CTableDataCell>
-                    <CTableDataCell>{customer.mobile}</CTableDataCell>
+              {filteredData.length > 0 ? (
+                filteredData.map((item) => (
+                  <CTableRow key={item._id}>
+                    <CTableDataCell>{item.fullName}</CTableDataCell>
+                    <CTableDataCell>{item.role?.roleTitle || ''}</CTableDataCell>
+                    <CTableDataCell>{item.center?.centerName || 'N/A'}</CTableDataCell>
                     <CTableDataCell>
-                      <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
+                         <a 
+                          href={`mailto:${item.email}`} 
+                          className="btn btn-link p-0 text-decoration-none"
+                          style={{color:'#337ab7'}}
+                          >
+                                  {item.email}
+                          </a>
+                      </CTableDataCell>
+                    <CTableDataCell>
+                          <a
+                            href={`tel:${item.mobile}`} 
+                            className="btn btn-link p-0 text-decoration-none"
+                            style={{color:'#337ab7'}}
+                          >
+                                {item.mobile}
+                          </a>
+                    </CTableDataCell>
+                    <CTableDataCell>
+                      <div className="dropdown-container" ref={el => dropdownRefs.current[item._id] = el}>
                         <CButton 
                           size="sm"
                           className='option-button btn-sm'
-                          onClick={() => toggleDropdown(customer._id)}
+                          onClick={() => toggleDropdown(item._id)}
                         >
                           <CIcon icon={cilSettings} />
                           Options
                         </CButton>
-                        {dropdownOpen[customer._id] && (
+                        {dropdownOpen[item._id] && (
                           <div className="dropdown-menu show">
                             <button 
                               className="dropdown-item"
-                              onClick={() => handleEditCustomer(customer._id)}
+                              onClick={() => handleEditData(item._id)}
                             >
                               <CIcon icon={cilPencil} className="me-2" /> Edit
                             </button>
                             <button 
                               className="dropdown-item"
-                              onClick={() => handleDeleteCustomer(customer._id)}
+                              onClick={() => handleDeleteUser(item._id)}
                             >
                               <CIcon icon={cilTrash} className="me-2" /> Delete
                             </button>
@@ -354,7 +366,7 @@ const UserList = () => {
               ) : (
                 <CTableRow>
                   <CTableDataCell colSpan="9" className="text-center">
-                    No customers found
+                    No data found
                   </CTableDataCell>
                 </CTableRow>
               )}

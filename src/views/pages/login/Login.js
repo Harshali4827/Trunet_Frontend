@@ -34,8 +34,10 @@ const Login = () => {
   const [success, setSuccess] = useState('')
   const [activeTab, setActiveTab] = useState(1)
   const navigate = useNavigate()
+  const user = JSON.parse(localStorage.getItem('user')) || {};
+  const userRole = user.role || '';
 
-  
+   
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setFormData((prevState) => ({ ...prevState, [name]: value }))

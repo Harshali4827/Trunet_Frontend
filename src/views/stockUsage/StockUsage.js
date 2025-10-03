@@ -229,28 +229,22 @@ const StockUsage = () => {
         <CTableHead>
           <CTableRow>
             <CTableHeaderCell scope="col" onClick={() => handleSort('username')} className="sortable-header">
-              User Name {getSortIcon('username')}
+              Date {getSortIcon('username')}
             </CTableHeaderCell>
             <CTableHeaderCell scope="col" onClick={() => handleSort('name')} className="sortable-header">
-             Name {getSortIcon('name')}
+             Type {getSortIcon('name')}
             </CTableHeaderCell>
             <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
               Center {getSortIcon('center.centerName')}
             </CTableHeaderCell>
             <CTableHeaderCell scope="col" onClick={() => handleSort('center.partner.partnerName')} className="sortable-header">
-              Partner {getSortIcon('center.partner.partnerName')}
+              Remark {getSortIcon('center.partner.partnerName')}
             </CTableHeaderCell>
             <CTableHeaderCell scope="col" onClick={() => handleSort('center.area.areaName')} className="sortable-header">
-              Area {getSortIcon('center.area.areaName')}
+              Detail {getSortIcon('center.area.areaName')}
             </CTableHeaderCell>
             <CTableHeaderCell scope="col" onClick={() => handleSort('mobile')} className="sortable-header">
-              Mobile {getSortIcon('mobile')}
-            </CTableHeaderCell>
-            <CTableHeaderCell scope="col" onClick={() => handleSort('email')} className="sortable-header">
-              Email {getSortIcon('email')}
-            </CTableHeaderCell>
-            <CTableHeaderCell scope="col" onClick={() => handleSort('city')} className="sortable-header">
-              City {getSortIcon('city')}
+              Created At{getSortIcon('mobile')}
             </CTableHeaderCell>
             <CTableHeaderCell scope="col">
               Action
@@ -275,8 +269,6 @@ const StockUsage = () => {
                 <CTableDataCell>{customer.center?.partner?.partnerName || 'N/A'}</CTableDataCell>
                 <CTableDataCell>{customer.center?.area?.areaName || 'N/A'}</CTableDataCell>
                 <CTableDataCell>{customer.mobile}</CTableDataCell>
-                <CTableDataCell>{customer.email}</CTableDataCell>
-                <CTableDataCell>{customer.city}</CTableDataCell>
                 <CTableDataCell>
                   <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
                     <CButton 

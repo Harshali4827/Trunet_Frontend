@@ -23,6 +23,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import SearchStockPurchase from './SearchStockPurchase';
+import Pagination from 'src/utils/Pagination';
 
 const StockPurchase = () => {
   const [customers, setCustomers] = useState([]);
@@ -34,11 +35,13 @@ const StockPurchase = () => {
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [activeSearch, setActiveSearch] = useState({ keyword: '', center: '' });
   const [dropdownOpen, setDropdownOpen] = useState({});
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
 
-  const fetchCustomers = async (searchParams = {}) => {
+  const fetchData = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -49,12 +52,14 @@ const StockPurchase = () => {
       if (searchParams.center) {
         params.append('center', searchParams.center);
       }
-
+      params.append('page', page);
       const url = params.toString() ? `/stockpurchase?${params.toString()}` : '/stockpurchase';
       const response = await axiosInstance.get(url);
       
       if (response.data.success) {
         setCustomers(response.data.data);
+        setCurrentPage(response.data.pagination.currentPage);
+        setTotalPages(response.data.pagination.totalPages);
       } else {
         throw new Error('API returned unsuccessful response');
       }
@@ -78,10 +83,15 @@ const StockPurchase = () => {
   };
 
   useEffect(() => {
-    fetchCustomers();
+    fetchData();
     fetchCenters();
   }, []);
 
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    fetchData(activeSearch, page);
+  };
+  
   // Calculate totals
   const calculateTotals = () => {
     const totals = {
@@ -146,13 +156,13 @@ const StockPurchase = () => {
 
   const handleSearch = (searchData) => {
     setActiveSearch(searchData);
-    fetchCustomers(searchData);
+    fetchData(searchData, 1);
   };
 
   const handleResetSearch = () => {
     setActiveSearch({ keyword: '', center: '' });
     setSearchTerm('');
-    fetchCustomers();
+    fetchData({},1);
   };
 
   const filteredCustomers = customers.filter(customer => {
@@ -276,13 +286,11 @@ const StockPurchase = () => {
           </div>
           
           <div>
-            <CPagination size="sm" aria-label="Page navigation">
-              <CPaginationItem>First</CPaginationItem>
-              <CPaginationItem>&lt;</CPaginationItem>
-              <CPaginationItem>1</CPaginationItem>
-              <CPaginationItem>&gt;</CPaginationItem>
-              <CPaginationItem>Last</CPaginationItem>
-            </CPagination>
+          <Pagination
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={handlePageChange}
+    />
           </div>
         </CCardHeader>
         

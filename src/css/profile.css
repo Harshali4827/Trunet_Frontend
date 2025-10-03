@@ -205,6 +205,12 @@
 .status-badge.completed {
   background-color: #00a65a;
 }
+.status-badge.admin_approved {
+  background-color: #00a65a;
+}
+.status-badge.admin_rejected {
+  background-color: #dd4b39;
+}
 .status-badge.rejected {
   background-color: #dd4b39;
 }

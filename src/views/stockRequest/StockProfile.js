@@ -164,6 +164,22 @@ const handleReject = async () => {
   }
 };
 
+// Submit
+const handleSubmitRequest = async () => {
+  try {
+    const response = await axiosInstance.put(`/stockrequest/${id}`, { status: 'Submitted' });
+    if (response.data.success) {
+      setAlert({ type: 'success', message: 'Data submitted successfully', visible: true });
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      setAlert({ type: 'danger', message: 'Failed to submit', visible: true });
+    }
+  } catch (err) {
+    console.error(err);
+    setAlert({ type: 'danger', message: 'Error to submit data', visible: true });
+  }
+};
+
 // approve qty
 const handleChangeApprovedQty = async () => {
   let hasError = false;
@@ -316,6 +332,40 @@ const handleMarkIncomplete = async (remark) => {
   }
 };
 
+
+const handleInomplete = async () => {
+  try {
+    const approvalsPayload = approvedProducts.map(p => ({
+      productId: p.productId,
+      approvedQuantity: Number(p.approvedQty) || 0,
+      approvedRemark: p.approvedRemark || ''
+    }));
+    const receiptsPayload = approvalsPayload.map(a => ({
+      productId: a.productId,
+      receivedQuantity: a.approvedQuantity,
+      receivedRemark: '',
+    }));
+
+    const response = await axiosInstance.patch(
+      `/stockrequest/${id}/complete-incomplete`,
+      {
+        productApprovals: approvalsPayload,
+        productReceipts: receiptsPayload,
+      }
+    );
+
+    if (response.data.success) {
+      setAlert({ type: 'success', message: 'Indent completed successfully', visible: true });
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      setAlert({ type: 'danger', message: response.data.message || 'Failed to complete indent', visible: true });
+    }
+  } catch (err) {
+    console.error(err);
+    setAlert({ type: 'danger', message: 'Error completing indent', visible: true });
+  }
+};
+
   const handleApprovedBlur = (productId, value) => {
     if (value === '' || !/^\d+$/.test(value)) {
       setErrors(prev => ({ ...prev, [productId]: 'The input value was not a correct number' }));
@@ -452,10 +502,13 @@ const handleMarkIncomplete = async (remark) => {
         <div className="subtitle-row d-flex justify-content-between align-items-center">
           <div className="subtitle">Product Details</div>
        <div className="action-buttons">
-      {data.status === 'Incomplete' && (
-        <CButton className="btn-action btn-incomplete">
-          Change Qty &amp; Complete Request
-        </CButton>
+
+       {data.status === 'Draft' && (
+        <>
+          <CButton className="btn-action btn-submitted me-2" onClick={handleSubmitRequest}>
+            Submit
+          </CButton>
+        </>
       )}
 
       {data.status === 'Confirmed' && (
@@ -507,6 +560,15 @@ const handleMarkIncomplete = async (remark) => {
           </CButton>
         </>
       )}
+
+        {data.status === 'Incompleted' && (
+        <>
+          <CButton className="btn-action btn-incomplete me-2" onClick={handleInomplete}>
+            Change Qty And Complete Request
+          </CButton>
+        </>
+      )}
+
     </div>
     </div>
         <CCardBody>

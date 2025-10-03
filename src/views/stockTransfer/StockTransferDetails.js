@@ -7,6 +7,8 @@ import '../../css/form.css';
 // import ShipGoodsModal from './ShipGoodsModal';
 // import IncompleteRemarkModal from './IncompleteRemarkModal';
 import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
+import ShipGoodsModal from '../stockRequest/ShipGoodsModal';
+import IncompleteRemarkModal from '../stockRequest/IncompleteRemarkModal';
 
 const StockTransferDetails = () => {
   const { id } = useParams();
@@ -32,7 +34,13 @@ const StockTransferDetails = () => {
     shipmentRemark: '',
     documents: []
   });
+
+  const user = JSON.parse(localStorage.getItem('user')) || {};
+  //const userRole = toLowerCase(user.role.roleTitle || '');
+  const userRole = (user?.role?.roleTitle || '').toLowerCase();
+
   
+  console.log(userRole);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,7 +74,7 @@ const StockTransferDetails = () => {
 
   const handleShipGoods = async (shipmentData) => {
     try {
-      const response = await axiosInstance.post(`/stockrequest/${id}/ship`, shipmentData)
+      const response = await axiosInstance.post(`/stocktransfer/${id}/ship`, shipmentData)
       if (response.data.success) {
         setAlert({ type: 'success', message: 'Shipment created successfully', visible: true })
         setShipmentModal(false)
@@ -80,7 +88,7 @@ const StockTransferDetails = () => {
     }
   }
 
-  const handleBack = () => navigate('/stock-request');
+  const handleBack = () => navigate('/stock-transfer');
 
   useEffect(() => {
     if (data?.products) {
@@ -132,37 +140,120 @@ const handleApprove = async () => {
   if (hasError) return;
 
   try {
-    const response = await axiosInstance.post(`/stockrequest/${id}/approve`, {
+    const response = await axiosInstance.post(`/stocktransfer/${id}/approve`, {
       productApprovals: payload
     });
 
     if (response.data.success) {
-      setAlert({ type: 'success', message: 'Stock request approved successfully', visible: true });
+      setAlert({ type: 'success', message: 'Data approved successfully', visible: true });
       setTimeout(() => window.location.reload(), 1000);
     } else {
-      setAlert({ type: 'danger', message: 'Failed to approve request', visible: true });
+      setAlert({ type: 'danger', message: 'Failed to approve data', visible: true });
     }
   } catch (err) {
     console.error(err);
-    setAlert({ type: 'danger', message: 'Error approving stock request', visible: true });
+    const errorMessage =
+      err.response?.data?.message ||
+      err.response?.data?.error ||   
+      err.message ||              
+      "Something went wrong";
+  
+    setAlert({ type: 'danger', message: errorMessage, visible: true });
   }
 };
+
+//approve admin
+const handleApproveAdmin = async () => {
+  let hasError = false;
+  const payload = approvedProducts.map(p => {
+    if (p.approvedQty === '' || !/^\d+$/.test(p.approvedQty)) {
+      setErrors(prev => ({ ...prev, [p._id]: 'The input value was not a correct number' }));
+      hasError = true;
+    }
+    return {
+      productId: p.productId,
+      approvedQuantity: Number(p.approvedQty),
+      approvedRemark: p.approvedRemark || ''
+    };
+  });
+
+  if (hasError) return;
+
+  try {
+    const response = await axiosInstance.patch(`/stocktransfer/${id}/admin/approve`, {
+      productApprovals: payload
+    });
+
+    if (response.data.success) {
+      setAlert({ type: 'success', message: 'Data approved successfully', visible: true });
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      setAlert({ type: 'danger', message: 'Failed to approve data', visible: true });
+    }
+  } catch (err) {
+    console.error(err);
+    const errorMessage =
+      err.response?.data?.message ||
+      err.response?.data?.error ||   
+      err.message ||              
+      "Something went wrong";
+  
+    setAlert({ type: 'danger', message: errorMessage, visible: true });
+  }
+};
+
+
+//reject admin
+const handleRejectAdmin = async () => {
+  try {
+    const response = await axiosInstance.post(`/stocktransfer/${id}/reject/admin`);
+    if (response.data.success) {
+      setAlert({ type: 'success', message: 'Data reject successfully', visible: true });
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      setAlert({ type: 'danger', message: 'Failed to reject data', visible: true });
+    }
+  } catch (err) {
+    console.error(err);
+    setAlert({ type: 'danger', message: 'Error rejecting data', visible: true });
+  }
+};
+
+
 
 // Reject
 const handleReject = async () => {
   try {
-    const response = await axiosInstance.post(`/stockrequest/${id}`, { status: 'Rejected' });
+    const response = await axiosInstance.post(`/stocktransfer/${id}`, { status: 'Rejected' });
     if (response.data.success) {
-      setAlert({ type: 'success', message: 'Stock request rejected successfully', visible: true });
+      setAlert({ type: 'success', message: 'Data rejected successfully', visible: true });
       setTimeout(() => window.location.reload(), 1000);
     } else {
-      setAlert({ type: 'danger', message: 'Failed to reject request', visible: true });
+      setAlert({ type: 'danger', message: 'Failed to reject data', visible: true });
     }
   } catch (err) {
     console.error(err);
-    setAlert({ type: 'danger', message: 'Error rejecting stock request', visible: true });
+    setAlert({ type: 'danger', message: 'Error rejecting data', visible: true });
   }
 };
+
+
+// Submit
+const handleSubmitRequest = async () => {
+  try {
+    const response = await axiosInstance.put(`/stocktransfer/${id}/submit`, { status: 'Submitted' });
+    if (response.data.success) {
+      setAlert({ type: 'success', message: 'Data submitted successfully', visible: true });
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      setAlert({ type: 'danger', message: 'Failed to submit', visible: true });
+    }
+  } catch (err) {
+    console.error(err);
+    setAlert({ type: 'danger', message: 'Error to submit data', visible: true });
+  }
+};
+
 
 // approve qty
 const handleChangeApprovedQty = async () => {
@@ -186,7 +277,7 @@ const handleChangeApprovedQty = async () => {
 
   try {
     const response = await axiosInstance.patch(
-      `/stockrequest/${id}/approved-quantities`,
+      `/stocktransfer/${id}/approved-quantities`,
       { productApprovals: payload }
     );
 
@@ -220,7 +311,7 @@ const handleChangeApprovedQty = async () => {
 //Cancel Shipment
 const handleCancelShipment = async () => {
   try {
-    const response = await axiosInstance.post(`/stockrequest/${id}/reject-shipment`);
+    const response = await axiosInstance.post(`/stocktransfer/${id}/reject-shipment`);
     if (response.data.success) {
       setAlert({ type: 'success', message: 'Shipment canceled successfully', visible: true });
       setTimeout(() => window.location.reload(), 1000);
@@ -250,7 +341,7 @@ const handleCompleteIndent = async () => {
       }));
     }
 
-    const response = await axiosInstance.post(`/stockrequest/${id}/complete`, {
+    const response = await axiosInstance.post(`/stocktransfer/${id}/complete`, {
       productReceipts: payload,
     });
 
@@ -283,7 +374,7 @@ const handleOpenUpdateShipment = () => {
 
 const handleUpdateShipment = async (shipmentData) => {
   try {
-    const response = await axiosInstance.patch(`/stockrequest/${id}/shipping-info`, shipmentData);
+    const response = await axiosInstance.patch(`/stocktransfer/${id}/shipping-info`, shipmentData);
     if (response.data.success) {
       setAlert({ type: 'success', message: 'Shipment updated successfully', visible: true });
       setShipmentModal(false);
@@ -297,10 +388,11 @@ const handleUpdateShipment = async (shipmentData) => {
   }
 };
 
+
 const handleMarkIncomplete = async (remark) => {
   try {
     const response = await axiosInstance.post(
-      `/stockrequest/${id}/mark-incomplete`,
+      `/stocktransfer/${id}/mark-incomplete`,
       { incompleteRemark: remark }
     );
     if (response.data.success) {
@@ -313,6 +405,40 @@ const handleMarkIncomplete = async (remark) => {
   } catch (err) {
     console.error(err);
     setAlert({ type: 'danger', message: 'Error marking incomplete', visible: true });
+  }
+};
+
+//handle incomplete
+const handleInomplete = async () => {
+  try {
+    const approvalsPayload = approvedProducts.map(p => ({
+      productId: p.productId,
+      approvedQuantity: Number(p.approvedQty) || 0,
+      approvedRemark: p.approvedRemark || ''
+    }));
+    const receiptsPayload = approvalsPayload.map(a => ({
+      productId: a.productId,
+      receivedQuantity: a.approvedQuantity,
+      receivedRemark: '',
+    }));
+
+    const response = await axiosInstance.patch(
+      `/stocktransfer/${id}/complete-incomplete`,
+      {
+        productApprovals: approvalsPayload,
+        productReceipts: receiptsPayload,
+      }
+    );
+
+    if (response.data.success) {
+      setAlert({ type: 'success', message: 'Indent completed successfully', visible: true });
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      setAlert({ type: 'danger', message: response.data.message || 'Failed to complete indent', visible: true });
+    }
+  } catch (err) {
+    console.error(err);
+    setAlert({ type: 'danger', message: 'Error completing indent', visible: true });
   }
 };
 
@@ -452,13 +578,21 @@ const handleMarkIncomplete = async (remark) => {
         <div className="subtitle-row d-flex justify-content-between align-items-center">
           <div className="subtitle">Product Details</div>
        <div className="action-buttons">
-      {data.status === 'Incomplete' && (
-        <CButton className="btn-action btn-incomplete">
-          Change Qty &amp; Complete Request
+
+       {data.status === 'Draft' && userRole !== 'admin' && (
+        <CButton className="btn-action btn-incomplete" onClick={handleSubmitRequest}>
+          Submit
         </CButton>
       )}
-
-      {data.status === 'Confirmed' && (
+     
+      {data.status === 'Incompleted' && userRole !== 'admin' && (
+        <>
+          <CButton className="btn-action btn-incomplete me-2" onClick={handleInomplete}>
+            Change Qty And Complete Request
+          </CButton>
+        </>
+      )}
+      {data.status === 'Confirmed' && userRole !== 'admin' &&(
         <>
           <CButton className="btn-action btn-submitted me-2" onClick={handleChangeApprovedQty}>
             Change Approved Qty
@@ -478,7 +612,7 @@ const handleMarkIncomplete = async (remark) => {
         </>
       )}
 
-      {data.status === 'Shipped' && (
+      {data.status === 'Shipped' && userRole !== 'admin' &&(
         <>
           <CButton className="btn-action btn-update me-2" onClick={handleOpenUpdateShipment}>
             Update Shipment
@@ -497,7 +631,7 @@ const handleMarkIncomplete = async (remark) => {
         </>
       )}
 
-      {data.status === 'Submitted' && (
+      {data.status === 'Admin_Approved' && userRole !== 'admin' && (
         <>
           <CButton className="btn-action btn-submitted me-2" onClick={handleApprove}>
             Submit &amp; Approve Request
@@ -507,6 +641,47 @@ const handleMarkIncomplete = async (remark) => {
           </CButton>
         </>
       )}
+
+
+    {data.status === 'Submitted' && userRole == 'admin' && (
+        <>
+         <CButton className="btn-action btn-incomplete me-2" onClick={handleApproveAdmin}>
+          Approval
+        </CButton>
+        <CButton className="btn-action btn-reject" onClick={handleRejectAdmin}>
+          Reject
+        </CButton>
+        </>
+      )}
+
+
+{/* {(data.status === 'Submitted' || data.status === 'Approval_Admin') && (
+  <>
+    {data.status === 'Submitted' && userRole === 'admin' && (
+      <>
+        <CButton className="btn-action btn-incomplete me-2" onClick={handleApproveAdmin}>
+          Approval
+        </CButton>
+        <CButton className="btn-action btn-reject" onClick={handleRejectAdmin}>
+          Reject
+        </CButton>
+      </>
+    )}
+
+    {data.status === 'Admin_Approved' && userRole !== 'admin' && (
+      <>
+        <CButton className="btn-action btn-submitted me-2" onClick={handleApprove}>
+          Submit &amp; Approve Request
+        </CButton>
+        <CButton className="btn-action btn-reject" onClick={handleReject}>
+          Submit &amp; Reject Request
+        </CButton>
+      </>
+    )}
+  </>
+)} */}
+
+
     </div>
     </div>
         <CCardBody>
@@ -597,7 +772,7 @@ const handleMarkIncomplete = async (remark) => {
           </CTable>
         </CCardBody>
       </CCard>
-      {/* <ShipGoodsModal
+      <ShipGoodsModal
   visible={shipmentModal}
   onClose={() => setShipmentModal(false)}
   onSubmit={currentShipmentAction}
@@ -608,7 +783,7 @@ const handleMarkIncomplete = async (remark) => {
   onClose={() => setIncompleteModal(false)}
   onSubmit={handleMarkIncomplete}
   initialRemark={data.incompleteRemark}
-/> */}
+/>
 
     </CContainer>
   );

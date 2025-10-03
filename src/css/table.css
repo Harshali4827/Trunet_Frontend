@@ -4,25 +4,38 @@
     border-top: 4px solid #2759a2;
     overflow: hidden;
   }
-  .responsive-table-wrapper {
+  /* .responsive-table-wrapper {
     max-height: 400px;
     overflow-y: auto;
     position: relative;
   } 
-   
+    */
+
+    .responsive-table-wrapper {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    
+    .responsive-table thead th {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 10;
+    }
+    
   .responsive-table {
     width: 100%;
     border-collapse: collapse;
   }
 
-  .responsive-table thead
+  /* .responsive-table thead
   {
     position: sticky;
     top: 0;
     background-color: #fff;
     z-index: 10;
     background: #fff;
-  }
+  } */
   .table-button{
       background-color: #007bff;
       border-radius: 2px;
@@ -60,11 +73,7 @@
   .action-button{
     color: white;
   }
-   
-  /* .card-header {
-    padding: 0.75rem 1.25rem;
-  } */
-   
+
   .table-container {
     margin-top: 20px;
   }

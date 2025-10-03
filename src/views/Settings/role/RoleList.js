@@ -1,5 +1,5 @@
-import '../../css/table.css';
-import '../../css/form.css';
+import '../../../css/table.css';
+import '../../../css/form.css';
 import React, { useState, useRef, useEffect } from 'react';
 import {
   CTable,
@@ -13,19 +13,17 @@ import {
   CCardHeader,
   CButton,
   CFormInput,
-  CPaginationItem,
-  CPagination,
   CSpinner
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilZoomOut } from '@coreui/icons';
+import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilSettings, cilPencil, cilTrash, cilZoomOut } from '@coreui/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
+import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
+import Pagination from 'src/utils/Pagination';
 
-// import SearchStockPurchase from './SearchStockPurchase';
-
-const ReportSubmissionList = () => {
+const RoleList = () => {
   const [data, setData] = useState([]);
   const [centers, setCenters] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,53 +33,36 @@ const ReportSubmissionList = () => {
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [activeSearch, setActiveSearch] = useState({ keyword: '', center: '' });
   const [dropdownOpen, setDropdownOpen] = useState({});
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
 
-  const fetchData = async (searchParams = {}) => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      
-      if (searchParams.keyword) {
-        params.append('search', searchParams.keyword);
-      }
-      if (searchParams.center) {
-        params.append('center', searchParams.center);
-      }
-
-      const url = params.toString() ? `/customers?${params.toString()}` : '/customers';
-      const response = await axiosInstance.get(url);
-      
+      const response = await axiosInstance.get('/role');
+  
       if (response.data.success) {
         setData(response.data.data);
-      } else {
-        throw new Error('API returned unsuccessful response');
       }
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
-  };
-
-  const fetchCenters = async () => {
-    try {
-      const response = await axiosInstance.get('/centers');
-      if (response.data.success) {
-        setCenters(response.data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching centers:', error);
-    }
-  };
-
+  };  
+  
   useEffect(() => {
     fetchData();
-    fetchCenters();
   }, []);
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    fetchData(activeSearch, page);
+  };
+  
 
   const handleSort = (key) => {
     let direction = 'ascending';
@@ -90,7 +71,7 @@ const ReportSubmissionList = () => {
     }
     setSortConfig({ key, direction });
 
-    const sortedData = [...data].sort((a, b) => {
+    const sortedCustomers = [...data].sort((a, b) => {
       let aValue = a;
       let bValue = b;
       
@@ -112,7 +93,7 @@ const ReportSubmissionList = () => {
       return 0;
     });
 
-    setData(sortedData);
+    setData(sortedCustomers);
   };
 
   const getSortIcon = (key) => {
@@ -124,26 +105,12 @@ const ReportSubmissionList = () => {
       : <CIcon icon={cilArrowBottom} className="ms-1" />;
   };
 
-  const handleSearch = (searchData) => {
-    setActiveSearch(searchData);
-    fetchData(searchData);
-  };
 
-  const handleResetSearch = () => {
-    setActiveSearch({ keyword: '', center: '' });
-    setSearchTerm('');
-    fetchData();
-  };
-  
-  const handleUsernameClick = (itemId) => {
-    navigate(`/customer-profile/${itemId}`);
-  };
-
-  const filteredData = data.filter(customer => {
+  const filteredData = data.filter(item => {
     if (activeSearch.keyword || activeSearch.center) {
       return true;
     }
-    return Object.values(customer).some(value => {
+    return Object.values(item).some(value => {
       if (typeof value === 'object' && value !== null) {
         return Object.values(value).some(nestedValue => 
           nestedValue && nestedValue.toString().toLowerCase().includes(searchTerm.toLowerCase())
@@ -152,6 +119,53 @@ const ReportSubmissionList = () => {
       return value && value.toString().toLowerCase().includes(searchTerm.toLowerCase());
     });
   });
+
+  const handleDeleteData = async (itemId) => {
+    const result = await confirmDelete();
+    if (result.isConfirmed) {
+      try {
+        await axiosInstance.delete(`/role/${itemId}`);
+        setData((prev) => prev.filter((c) => c._id !== itemId));
+        showSuccess('Data deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting data:', error);
+      }
+    }
+  };
+  
+  const handleEditData = (itemId) => {
+    navigate(`/edit-role/${itemId}`)
+  };
+
+  const toggleDropdown = (id) => {
+    setDropdownOpen(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const newDropdownState = {};
+      let shouldUpdate = false;
+      
+      Object.keys(dropdownRefs.current).forEach(key => {
+        if (dropdownRefs.current[key] && !dropdownRefs.current[key].contains(event.target)) {
+          newDropdownState[key] = false;
+          shouldUpdate = true;
+        }
+      });
+      
+      if (shouldUpdate) {
+        setDropdownOpen(prev => ({ ...prev, ...newDropdownState }));
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -171,58 +185,26 @@ const ReportSubmissionList = () => {
 
   return (
     <div>
-      <div className='title'>Closing Stock Logs </div>
-    
-      {/* <SearchStockPurchase
-        visible={searchModalVisible}
-        onClose={() => setSearchModalVisible(false)}
-        onSearch={handleSearch}
-        centers={centers}
-      /> */}
-      
+      <div className='title'>Role List </div>
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
-            <Link to='/add-reportSubmission'>
+            <Link to='/add-role'>
               <CButton size="sm" className="action-btn me-1">
                 <CIcon icon={cilPlus} className='icon'/> Add
               </CButton>
             </Link>
-            <CButton 
-              size="sm" 
-              className="action-btn me-1"
-            >
-              <i className="fa fa-fw fa-file-excel"></i>
-               Export
-            </CButton>
-            <CButton 
-              size="sm" 
-              className="action-btn me-1"
-              onClick={() => setSearchModalVisible(true)}
-            >
-              <CIcon icon={cilSearch} className='icon' /> Search
-            </CButton>
-            {(activeSearch.keyword || activeSearch.center) && (
-              <CButton 
-                size="sm" 
-                color="secondary" 
-                className="action-btn me-1"
-                onClick={handleResetSearch}
-              >
-               <CIcon icon={cilZoomOut} className='icon' />
-                Reset Search
-              </CButton>
-            )}
           </div>
           
           <div>
-            <CPagination size="sm" aria-label="Page navigation">
-              <CPaginationItem>First</CPaginationItem>
-              <CPaginationItem>&lt;</CPaginationItem>
-              <CPaginationItem>1</CPaginationItem>
-              <CPaginationItem>&gt;</CPaginationItem>
-              <CPaginationItem>Last</CPaginationItem>
-            </CPagination>
+   
+          
+          <Pagination 
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={handlePageChange}
+    />
+
           </div>
         </CCardHeader>
         
@@ -247,22 +229,22 @@ const ReportSubmissionList = () => {
             <CTableHead>
               <CTableRow>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('username')} className="sortable-header">
-                   Date {getSortIcon('username')}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span>ID</span>
+                    {getSortIcon('username')}
+                  </div>
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('name')} className="sortable-header">
-                 Center {getSortIcon('name')}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span>Role</span>
+                    {getSortIcon('name')}
+                  </div>
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
-                  Remark {getSortIcon('center.centerName')}
-                </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('center.partner.partnerName')} className="sortable-header">
-                  Created At {getSortIcon('center.partner.partnerName')}
-                </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('center.area.areaName')} className="sortable-header">
-                  Created By {getSortIcon('center.area.areaName')}
-                </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('mobile')} className="sortable-header">
-                  Approve Remark {getSortIcon('mobile')}
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span>Permission</span>
+                    {getSortIcon('center.centerName')}
+                  </div>
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col">
                   Action
@@ -271,28 +253,48 @@ const ReportSubmissionList = () => {
             </CTableHead>
             <CTableBody>
               {filteredData.length > 0 ? (
-                filteredData.map((customer) => (
-                  <CTableRow key={customer._id}>
+                filteredData.map((item,index) => (
+                  <CTableRow key={item._id}>
                     <CTableDataCell>
-                      <button 
-                        className="btn btn-link p-0 text-decoration-none"
-                        onClick={() => handleUsernameClick(customer._id)}
-                        style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
-                      >
-                        {customer.username}
-                      </button>
+                        {index+1}
+                
                     </CTableDataCell>
-                    <CTableDataCell>{customer.name}</CTableDataCell>
-                    <CTableDataCell>{customer.center?.centerName || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{customer.center?.partner?.partnerName || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{customer.center?.area?.areaName || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{customer.mobile}</CTableDataCell>
+                    <CTableDataCell>{item.roleTitle}</CTableDataCell>
+                    <CTableDataCell></CTableDataCell>
+                    <CTableDataCell>
+                      <div className="dropdown-container" ref={el => dropdownRefs.current[item._id] = el}>
+                        <CButton 
+                          size="sm"
+                          className='option-button btn-sm'
+                          onClick={() => toggleDropdown(item._id)}
+                        >
+                          <CIcon icon={cilSettings} />
+                          Options
+                        </CButton>
+                        {dropdownOpen[item._id] && (
+                          <div className="dropdown-menu show">
+                            <button 
+                              className="dropdown-item"
+                              onClick={() => handleEditData(item._id)}
+                            >
+                              <CIcon icon={cilPencil} className="me-2" /> Edit
+                            </button>
+                            <button 
+                              className="dropdown-item"
+                              onClick={() => handleDeleteData(item._id)}
+                            >
+                              <CIcon icon={cilTrash} className="me-2" /> Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </CTableDataCell>
                   </CTableRow>
                 ))
               ) : (
                 <CTableRow>
                   <CTableDataCell colSpan="9" className="text-center">
-                    No data found
+                    No Data found
                   </CTableDataCell>
                 </CTableRow>
               )}
@@ -305,5 +307,4 @@ const ReportSubmissionList = () => {
   );
 };
 
-export default ReportSubmissionList;
-
+export default RoleList;

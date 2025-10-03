@@ -179,9 +179,13 @@ const AppHeaderDropdown = () => {
               marginTop: '10px',
             }}
           >
-            {center
+            {/* {center
               ? `${center.centerType} - ${center.centerName}`
-              : 'Outlet - Unknown'}
+              : 'Outlet - Unknown'} */}
+              {user?.role
+                 ? `${user.role.roleTitle} - ${center?.centerName || 'Unknown'}`
+                 : 'Role - Unknown'
+              }
           </p>
         </div>
 

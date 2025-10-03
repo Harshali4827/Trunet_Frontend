@@ -14,8 +14,6 @@ import {
   CCardHeader,
   CButton,
   CFormInput,
-  CPaginationItem,
-  CPagination,
   CSpinner,
   CNav,
   CNavItem,
@@ -30,6 +28,7 @@ import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
 import SearchStockModel from './SearchStockModel';
+import Pagination from 'src/utils/Pagination';
 
 const StockRequest = () => {
   const [customers, setCustomers] = useState([]);
@@ -42,6 +41,8 @@ const StockRequest = () => {
   const [activeSearch, setActiveSearch] = useState({ keyword: '', center: '' });
   const [dropdownOpen, setDropdownOpen] = useState({});
   const [activeTab, setActiveTab] = useState('open');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
@@ -50,7 +51,7 @@ const StockRequest = () => {
     closed: ['Rejected', 'Completed']
   };
 
-  const fetchData = async (searchParams = {}, tab = activeTab) => {
+  const fetchData = async (searchParams = {}, tab = activeTab,page = 1) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -66,12 +67,14 @@ const StockRequest = () => {
       if (searchParams.center) {
         params.append('center', searchParams.center);
       }
-
+      params.append('page', page);
       const url = `/stockrequest/?${params.toString()}`;
       const response = await axiosInstance.get(url);
       
       if (response.data.success) {
         setCustomers(response.data.data);
+        setCurrentPage(response.data.pagination.currentPage);
+        setTotalPages(response.data.pagination.totalPages);
       } else {
         throw new Error('API returned unsuccessful response');
       }
@@ -98,6 +101,12 @@ const StockRequest = () => {
     fetchData();
     fetchCenters();
   }, []);
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    fetchData(activeSearch, page);
+  };
+  
+
 
   useEffect(() => {
     fetchData(activeSearch, activeTab);
@@ -146,13 +155,13 @@ const StockRequest = () => {
 
   const handleSearch = (searchData) => {
     setActiveSearch(searchData);
-    fetchData(searchData, activeTab);
+    fetchData(searchData, activeTab,1);
   };
 
   const handleResetSearch = () => {
     setActiveSearch({ keyword: '', center: '' });
     setSearchTerm('');
-    fetchData({}, activeTab);
+    fetchData({}, activeTab, 1);
   };
 
   const handleTabChange = (tab) => {
@@ -196,13 +205,24 @@ const StockRequest = () => {
     navigate(`/edit-stockRequest/${customerId}`)
   };
 
-  const toggleDropdown = (id) => {
-    setDropdownOpen(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
+  // const toggleDropdown = (id) => {
+  //   setDropdownOpen(prev => ({
+  //     ...prev,
+  //     [id]: !prev[id]
+  //   }));
+  // };
 
+  const toggleDropdown = (id) => {
+    setDropdownOpen(prev => {
+      const isCurrentlyOpen = !!prev[id];
+      const newState = {};
+      if (!isCurrentlyOpen) {
+        newState[id] = true;
+      }
+      return newState;
+    });
+  };
+  
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
@@ -231,7 +251,7 @@ const StockRequest = () => {
   
   const renderTable = () => (
     <div className="responsive-table-wrapper">
-      <CTable striped bordered hover responsive className='responsive-table'>
+      <CTable striped bordered hover className='responsive-table'>
         <CTableHead>
           <CTableRow>
             <CTableHeaderCell scope="col" onClick={() => handleSort('date')} className="sortable-header">
@@ -263,7 +283,9 @@ const StockRequest = () => {
         <CTableBody>
           {filteredCustomers.length > 0 ? (
             filteredCustomers.map((item) => (
-              <CTableRow key={item._id}>
+              <CTableRow key={item._id} 
+                className={item.status === 'Submitted' ? 'selected-row' : ''}>
+
                 <CTableDataCell>{formatDate(item.date)}</CTableDataCell>
                 <CTableDataCell>
                   <button 
@@ -292,34 +314,43 @@ const StockRequest = () => {
                   )}
                 </CTableDataCell>
                 <CTableDataCell>{item.products[0].productRemark}</CTableDataCell>
-                <CTableDataCell>
-                  <div className="dropdown-container" ref={el => dropdownRefs.current[item._id] = el}  onClick={(e) => e.stopPropagation()}>
-                    <CButton 
-                      size="sm"
-                      className='option-button btn-sm'
-                      onClick={() => toggleDropdown(item._id)}
-                    >
-                      <CIcon icon={cilSettings} />
-                      Options
-                    </CButton>
-                    {dropdownOpen[item._id] && (
-                      <div className="dropdown-menu show">
-                        <button 
-                          className="dropdown-item"
-                          onClick={() => handleEditCustomer(item._id)}
-                        >
-                          <CIcon icon={cilPencil} className="me-2" /> Edit
-                        </button>
-                        <button 
-                          className="dropdown-item"
-                          onClick={() => handleDeleteCustomer(item._id)}
-                        >
-                          <CIcon icon={cilTrash} className="me-2" /> Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </CTableDataCell>
+<CTableDataCell>
+  {['Shipped', 'Incompleted', 'Rejected'].includes(item.status) ? null : (
+    <div
+      className="dropdown-container"
+      ref={el => dropdownRefs.current[item._id] = el}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <CButton
+        size="sm"
+        className='option-button btn-sm'
+        onClick={() => toggleDropdown(item._id)}
+      >
+        <CIcon icon={cilSettings} />
+        Options
+      </CButton>
+      {dropdownOpen[item._id] && (
+        <div className="dropdown-menu show">
+          {item.status === 'Submitted' && (
+            <button
+              className="dropdown-item"
+              onClick={() => handleEditCustomer(item._id)}
+            >
+              <CIcon icon={cilPencil} className="me-2" /> Edit
+            </button>
+          )}
+          <button
+            className="dropdown-item"
+            onClick={() => handleDeleteCustomer(item._id)}
+          >
+            <CIcon icon={cilTrash} className="me-2" /> Delete
+          </button>
+        </div>
+      )}
+    </div>
+  )}
+</CTableDataCell>
+
               </CTableRow>
             ))
           ) : (
@@ -380,13 +411,12 @@ const StockRequest = () => {
           </div>
           
           <div>
-            <CPagination size="sm" aria-label="Page navigation">
-              <CPaginationItem>First</CPaginationItem>
-              <CPaginationItem>&lt;</CPaginationItem>
-              <CPaginationItem>1</CPaginationItem>
-              <CPaginationItem>&gt;</CPaginationItem>
-              <CPaginationItem>Last</CPaginationItem>
-            </CPagination>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+
           </div>
         </CCardHeader>
         

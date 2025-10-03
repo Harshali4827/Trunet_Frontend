@@ -1,6 +1,7 @@
 
 import '../../css/table.css';
 import '../../css/form.css';
+import '../../css/profile.css';
 import React, { useState, useRef, useEffect } from 'react';
 import {
   CTable,
@@ -69,7 +70,7 @@ const StockTransfer = () => {
       }
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching customers:', err);
+      console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
     }
@@ -244,7 +245,7 @@ const StockTransfer = () => {
                     {item.transferNumber}
                   </button>
                   </CTableDataCell>
-                <CTableDataCell>{item.warehouse?.warehouseName}</CTableDataCell>
+                <CTableDataCell>{item.fromCenter?.centerName}</CTableDataCell>
                 <CTableDataCell>{item.toCenter?.centerName || 'N/A'}</CTableDataCell>
                 <CTableDataCell>
   {item.createdBy?.email || 'N/A'} 
@@ -254,8 +255,12 @@ const StockTransfer = () => {
     hour12: true 
   })}`}
 </CTableDataCell>
-                <CTableDataCell>{item.status}</CTableDataCell>
-                <CTableDataCell>{item.products[0].productRemark}</CTableDataCell>
+                <CTableDataCell> {item.status && (
+                    <span className={`status-badge ${item.status.toLowerCase()}`}>
+                      {item.status}
+                    </span>
+                  )}</CTableDataCell>
+                <CTableDataCell>{item.remark}</CTableDataCell>
                 <CTableDataCell>
                   <div className="dropdown-container" ref={el => dropdownRefs.current[item._id] = el}>
                     <CButton 

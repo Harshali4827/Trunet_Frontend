@@ -22,7 +22,7 @@ const AddStockTransfer = () => {
   const { id } = useParams();
 
   const [formData, setFormData] = useState({
-    toCenter: '',
+    fromCenter: '',
     remark: '',
     date: new Date().toISOString().split('T')[0],
     transferNumber: '',
@@ -98,7 +98,7 @@ const AddStockTransfer = () => {
       const data = res.data.data;
 
       setFormData({
-        toCenter: data.toCenter?._id || '',
+        fromCenter: data.fromCenter?._id || '',
         remark: data.remark || '',
         date: data.date ? data.date.split('T')[0] : new Date().toISOString().split('T')[0],
         transferNumber: data.transferNumber || '',
@@ -149,7 +149,7 @@ const AddStockTransfer = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.toCenter) newErrors.toCenter = 'This is a required field';
+    if (!formData.fromCenter) newErrors.fromCenter = 'This is a required field';
     if (!formData.date) newErrors.date = 'This is a required field';
 
     const selectedProducts = Object.keys(selectedRows).filter(id => selectedRows[id]);
@@ -180,21 +180,21 @@ const AddStockTransfer = () => {
     }));
 
     const payload = {
-      toCenter: formData.toCenter,
+      fromCenter: formData.fromCenter,
       remark: formData.remark,
       date: formData.date,
       transferNumber: formData.transferNumber,
       products: productsData,
-      // status: 'Submitted' 
+      status: 'Submitted' 
     };
 
     try {
       if (id) {
         await axiosInstance.put(`/stocktransfer/${id}`, payload);
-        setAlert({ show: true, message: 'Stock transfer updated successfully!', type: 'success' });
+        setAlert({ show: true, message: 'Data updated successfully!', type: 'success' });
       } else {
         await axiosInstance.post('/stocktransfer', payload);
-        setAlert({ show: true, message: 'Stock transfer created successfully!', type: 'success' });
+        setAlert({ show: true, message: 'Data added successfully!', type: 'success' });
       }
       navigate('/stock-transfer');
       setTimeout(() => {
@@ -215,7 +215,7 @@ const AddStockTransfer = () => {
     }));
 
     const payload = {
-      toCenter: formData.toCenter,
+      fromCenter: formData.fromCenter,
       remark: formData.remark,
       date: formData.date,
       transferNumber: formData.transferNumber,
@@ -226,10 +226,10 @@ const AddStockTransfer = () => {
     try {
       if (id) {
         await axiosInstance.put(`/stocktransfer/${id}`, payload);
-        setAlert({ show: true, message: 'Draft updated successfully!', type: 'success' });
+        setAlert({ show: true, message: 'Data updated successfully!', type: 'success' });
       } else {
         await axiosInstance.post('/stocktransfer', payload);
-        setAlert({ show: true, message: 'Draft saved successfully!', type: 'success' });
+        setAlert({ show: true, message: 'Data saved successfully!', type: 'success' });
       }
       
       setTimeout(() => {
@@ -268,7 +268,7 @@ const AddStockTransfer = () => {
             Save As Draft
           </button>
           <button type="button" className="submit-button" onClick={handleSubmit}>
-            Submit Request
+            Submit Transfer
           </button>
         </div>
 
@@ -288,18 +288,18 @@ const AddStockTransfer = () => {
               <div className="form-group">
                 <label 
                   className={`form-label 
-                    ${errors.toCenter ? 'error-label' : formData.toCenter ? 'valid-label' : ''}`} 
-                  htmlFor="toCenter"
+                    ${errors.fromCenter ? 'error-label' : formData.fromCenter ? 'valid-label' : ''}`} 
+                  htmlFor="fromCenter"
                 >
                   Center <span className="required">*</span>
                 </label>
                 <CFormSelect
-                  id="toCenter"
-                  name="toCenter"
-                  value={formData.toCenter}
+                  id="fromCenter"
+                  name="fromCenter"
+                  value={formData.fromCenter}
                   onChange={handleChange}
                   className={`form-input 
-                    ${errors.toCenter ? 'error-input' : formData.toCenter ? 'valid-input' : ''}`}
+                    ${errors.fromCenter ? 'error-input' : formData.fromCenter ? 'valid-input' : ''}`}
                   disabled={centerLoading}
                 >
                   <option value="">Select Center</option>
@@ -309,7 +309,7 @@ const AddStockTransfer = () => {
                     </option>
                   ))}
                 </CFormSelect>
-                {errors.toCenter && <span className="error-text">{errors.toCenter}</span>}
+                {errors.fromCenter && <span className="error-text">{errors.fromCenter}</span>}
               </div>
 
               <div className="form-group">
@@ -473,7 +473,7 @@ const AddStockTransfer = () => {
                 Save As Draft
               </button>
               <button type="button" className="submit-button" onClick={handleSubmit}>
-                Submit Stock Request
+                Submit Transfer
               </button>
             </div>
           </form>

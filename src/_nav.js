@@ -230,7 +230,7 @@ const _nav = [
       {
         component: CNavItem,
         name: 'Role',
-        to: '/base/role',
+        to: '/role-list',
       },
       {
         component: CNavItem,
