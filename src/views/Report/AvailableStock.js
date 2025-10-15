@@ -1,114 +1,424 @@
-import React, { useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFileExcel, faPrint, faSearch,} from "@fortawesome/free-solid-svg-icons";
-import '../../components/Styling.css'; 
+import '../../css/table.css';
+import '../../css/form.css';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  CTable,
+  CTableHead,
+  CTableRow,
+  CTableHeaderCell,
+  CTableBody,
+  CTableDataCell,
+  CCard,
+  CCardBody,
+  CCardHeader,
+  CButton,
+  CFormInput,
+  CSpinner
+} from '@coreui/react';
+import CIcon from '@coreui/icons-react';
+import { cilArrowTop, cilArrowBottom, cilSearch, cilZoomOut } from '@coreui/icons';
+import { CFormLabel } from '@coreui/react-pro';
+import axiosInstance from 'src/axiosInstance';
+import Pagination from 'src/utils/Pagination';
+import { showError } from 'src/utils/sweetAlerts';
+import SearchCenterStock from './SearchCenterStock';
 
-function AvailableStock()
-{
-const initialData = [
-           { center: 'GOPL', product:'40Amp Change-Over Switch', category: 'HO ASSETS', stock: '1' ,damage:'0'},
-           { center: 'Vashi', product: 'switch', category: 'Asset', stock: '4',damage:'0'},
-         ];
-       
-         const [data, setData] = useState(initialData);
-         const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
-       
-         const handleSort = (key, direction) => {
-           const sortedData = [...data].sort((a, b) => {
-             if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
-             if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
-             return 0;
-           });
-           setData(sortedData);
-           setSortConfig({ key, direction });
-         };
-       
-         const renderSortControls = (key) => {
-           const isAsc = sortConfig.key === key && sortConfig.direction === 'asc';
-           const isDesc = sortConfig.key === key && sortConfig.direction === 'desc';
-           return (
-             <span style={{ marginLeft: '6px' }}>
-               <span
-                 onClick={() => handleSort(key, 'asc')}
-                 style={{ fontWeight: isAsc ? 'bold' : 'normal', cursor: 'pointer' }}
-               >
-                 ↑
-               </span>
-               <span
-                 onClick={() => handleSort(key, 'desc')}
-                 style={{ fontWeight: isDesc ? 'bold' : 'normal', marginLeft: '4px', cursor: 'pointer' }}
-               >
-                 ↓
-               </span>
-             </span>
-           );
-         };
-       
-         const thStyle = {
-           backgroundColor: '#f4f4f4',
-           border: '1px solid #ccc',
-           padding: '8px',
-           textAlign: 'left'
-         };
-       
-         const tdStyle = {
-           border: '1px solid #ccc',
-           padding: '8px'
-         };
+const AvailableStock = () => {
+  const [data, setData] = useState([]);
+  const [centers, setCenters] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchModalVisible, setSearchModalVisible] = useState(false);
+  const [activeSearch, setActiveSearch] = useState({  product: '', center: '' });
+  const [dropdownOpen, setDropdownOpen] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-    return(
-        <>
-         {/* <h1 className='headingF'>Center's Stock</h1>  */}
-                <div className='top_border'>
-                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'10px',marginTop:'10px',
-                 }}>
-                     <form style={{ display: 'flex', flexWrap: 'wrap', width: '100%' }}>
-                        <div style={{ display:'flex',flexWrap:'wrap',gap:'10px',marginLeft:'10px'}}>
-                                        <button className='buttonsASE'>
-                                         <FontAwesomeIcon icon={faSearch} className='iconsASE' /> Search
-                                       </button>
-                                        <button className='buttonsASE'>
-                                         <FontAwesomeIcon icon={faFileExcel}  className='iconsASE' />Export
-                                       </button>
-                                       <button  className='buttonsASE'>
-                                         <FontAwesomeIcon icon={faPrint} className='iconsASE'/>Print
-                                       </button>
-                                     </div>
-       
-                       <hr style={{ margin: '15px 0 10px', opacity: '0.1', flexBasis: '100%' }} />
-       
-                       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', marginRight: '20px' }}>
-                           <label>Search:</label>
-                           <input type="text" placeholder="" className='searchBTN' />
-                       </div>
-                       </form>
-                       </div>
-                       <div style={{ overflowX: 'auto', margin:'10px'}}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={thStyle}>Center {renderSortControls('center')}</th>
-                    <th style={thStyle}>Product {renderSortControls('product')}</th>
-                    <th style={thStyle}>Category{renderSortControls('category')}</th>
-                     <th style={thStyle}>Stock {renderSortControls('stock')}</th>
-                      <th style={thStyle}>Damage{renderSortControls('damage')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.map((item, index) => (
-                    <tr key={index}>
-                      <td style={tdStyle}>{item.center}</td>
-                      <td style={tdStyle}>{item.product}</td>
-                      <td style={tdStyle}>{item.category}</td>
-                      <td style={tdStyle}>{item.stock}</td>
-                      <td style={tdStyle}>{item.damage}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+  const dropdownRefs = useRef({});
+
+  const fetchData = async (searchParams = {}, page = 1) => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      
+      if (searchParams.product) {
+        params.append('product', searchParams.product);
+      }
+      if (searchParams.center) {
+        params.append('center', searchParams.center);
+      }
+      params.append('page', page);
+      const url = params.toString() ? `/availableStock/availableStock?${params.toString()}` : '/availableStock/availableStock';
+      const response = await axiosInstance.get(url);
+      
+      if (response.data.success) {
+        setData(response.data.data.stock);
+        setCurrentPage(response.data.data.pagination.currentPage);
+        setTotalPages(response.data.data.pagination.totalPages);
+      } else {
+        throw new Error('API returned unsuccessful response');
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCenters = async () => {
+    try {
+      const response = await axiosInstance.get('/centers');
+      if (response.data.success) {
+        setCenters(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+  const fetchProducts = async () => {
+    try {
+      const response = await axiosInstance.get('/products');
+      if (response.data.success) {
+        setProducts(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+  useEffect(() => {
+    fetchData();
+    fetchCenters();
+    fetchProducts();
+  }, []);
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    fetchData(activeSearch, page);
+  };
+
+  const handleSort = (key) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+
+    const sortedData = [...data].sort((a, b) => {
+      let aValue = a;
+      let bValue = b;
+      
+      if (key.includes('.')) {
+        const keys = key.split('.');
+        aValue = keys.reduce((obj, k) => obj && obj[k], a);
+        bValue = keys.reduce((obj, k) => obj && obj[k], b);
+      } else {
+        aValue = a[key];
+        bValue = b[key];
+      }
+      
+      if (aValue < bValue) {
+        return direction === 'ascending' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return direction === 'ascending' ? 1 : -1;
+      }
+      return 0;
+    });
+
+    setData(sortedData);
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) {
+      return null;
+    }
+    return sortConfig.direction === 'ascending'
+      ? <CIcon icon={cilArrowTop} className="ms-1" />
+      : <CIcon icon={cilArrowBottom} className="ms-1" />;
+  };
+
+  const handleSearch = (searchData) => {
+    setActiveSearch(searchData);
+    fetchData(searchData, 1);
+  };
+
+  const handleResetSearch = () => {
+    setActiveSearch({product: '', center: '' });
+    setSearchTerm('');
+    fetchData({},1);
+  };
+
+  const filteredData = data.filter(data => {
+    if (activeSearch.product || activeSearch.center) {
+      return true;
+    }
+    return Object.values(data).some(value => {
+      if (typeof value === 'object' && value !== null) {
+        return Object.values(value).some(nestedValue => 
+          nestedValue && nestedValue.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+      return value && value.toString().toLowerCase().includes(searchTerm.toLowerCase());
+    });
+  });
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const newDropdownState = {};
+      let shouldUpdate = false;
+      
+      Object.keys(dropdownRefs.current).forEach(key => {
+        if (dropdownRefs.current[key] && !dropdownRefs.current[key].contains(event.target)) {
+          newDropdownState[key] = false;
+          shouldUpdate = true;
+        }
+      });
+      
+      if (shouldUpdate) {
+        setDropdownOpen(prev => ({ ...prev, ...newDropdownState }));
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
+        <CSpinner color="primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="alert alert-danger" role="alert">
+        Error loading data: {error}
+      </div>
+    );
+  }
+
+  const fetchAllDataForExport = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get('/availableStock/centerstock');
+      if (response.data.success) {
+        return response.data.data.stock;
+      } else {
+        throw new Error('API returned unsuccessful response');
+      }
+    } catch (err) {
+      console.error('Error fetching data for export:', err);
+      showError('Error fetching data for export');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const generateDetailExport = async () => {
+    try {
+      setLoading(true);
+    
+      const allData = await fetchAllDataForExport();
+      
+      if (!allData || allData.length === 0) {
+        showError('No data available for export');
+        return;
+      }
+  
+      const headers = [
+        'Center',
+        'Products',
+        'Category',
+        'Stock',
+        'Damage',
+      ];
+  
+      const csvData = allData.flatMap(purchase => {
+        if (purchase.products && purchase.products.length > 0) {
+          return purchase.products.map(product => [
+            purchase.centerName,
+            purchase.productName || 'N/A',
+            purchase.productCategory?.name || "",
+            purchase.availableQuantity || 0,
+            purchase.damagedQuantity || 0,
+          ]);
+        } else {
+          return [[
+            purchase.centerName,
+            purchase.productName || 'N/A',
+            purchase.productCategory?.name || "",
+            purchase.availableQuantity || 0,
+            purchase.damagedQuantity || 0,
+          ]];
+        }
+      }
+    );
+  
+      const csvContent = [
+        headers.join(','),
+        ...csvData.map(row => 
+          row.map(field => {
+            const stringField = String(field || '');
+            return `"${stringField.replace(/"/g, '""')}"`;
+          }).join(',')
+        )
+      ].join('\n');
+  
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `available_stock_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    
+    } catch (error) {
+      console.error('Error generating export:', error);
+      showError('Error generating export file');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className='title'>Available Stock</div>
+    
+      <SearchCenterStock
+        visible={searchModalVisible}
+        onClose={() => setSearchModalVisible(false)}
+        onSearch={handleSearch}
+        centers={centers}
+       products={products}
+      />
+      
+      <CCard className='table-container mt-4'>
+        <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
+          <div>
+            <CButton 
+              size="sm" 
+              className="action-btn me-1"
+              onClick={() => setSearchModalVisible(true)}
+            >
+              <CIcon icon={cilSearch} className='icon' /> Search
+            </CButton>
+            {(activeSearch.product || activeSearch.center) && (
+              <CButton 
+                size="sm" 
+                color="secondary" 
+                className="action-btn me-1"
+                onClick={handleResetSearch}
+              >
+               <CIcon icon={cilZoomOut} className='icon' />
+                Reset Search
+              </CButton>
+            )}
+              <CButton 
+              size="sm" 
+              className="action-btn me-1"
+              onClick={generateDetailExport}
+            >
+              <i className="fa fa-fw fa-file-excel"></i>
+               Export
+            </CButton>
+            <CButton 
+              size="sm" 
+              className="action-btn me-1"
+            >
+              <i className="fa fa-fw fa-print"></i>
+            Print
+            </CButton>
+          </div>
+          
+          <div>
+          <Pagination
+                 currentPage={currentPage}
+                 totalPages={totalPages}
+                 onPageChange={handlePageChange}
+            />
+          </div>
+        </CCardHeader>
+        
+        <CCardBody>
+          <div className="d-flex justify-content-between mb-3">
+            <div>
             </div>
-                       </div>
-        </>
-    )
-}
+            <div className='d-flex'>
+              <CFormLabel className='mt-1 m-1'>Search:</CFormLabel>
+              <CFormInput
+                type="text"
+                style={{maxWidth: '350px', height: '30px', borderRadius: '0'}}
+                className="d-inline-block square-search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <div className="responsive-table-wrapper">
+          <CTable striped bordered hover className='responsive-table'>
+            <CTableHead>
+              <CTableRow>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('outlet')} className="sortable-header">
+                 Center {getSortIcon('outlet')}
+                </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('date')} className="sortable-header">
+                Product {getSortIcon('date')}
+                </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('invoiceNo')} className="sortable-header">
+                  Category {getSortIcon('invoiceNo')}
+                </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('vendor.businessName')} className="sortable-header">
+                  Stock {getSortIcon('vendor.businessName')}
+                </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('damagedQuantity')} className="sortable-header">
+                 Damage {getSortIcon('damagedQuantity')}
+                </CTableHeaderCell>
+             </CTableRow>
+            </CTableHead>
+            <CTableBody>
+              {filteredData.length > 0 ? (
+                <>
+                  {filteredData.map((data) => (
+                    <CTableRow key={data._id}>
+                      <CTableDataCell>
+                          {data.centerName || ''}
+                      </CTableDataCell>
+                      <CTableDataCell>{data.productName}</CTableDataCell>
+                      <CTableDataCell>{data.productCategory.name || ''}</CTableDataCell>
+                      <CTableDataCell>{data.availableQuantity || 'N/A'}</CTableDataCell>
+                      <CTableDataCell>{data.damagedQuantity || 0}</CTableDataCell>
+                    </CTableRow>
+                  ))}
+                </>
+              ) : (
+                <CTableRow>
+                  <CTableDataCell colSpan="11" className="text-center">
+                    No data found
+                  </CTableDataCell>
+                </CTableRow>
+              )}
+            </CTableBody>
+          </CTable>
+          </div>
+        </CCardBody>
+      </CCard>
+    </div>
+  );
+};
+
 export default AvailableStock;

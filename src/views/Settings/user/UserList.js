@@ -27,6 +27,7 @@ import Pagination from 'src/utils/Pagination';
 const UserList = () => {
   const [data, setData] = useState([]);
   const [centers, setCenters] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
@@ -80,10 +81,21 @@ const UserList = () => {
       console.error('Error fetching centers:', error);
     }
   };
+  const fetchRoles = async () => {
+    try {
+      const response = await axiosInstance.get('/role');
+      if (response.data.success) {
+        setRoles(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
 
   useEffect(() => {
     fetchData();
     fetchCenters();
+    fetchRoles();
   }, []);
  
   const handlePageChange = (page) => {
@@ -229,6 +241,7 @@ const UserList = () => {
         onClose={() => setSearchModalVisible(false)}
         onSearch={handleSearch}
         centers={centers}
+        roles = {roles}
       />
       
       <CCard className='table-container mt-4'>

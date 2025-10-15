@@ -11,15 +11,17 @@ import {
 } from '@coreui/react'
 import PropTypes from 'prop-types'
 import '../../../css/form.css'
-const SearchUserModel = ({ visible, onClose, onSearch, centers }) => {
+const SearchUserModel = ({ visible, onClose, onSearch, centers , roles, status}) => {
   const [searchData, setSearchData] = useState({
     keyword: '',
-    center: ''
+    center: '',
+    role:'',
+    status:''
   })
 
   useEffect(() => {
     if (!visible) {
-      setSearchData({ keyword: '', center: '' })
+      setSearchData({ keyword: '', center: '' , role:'', status:''})
     }
   }, [visible])
 
@@ -34,8 +36,8 @@ const SearchUserModel = ({ visible, onClose, onSearch, centers }) => {
   }
 
   const handleReset = () => {
-    setSearchData({ keyword: '', center: '' })
-    onSearch({ keyword: '', center: '' })
+    setSearchData({ keyword: '', center: '' ,role:'', status:''})
+    onSearch({ keyword: '', center: '' , role:'', status:''})
   }
 
   return (
@@ -80,6 +82,45 @@ const SearchUserModel = ({ visible, onClose, onSearch, centers }) => {
             </CFormSelect>
           </div>
         </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label" htmlFor="role">
+              Role
+            </label>
+            <CFormSelect
+              id="role"
+              name="role"
+              value={searchData.role}
+              onChange={handleChange}
+              className="form-input no-radius-input"
+            >
+              <option value="">SELECT ROLE</option>
+              {roles.map((role) => (
+                <option key={role._id} value={role._id}>
+                  {role.roleTitle}
+                </option>
+              ))}
+            </CFormSelect>
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="status">
+              Status
+            </label>
+            <CFormSelect
+             type="text"
+             id="status"
+             name="status"
+             value={searchData.status}
+             onChange={handleChange}
+             className="form-input no-radius-input"
+            >
+              <option value=''>-SELECT-</option>
+              <option value="Enable">Enable</option>
+              <option value="Disable">Disable</option>
+            </CFormSelect>
+          </div>
+
+        </div>
       </CModalBody>
 
       <CModalFooter>
@@ -105,7 +146,9 @@ SearchUserModel.propTypes = {
   visible: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSearch: PropTypes.func.isRequired,
-  centers: PropTypes.array.isRequired
+  centers: PropTypes.array.isRequired,
+  roles: PropTypes.array.isRequired,
+  status: PropTypes.array.isRequired
 }
 
 export default SearchUserModel

@@ -114,9 +114,12 @@ const AddStockPurchase = () => {
               quantity: prod.purchasedQuantity,
               price: prod.price,
               productRemark: prod.productRemark || '',
-              productInStock: prod.product.stock?.totalAvailable || 0,
+              productInStock: prod.product.stock?.currentStock || 0,
               trackSerialNumber: prod.product.trackSerialNumber,
-              serialNumbers: prod.serialNumbers || [],
+              // serialNumbers: prod.serialNumbers || [],
+              serialNumbers: (prod.serialNumbers || []).map(sn => 
+                typeof sn === 'string' ? sn : sn.serialNumber
+              ),
             };
           });
           setSelectedRows(selected);
@@ -333,25 +336,6 @@ const AddStockPurchase = () => {
       setSubmitting(false);
     }
   };  
-
-  const handleReset = () => {
-    setFormData({
-      type: '',
-      date: new Date().toISOString().split('T')[0],
-      invoiceNo: '',
-      vendor: '',
-      vendor_id: '',
-      transportAmount: '',
-      remark: '',
-      cgst: '',
-      sgst: '',
-      igst: ''
-    });
-    setSearchTerm('');
-    setProductSearchTerm('');
-    setSelectedRows({});
-    setErrors({});
-  };
 
   const filteredProducts = products.filter((p) =>
     p.productTitle?.toLowerCase().includes(productSearchTerm.toLowerCase())
@@ -638,7 +622,7 @@ const AddStockPurchase = () => {
                             <input
                               type="checkbox"
                               checked={!!selectedRows[p._id]}
-                              onChange={() => handleRowSelect(p._id, p.productPrice, p.stock?.totalAvailable, p.trackSerialNumber)}
+                              onChange={() => handleRowSelect(p._id, p.productPrice, p.stock?.currentStock, p.trackSerialNumber)}
                               style={{height:"20px", width:"20px"}}
                             />
                           </CTableDataCell>
@@ -665,7 +649,7 @@ const AddStockPurchase = () => {
                             )}
                           </CTableDataCell>
                   
-                          <CTableDataCell>{p.stock?.totalAvailable || 0}</CTableDataCell>
+                          <CTableDataCell>{p.stock?.currentStock || 0}</CTableDataCell>
                           <CTableDataCell>
                             {selectedRows[p._id] ? (
                               <input

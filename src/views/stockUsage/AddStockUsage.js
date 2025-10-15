@@ -2,35 +2,41 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../css/form.css';
-import { CButton } from '@coreui/react';
+import '../../css/table.css';
+import { CAlert, CButton, CFormInput, CSpinner, CTable, CTableBody, CTableDataCell, CTableHead, CTableHeaderCell, CTableRow } from '@coreui/react';
 import { cilPlus, cilSearch } from '@coreui/icons';
 import CIcon from '@coreui/icons-react';
 import BuildingFormModal from './BuildingModel';
 import CustomerModel from './CustomerModel';
 import ControlRoomModel from './ControlRoomModel';
+import UsageSerialNumbers from './UsageSerialNumbers';
 
 const AddStockUsage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
 
+  const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [formData, setFormData] = useState({
-    date: '',
+    date: getTodayDate(),
     usageType: '',
     remark: '',
     customer: '',
-    customer_id: '',
-    previousConnectionType: '',
+    connectionType: '',
     packageAmount: '',
     packageDuration: '',
     onuCharges: '',
     installationCharges: '',
     reason: '',
     fromBuilding: '',
-    fromBuilding_id: '',
     toBuilding: '',
-    toBuilding_id: '',
     controlRoom: '',
-    controlRoom_id: '',
     stolenFrom: '',
     address: '',
     shiftingAmount: '',
@@ -40,14 +46,14 @@ const AddStockUsage = () => {
   const [errors, setErrors] = useState({});
   const [isBuildingModalOpen, setIsBuildingModalOpen] = useState(false);
   const [isControlRoomModalOpen, setIsControlRoomModalOpen] = useState(false);
-  const [currentBuildingField, setCurrentBuildingField] = useState('');
   const [showCustomerModal, setShowCustomerModal] = useState(false);
-  
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
-  
+  const [products, setProducts] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRows, setSelectedRows] = useState({});
   const [buildings, setBuildings] = useState([]);
   const [filteredBuildings, setFilteredBuildings] = useState([]);
   const [buildingSearchTerm, setBuildingSearchTerm] = useState('');
@@ -57,6 +63,11 @@ const AddStockUsage = () => {
   const [filteredControlRooms, setFilteredControlRooms] = useState([]);
   const [controlRoomSearchTerm, setControlRoomSearchTerm] = useState('');
   const [showControlRoomDropdown, setShowControlRoomDropdown] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [serialModalVisible, setSerialModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [assignedSerials, setAssignedSerials] = useState({});
+  const [alert, setAlert] = useState({ show: false, message: '', type: '' });
 
   useEffect(() => {
     if (id) {
@@ -65,15 +76,129 @@ const AddStockUsage = () => {
     fetchCustomers();
     fetchBuildings();
     fetchControlRooms();
+    fetchProducts();
   }, [id]);
+
+  const handleOpenSerialModal = (product) => {
+    const usageQuantity = parseInt(selectedRows[product._id]?.quantity) || 0;
+    if (usageQuantity > 0) {
+      setSelectedProduct(product);
+      setSerialModalVisible(true);
+    }
+  };
+   
+  const handleSerialNumbersUpdate = (productId, serialsArray) => {
+    setAssignedSerials(prev => ({
+      ...prev,
+      [productId]: serialsArray
+    }));
+  };
+
+  // const fetchStockUsage = async (usageId) => {
+  //   try {
+  //     const res = await axiosInstance.get(`/stockusage/${usageId}`);
+  //     const data = res.data.data;
+  //        const apiDate = data.date ? data.date.split('T')[0] : '';
+    
+  //   setFormData(prev => ({
+  //     ...prev,
+  //     ...data,
+  //     date: apiDate
+  //   }));
+      
+  //     if (data.customer && typeof data.customer === 'object') {
+  //       setCustomerSearchTerm(data.customer.name || data.customer.username || '');
+  //     } else {
+  //       setCustomerSearchTerm(data.customer || '');
+  //     }
+      
+  //     if (data.fromBuilding && typeof data.fromBuilding === 'object') {
+  //       setBuildingSearchTerm(data.fromBuilding.buildingName || '');
+  //     } else {
+  //       setBuildingSearchTerm(data.fromBuilding || '');
+  //     }
+      
+  //     if (data.controlRoom && typeof data.controlRoom === 'object') {
+  //       setControlRoomSearchTerm(data.controlRoom.name || '');
+  //     } else {
+  //       setControlRoomSearchTerm(data.controlRoom || '');
+  //     }
+  //     if (data.items && data.items.length > 0) {
+  //       const existingSelectedRows = {};
+  //       const existingAssignedSerials = {};
+        
+  //       data.items.forEach(item => {
+  //         const productId = item.product?.productId || item.product;
+  //         existingSelectedRows[productId] = {
+  //           quantity: item.quantity.toString(),
+  //           productRemark: item.productRemark || '',
+  //           productInStock: item.oldStock || 0
+  //         };
+          
+  //         if (item.serialNumbers && item.serialNumbers.length > 0) {
+  //           existingAssignedSerials[productId] = item.serialNumbers;
+  //         }
+  //       });
+        
+  //       setSelectedRows(existingSelectedRows);
+  //       setAssignedSerials(existingAssignedSerials);
+  //     }
+      
+  //   } catch (error) {
+  //     console.error('Error fetching stock usage:', error);
+  //   }
+  // };
+
 
   const fetchStockUsage = async (usageId) => {
     try {
-      const res = await axiosInstance.get(`/stock-usage/${usageId}`);
-      setFormData(res.data.data);
-      if (res.data.data.customer) setCustomerSearchTerm(res.data.data.customer);
-      if (res.data.data.fromBuilding) setBuildingSearchTerm(res.data.data.fromBuilding);
-      if (res.data.data.controlRoom) setControlRoomSearchTerm(res.data.data.controlRoom);
+      const res = await axiosInstance.get(`/stockusage/${usageId}`);
+      const data = res.data.data;
+      const apiDate = data.date ? data.date.split('T')[0] : '';
+      
+      setFormData(prev => ({
+        ...prev,
+        ...data,
+        date: apiDate,
+        customer: data.customer?._id || data.customer || '',
+        fromBuilding: data.fromBuilding?._id || data.fromBuilding || '',
+        toBuilding: data.toBuilding?._id || data.toBuilding || '',
+        controlRoom: data.controlRoom?._id || data.controlRoom || ''
+      }));
+    
+      if (data.customer) {
+        setCustomerSearchTerm(data.customer.name || data.customer.username || '');
+      }
+      
+      if (data.fromBuilding) {
+        setBuildingSearchTerm(data.fromBuilding.buildingName || '');
+      }
+      
+      if (data.controlRoom) {
+        setControlRoomSearchTerm(data.controlRoom.name || '');
+      }
+  
+      if (data.items && data.items.length > 0) {
+        const existingSelectedRows = {};
+        const existingAssignedSerials = {};
+        
+        data.items.forEach(item => {
+          const productId = item.product?.productId || item.product;
+          existingSelectedRows[productId] = {
+            quantity: item.quantity.toString(),
+            productRemark: item.productRemark || '',
+            productInStock: item.oldStock || 0
+          };
+          
+          if (item.serialNumbers && item.serialNumbers.length > 0) {
+            existingAssignedSerials[productId] = item.serialNumbers;
+          }
+        });
+        
+        setSelectedRows(existingSelectedRows);
+        setAssignedSerials(existingAssignedSerials);
+      }
+      
     } catch (error) {
       console.error('Error fetching stock usage:', error);
     }
@@ -108,6 +233,42 @@ const AddStockUsage = () => {
       console.error('Error fetching control rooms:', error);
     }
   };
+
+  const fetchProducts = async () => {
+    try {
+      const res = await axiosInstance.get('/stockpurchase/products/with-stock');
+      if (res.data.success) {
+        setProducts(res.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRowSelect = (productId, productStock) => {
+    setSelectedRows((prev) => {
+      const updated = { ...prev };
+      if (updated[productId]) {
+        delete updated[productId];
+      } else {
+        updated[productId] = { quantity: '', productRemark: '', productInStock: productStock || 0 };
+      }
+      return updated;
+    });
+  };
+  
+  const handleUsageQtyChange = (productId, value) => {
+    setSelectedRows((prev) => ({
+      ...prev,
+      [productId]: {
+        ...prev[productId],
+        quantity: value
+      }
+    }));
+  };
+  
   useEffect(() => {
     if (customerSearchTerm) {
       const filtered = customers.filter(customer =>
@@ -156,15 +317,13 @@ const AddStockUsage = () => {
     setFormData(prev => ({
       ...prev,
       customer: value,
-      customer_id: ''
     }));
   };
 
   const handleCustomerSelect = (customer) => {
     setFormData(prev => ({
       ...prev,
-      customer: customer.name || customer.username,
-      customer_id: customer.id
+      customer:customer._id,
     }));
     setCustomerSearchTerm(customer.name || customer.username);
     setShowCustomerDropdown(false);
@@ -188,14 +347,13 @@ const AddStockUsage = () => {
     if (type === 'from') {
       setFormData(prev => ({
         ...prev,
-        fromBuilding: value,
-        fromBuilding_id: ''
+        fromBuilding: value
       }));
     } else {
       setFormData(prev => ({
         ...prev,
         toBuilding: value,
-        toBuilding_id: ''
+  
       }));
     }
   };
@@ -204,15 +362,13 @@ const AddStockUsage = () => {
     if (type === 'from') {
       setFormData(prev => ({
         ...prev,
-        fromBuilding: building.buildingName,
-        fromBuilding_id: building.id
+        fromBuilding: building._id || building.id,
       }));
       setBuildingSearchTerm(building.buildingName);
     } else {
       setFormData(prev => ({
         ...prev,
-        toBuilding: building.buildingName,
-        toBuilding_id: building.id
+        toBuilding: building._id || building.id,
       }));
     }
     setShowBuildingDropdown(false);
@@ -235,15 +391,13 @@ const AddStockUsage = () => {
     setFormData(prev => ({
       ...prev,
       controlRoom: value,
-      controlRoom_id: ''
     }));
   };
 
   const handleControlRoomSelect = (controlRoom) => {
     setFormData(prev => ({
       ...prev,
-      controlRoom: controlRoom.name,
-      controlRoom_id: controlRoom.id
+      controlRoom: controlRoom._id || controlRoom.id,
     }));
     setControlRoomSearchTerm(controlRoom.name);
     setShowControlRoomDropdown(false);
@@ -265,10 +419,31 @@ const AddStockUsage = () => {
     
     if (!formData.date) newErrors.date = 'Date is required';
     if (!formData.usageType) newErrors.usageType = 'Usage Type is required';
-    
+    if (Object.keys(selectedRows).length === 0) {
+      newErrors.products = 'Please select at least one product';
+    }
+  
+    Object.keys(selectedRows).forEach(productId => {
+      const product = products.find(p => p._id === productId);
+      const selectedRow = selectedRows[productId];
+      
+      if (!selectedRow.quantity || parseInt(selectedRow.quantity) <= 0) {
+        newErrors.products = `Please enter valid usage quantity for ${product?.productTitle}`;
+      }
+      
+      if (product?.trackSerialNumber === "Yes") {
+        const usageQty = parseInt(selectedRow.quantity);
+        const assignedSerialsForProduct = assignedSerials[productId] || [];
+        
+        if (assignedSerialsForProduct.length !== usageQty) {
+          newErrors.products = `Please assign serial numbers for all ${usageQty} items of ${product?.productTitle}`;
+        }
+      }
+    });
+  
     if (formData.usageType === 'Customer') {
       if (!formData.customer) newErrors.customer = 'Customer is required';
-      if (!formData.previousConnectionType) newErrors.previousConnectionType = 'Previous Connection Type is required';
+      if (!formData.connectionType) newErrors.connectionType = 'Previous Connection Type is required';
       if (!formData.packageAmount) newErrors.packageAmount = 'Package Amount is required';
       if (!formData.packageDuration) newErrors.packageDuration = 'Package Duration is required';
       if (!formData.onuCharges) newErrors.onuCharges = 'ONU Charges is required';
@@ -296,21 +471,68 @@ const AddStockUsage = () => {
     if (formData.usageType === 'Other' && !formData.address) {
       newErrors.address = 'Address is required';
     }
-
+  
     if (Object.keys(newErrors).length) {
       setErrors(newErrors);
       return;
     }
-
+  
     try {
+        const items = Object.keys(selectedRows).map(productId => {
+        const product = products.find(p => p._id === productId);
+        const selectedRow = selectedRows[productId];
+        const serialNumbers = assignedSerials[productId] || [];
+        
+        const item = {
+          product: productId,
+          quantity: parseInt(selectedRow.quantity),
+          productRemark: selectedRow.productRemark || '',
+        };
+        if (serialNumbers.length > 0) {
+          item.serialNumbers = serialNumbers;
+        }
+        
+        return item;
+      });
+  
+      const payload = {
+        date: formData.date,
+        usageType: formData.usageType,
+        remark: formData.remark || '',
+        customer: formData.customer || null,
+        connectionType: formData.connectionType || null,
+        packageAmount: formData.packageAmount ? parseFloat(formData.packageAmount) : 0,
+        packageDuration: formData.packageDuration || null,
+        onuCharges: formData.onuCharges ? parseFloat(formData.onuCharges) : 0,
+        installationCharges: formData.installationCharges ? parseFloat(formData.installationCharges) : 0,
+        reason: formData.reason || null,
+        shiftingAmount: formData.shiftingAmount ? parseFloat(formData.shiftingAmount) : 0,
+        wireChangeAmount: formData.wireChangeAmount ? parseFloat(formData.wireChangeAmount) : 0,
+        fromBuilding: formData.fromBuilding || null,
+        toBuilding: formData.toBuilding || null,
+        controlRoom: formData.controlRoom || null,
+        stolenFrom: formData.stolenFrom || null,
+        address: formData.address || null,
+        items: items
+      };
+  
+      console.log('Submitting payload:', payload);
+  
       if (id) {
-        await axiosInstance.put(`/stock-usage/${id}`, formData);
+        await axiosInstance.put(`/stockusage/${id}`, payload);
+        setAlert({ show: true, message: 'Data updated successfully!', type: 'success' });
       } else {
-        await axiosInstance.post('/stock-usage', formData);
+        await axiosInstance.post('/stockusage', payload);
+        setAlert({ show: true, message: 'Data added successfully!', type: 'success' });
       }
-      navigate('/stock-usage-list');
+      navigate('/stock-usage');
     } catch (error) {
       console.error('Error saving stock usage:', error);
+      if (error.response?.data?.message) {
+        setErrors({ submit: error.response.data.message });
+      } else {
+        setErrors({ submit: 'Failed to save stock usage' });
+      }
     }
   };
 
@@ -320,19 +542,15 @@ const AddStockUsage = () => {
       usageType: '',
       remark: '',
       customer: '',
-      customer_id: '',
-      previousConnectionType: '',
+      connectionType: '',
       packageAmount: '',
       packageDuration: '',
       onuCharges: '',
       installationCharges: '',
       reason: '',
       fromBuilding: '',
-      fromBuilding_id: '',
       toBuilding: '',
-      toBuilding_id: '',
       controlRoom: '',
-      controlRoom_id: '',
       stolenFrom: '',
       address: '',
       shiftingAmount: '',
@@ -358,8 +576,7 @@ const AddStockUsage = () => {
 
     setFormData((prev) => ({
       ...prev,
-      customer: newCustomer.name || newCustomer.username,
-      customer_id: newCustomer.id
+      customer: newCustomer._id,
     }));
     setCustomerSearchTerm(newCustomer.name || newCustomer.username);
   };
@@ -375,15 +592,13 @@ const AddStockUsage = () => {
     if (currentBuildingType === 'from') {
       setFormData((prev) => ({
         ...prev,
-        fromBuilding: newBuilding.name,
-        fromBuilding_id: newBuilding.id
+        fromBuilding: newBuilding._id || newBuilding.id,
       }));
       setBuildingSearchTerm(newBuilding.name);
     } else {
       setFormData((prev) => ({
         ...prev,
-        toBuilding: newBuilding.name,
-        toBuilding_id: newBuilding.id
+        toBuilding: newBuilding._id || newBuilding.id
       }));
     }
   };
@@ -399,18 +614,20 @@ const AddStockUsage = () => {
     if (currentBuildingType === 'from') {
       setFormData((prev) => ({
         ...prev,
-        fromBuilding: newControlRoom.buildingName,
-        fromBuilding_id: newControlRoom.id
+        fromBuilding: newControlRoom.id,
       }));
       setBuildingSearchTerm(newControlRoom.buildingName);
     } else {
       setFormData((prev) => ({
         ...prev,
-        toBuilding: newControlRoom.buildingName,
-        toBuilding_id: newControlRoom.id
+        toBuilding: newControlRoom.id,
       }));
     }
   };
+
+  const filteredProducts = products.filter((p) =>
+    p.productTitle?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const renderConditionalFields = () => {
     switch (formData.usageType) {
@@ -449,7 +666,7 @@ const AddStockUsage = () => {
                       {filteredCustomers.length > 0 ? (
                         filteredCustomers.map((customer) => (
                           <div
-                            key={customer.id}
+                            key={customer._id}
                             className="select-item"
                             onClick={() => handleCustomerSelect(customer)}
                           >
@@ -471,13 +688,13 @@ const AddStockUsage = () => {
 
             <div className="form-row">
               <div className="form-group">
-                <label className={`form-label ${errors.previousConnectionType ? 'error-label' : formData.previousConnectionType ? 'valid-label' : ''}`}>
+                <label className={`form-label ${errors.connectionType ? 'error-label' : formData.connectionType ? 'valid-label' : ''}`}>
                   Connection Type <span className="required">*</span>
                 </label>
                 <select
-                  name="previousConnectionType"
-                  className={`form-input ${errors.previousConnectionType ? 'error-input' : formData.previousConnectionType ? 'valid-input' : ''}`}
-                  value={formData.previousConnectionType}
+                  name="connectionType"
+                  className={`form-input ${errors.connectionType ? 'error-input' : formData.connectionType ? 'valid-input' : ''}`}
+                  value={formData.connectionType}
                   onChange={handleChange}
                 >
                   <option value="">SELECT</option>
@@ -486,7 +703,7 @@ const AddStockUsage = () => {
                   <option value="Shifting">Shifting</option>
                   <option value="Repair">Repair</option>
                 </select>
-                {errors.previousConnectionType && <span className="error">{errors.previousConnectionType}</span>}
+                {errors.connectionType && <span className="error">{errors.connectionType}</span>}
               </div>
 
               <div className="form-group">
@@ -568,6 +785,39 @@ const AddStockUsage = () => {
                   <option value="Repair">Repair</option>
                 </select>
                 {errors.reason && <span className="error">{errors.reason}</span>}
+              </div>
+              <div className="form-group"></div>
+              <div className="form-group"></div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className={`form-label ${errors.shiftingAmount ? 'error-label' : formData.shiftingAmount ? 'valid-label' : ''}`}>
+                  Shifting Amount<span className="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="shiftingAmount"
+                  className={`form-input ${errors.shiftingAmount ? 'error-input' : formData.shiftingAmount ? 'valid-input' : ''}`}
+                  value={formData.shiftingAmount}
+                  onChange={handleChange}
+                  placeholder='Shifting Amount'
+                />
+                {errors.shiftingAmount && <span className="error">{errors.shiftingAmount}</span>}
+              </div>
+
+              <div className="form-group">
+                <label className={`form-label ${errors.wireChangeAmount ? 'error-label' : formData.wireChangeAmount ? 'valid-label' : ''}`}>
+                  Wire Change Amount <span className="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="wireChangeAmount"
+                  className={`form-input ${errors.wireChangeAmount ? 'error-input' : formData.wireChangeAmount ? 'valid-input' : ''}`}
+                  value={formData.wireChangeAmount}
+                  onChange={handleChange}
+                  placeholder='Wire Change Amount'
+                />
+                {errors.wireChangeAmount && <span className="error">{errors.wireChangeAmount}</span>}
               </div>
               <div className="form-group"></div>
               <div className="form-group"></div>
@@ -793,17 +1043,170 @@ const AddStockUsage = () => {
               <label className={`form-label ${errors.stolenFrom ? 'error-label' : formData.stolenFrom ? 'valid-label' : ''}`}>
                 Stolen From <span className="required">*</span>
               </label>
-              <input
+              <select
                 type="text"
                 name="stolenFrom"
                 className={`form-input ${errors.stolenFrom ? 'error-input' : formData.stolenFrom ? 'valid-input' : ''}`}
                 value={formData.stolenFrom}
                 onChange={handleChange}
                 placeholder="Stolen From"
-              />
+              >
+                <option value="">SELECT</option>
+                <option value="Building">Building</option>
+                <option value="Customer">Customer</option>
+                <option value="Control Room">Control Room</option>
+              </select>
               {errors.stolenFrom && <span className="error">{errors.stolenFrom}</span>}
             </div>
-            <div className="form-group"></div>
+            {formData.stolenFrom === 'Building' && (
+                  <div className="form-group select-dropdown-container">
+                  <label className={`form-label ${errors.fromBuilding ? 'error-label' : formData.fromBuilding ? 'valid-label' : ''}`}>
+                    From Building <span className="required">*</span>
+                  </label>
+                  <div className="input-with-button">
+                    <div className="select-input-wrapper">
+                      <input
+                        type="text"
+                        name="fromBuilding"
+                        className={`form-input ${errors.fromBuilding ? 'error-input' : formData.fromBuilding ? 'valid-input' : ''}`}
+                        value={buildingSearchTerm}
+                        onChange={(e) => handleBuildingSearchChange(e, 'from')}
+                        onFocus={() => handleBuildingInputFocus('from')}
+                        onBlur={handleBuildingInputBlur}
+                        placeholder="Search Building"
+                      />
+                      <CIcon icon={cilSearch} className="search-icon" />
+                    </div>
+                    <button type="button" className="add-btn" onClick={() => { setCurrentBuildingType('from'); handleAddBuilding(); }}>
+                      <CIcon icon={cilPlus} className='icon'/> ADD
+                    </button>
+                  </div>
+                  {showBuildingDropdown && currentBuildingType === 'from' && (
+                    <div className="select-dropdown">
+                      <div className="select-dropdown-header">
+                        <span>Select Building</span>
+                      </div>
+                      <div className="select-list">
+                        {filteredBuildings.length > 0 ? (
+                          filteredBuildings.map((building) => (
+                            <div
+                              key={building.id}
+                              className="select-item"
+                              onClick={() => handleBuildingSelect(building, 'from')}
+                            >
+                              <div className="select-name">{building.buildingName}</div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="no-select">No buildings found</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {errors.fromBuilding && <span className="error">{errors.fromBuilding}</span>}
+                </div>
+            )}
+            { formData.stolenFrom === 'Customer' && (
+                <>
+                  <div className="form-group select-dropdown-container">
+                <label className={`form-label ${errors.customer ? 'error-label' : formData.customer ? 'valid-label' : ''}`}>
+                  Customer <span className="required">*</span>
+                </label>
+                <div className="input-with-button">
+                  <div className="select-input-wrapper">
+                    <input
+                      type="text"
+                      name="customer"
+                      className={`form-input ${errors.customer ? 'error-input' : formData.customer ? 'valid-input' : ''}`}
+                      value={customerSearchTerm}
+                      onChange={handleCustomerSearchChange}
+                      onFocus={handleCustomerInputFocus}
+                      onBlur={handleCustomerInputBlur}
+                      placeholder="Search User"
+                    />
+                    <CIcon icon={cilSearch} className="search-icon" />
+                  </div>
+                  <button type="button" className="add-btn" onClick={handleAddCustomer}>
+                    <CIcon icon={cilPlus} className='icon'/> ADD
+                  </button>
+                </div>
+                {showCustomerDropdown && (
+                  <div className="select-dropdown">
+                    <div className="select-dropdown-header">
+                      <span>Select Customer</span>
+                    </div>
+                    <div className="select-list">
+                      {filteredCustomers.length > 0 ? (
+                        filteredCustomers.map((customer) => (
+                          <div
+                            key={customer._id}
+                            className="select-item"
+                            onClick={() => handleCustomerSelect(customer)}
+                          >
+                            <div className="select-name">{customer.name || customer.username}</div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="no-select">No customers found</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {errors.customer && <span className="error">{errors.customer}</span>}
+              </div>
+                </>
+            )}
+
+            {formData.stolenFrom === 'Control Room' && (
+              <>
+                   <div className="form-group select-dropdown-container">
+              <label className={`form-label ${errors.controlRoom ? 'error-label' : formData.controlRoom ? 'valid-label' : ''}`}>
+                Control Room <span className="required">*</span>
+              </label>
+              <div className="input-with-button">
+                <div className="select-input-wrapper">
+                  <input
+                    type="text"
+                    name="controlRoom"
+                    className={`form-input ${errors.controlRoom ? 'error-input' : formData.controlRoom ? 'valid-input' : ''}`}
+                    value={controlRoomSearchTerm}
+                    onChange={handleControlRoomSearchChange}
+                    onFocus={handleControlRoomInputFocus}
+                    onBlur={handleControlRoomInputBlur}
+                    placeholder="Search Control Room"
+                  />
+                  <CIcon icon={cilSearch} className="search-icon" />
+                </div>
+                <button type="button" className="add-btn" onClick={handleAddControlRoom}>
+                  <CIcon icon={cilPlus} className='icon'/> ADD
+                </button>
+              </div>
+              {showControlRoomDropdown && (
+                <div className="select-dropdown">
+                  <div className="select-dropdown-header">
+                    <span>Select Control Room</span>
+                  </div>
+                  <div className="select-list">
+                    {filteredControlRooms.length > 0 ? (
+                      filteredControlRooms.map((controlRoom) => (
+                        <div
+                          key={controlRoom.id}
+                          className="select-item"
+                          onClick={() => handleControlRoomSelect(controlRoom)}
+                        >
+                          <div className="select-name">{controlRoom.buildingName}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="no-select">No control rooms found</div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {errors.controlRoom && <span className="error">{errors.controlRoom}</span>}
+            </div>
+              </>
+            )}
             <div className="form-group"></div>
             <div className="form-group"></div>
           </div>
@@ -855,6 +1258,16 @@ const AddStockUsage = () => {
           </button>
         </div>
         <div className="form-body">
+        {alert.show && (
+        <CAlert
+          color={alert.type} 
+          className="mb-3 mx-3" 
+          dismissible 
+          onClose={() => setAlert({ show: false, message: '', type: '' })}
+        >
+          {alert.message}
+        </CAlert>
+      )}
           <form onSubmit={handleSubmit}>
             <div className="form-row">
               <div className="form-group">
@@ -867,6 +1280,7 @@ const AddStockUsage = () => {
                   className={`form-input ${errors.date ? 'error-input' : formData.date ? 'valid-input' : ''}`}
                   value={formData.date}
                   onChange={handleChange}
+                  disabled
                 />
                 {errors.date && <span className="error">{errors.date}</span>}
               </div>
@@ -911,38 +1325,107 @@ const AddStockUsage = () => {
 
             {renderConditionalFields()}
             
-            <div className="form-row">
-              <div className="form-group">
-                <label className={`form-label ${errors.shiftingAmount ? 'error-label' : formData.shiftingAmount ? 'valid-label' : ''}`}>
-                  Shifting Amount<span className="required">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="shiftingAmount"
-                  className={`form-input ${errors.shiftingAmount ? 'error-input' : formData.shiftingAmount ? 'valid-input' : ''}`}
-                  value={formData.shiftingAmount}
-                  onChange={handleChange}
-                  placeholder='Shifting Amount'
-                />
-                {errors.shiftingAmount && <span className="error">{errors.shiftingAmount}</span>}
+            <div className="mt-4">
+              <div className="d-flex justify-content-between mb-2">
+                <h5>Select Products</h5>
+                {errors.products && <span className="error-text">{errors.products}</span>}
+                <div className="d-flex">
+                  <label className="me-2 mt-1">Search:</label>
+                  <CFormInput
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    style={{ maxWidth: '250px' }}
+                    placeholder="Search products..."
+                  />
+                </div>
               </div>
 
-              <div className="form-group">
-                <label className={`form-label ${errors.wireChangeAmount ? 'error-label' : formData.wireChangeAmount ? 'valid-label' : ''}`}>
-                  Wire Change Amount <span className="required">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="wireChangeAmount"
-                  className={`form-input ${errors.wireChangeAmount ? 'error-input' : formData.wireChangeAmount ? 'valid-input' : ''}`}
-                  value={formData.wireChangeAmount}
-                  onChange={handleChange}
-                  placeholder='Wire Change Amount'
-                />
-                {errors.wireChangeAmount && <span className="error">{errors.wireChangeAmount}</span>}
-              </div>
-              <div className="form-group"></div>
-              <div className="form-group"></div>
+              {loading ? (
+                <div className="text-center my-3">
+                  <CSpinner color="primary" />
+                </div>
+              ) : (
+                <CTable bordered striped responsive>
+                  <CTableHead>
+                    <CTableRow>
+                      <CTableHeaderCell>Select</CTableHeaderCell>
+                      <CTableHeaderCell>Product Name</CTableHeaderCell>
+                      <CTableHeaderCell>Available Quantity</CTableHeaderCell>
+                      <CTableHeaderCell>Type</CTableHeaderCell>
+                      <CTableHeaderCell>Damage Qty</CTableHeaderCell>
+                      <CTableHeaderCell>Old Replace</CTableHeaderCell>
+                      <CTableHeaderCell>Usage Qty</CTableHeaderCell>
+                    </CTableRow>
+                  </CTableHead>
+                  
+                  <CTableBody>
+                {filteredProducts.length > 0 ? (
+                  filteredProducts.map((p) => {
+                  const isSelected = !!selectedRows[p._id];
+
+      return (
+        <CTableRow key={p._id} className={isSelected ? 'selected-row' : ''}>
+          <CTableDataCell>
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => handleRowSelect(p._id, p.stock)}
+              style={{ height: "20px", width: "20px" }}
+            />
+          </CTableDataCell>
+
+          <CTableDataCell>{p.productTitle}</CTableDataCell>
+          <CTableDataCell>{p.stock?.currentStock || 0}</CTableDataCell>
+
+          <CTableDataCell></CTableDataCell>
+          <CTableDataCell></CTableDataCell>
+          <CTableDataCell></CTableDataCell>
+
+          <CTableDataCell>
+  {isSelected && (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <CFormInput
+        type="number"
+        value={selectedRows[p._id]?.quantity || ''}
+        onChange={(e) => handleUsageQtyChange(p._id, e.target.value)}
+        placeholder="Usage Qty"
+        style={{width:'100px'}}
+        min="1"
+        max={p.stock?.currentStock || 0}
+      />
+
+      {selectedRows[p._id] && p.trackSerialNumber === "Yes" && (
+        <span
+          style={{
+            fontSize: '18px',
+            cursor: 'pointer',
+            color: '#337ab7',
+          }}
+          onClick={() => handleOpenSerialModal(p)}
+          title="Add Serial Numbers"
+        >
+          ☰
+        </span>
+      )}
+    </div>
+  )}
+</CTableDataCell>
+
+        </CTableRow>
+      );
+    })
+  ) : (
+    <CTableRow>
+      <CTableDataCell colSpan={7} className="text-center">
+        No products found
+      </CTableDataCell>
+    </CTableRow>
+  )}
+</CTableBody>
+
+                </CTable>
+              )}
             </div>
 
             <div className="form-footer">
@@ -966,9 +1449,16 @@ const AddStockUsage = () => {
         onBuildingAdded={handleBuildingAdded}
       />
       <ControlRoomModel
-      visible={isControlRoomModalOpen}
-      onClose={() => setIsControlRoomModalOpen(false)}
-      onControlRoomAdded={handleControlRoomAdded}
+        visible={isControlRoomModalOpen}
+        onClose={() => setIsControlRoomModalOpen(false)}
+        onControlRoomAdded={handleControlRoomAdded}
+      />
+      <UsageSerialNumbers
+        visible={serialModalVisible}
+        onClose={() => setSerialModalVisible(false)}
+        product={selectedProduct}
+        usageQty={parseInt(selectedRows[selectedProduct?._id]?.quantity) || 0}
+        onSerialNumbersUpdate={handleSerialNumbersUpdate}
       />
     </div>
   );

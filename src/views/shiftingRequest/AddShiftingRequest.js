@@ -10,24 +10,25 @@ const AddShiftingRequest = () => {
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
+    toCenter: '',
     customer: '',
-    customer_id: '',
     address1: '',
     address2: '',
-    landmark: '',
-    remark: '',
-    shiftingAmount: '',
-    wireChangeAmount: ''
+    city: '',
+    remark: ''
   });
 
   const [customers, setCustomers] = useState([]);
+  const [centers, setCenters] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchCustomers();
+    fetchCenters();
     if (id) {
       fetchShiftingRequest(id);
     }
@@ -43,28 +44,40 @@ const AddShiftingRequest = () => {
     }
   };
 
+  const fetchCenters = async () => {
+    try {
+      const res = await axiosInstance.get('/centers');
+      setCenters(res.data.data || []);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const fetchShiftingRequest = async (requestId) => {
     try {
-      const res = await axiosInstance.get(`/shifting-requests/${requestId}`);
-      const data = res.data.data;
+      setLoading(true);
+      const res = await axiosInstance.get(`/shiftingRequest/${requestId}`);
       
-      setFormData({
-        date: data.date ? new Date(data.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-        customer: data.customer || '',
-        customer_id: data.customer_id || '',
-        address1: data.address1 || '',
-        address2: data.address2 || '',
-        landmark: data.landmark || '',
-        remark: data.remark || '',
-        shiftingAmount: data.shiftingAmount || '',
-        wireChangeAmount: data.wireChangeAmount || ''
-      });
-      
-      if (data.customer) {
-        setCustomerSearchTerm(data.customer);
+      if (res.data.success) {
+        const data = res.data.data;
+
+        setFormData({
+          date: data.date ? new Date(data.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          toCenter: data.toCenter?._id || data.toCenter || '',
+          customer: data.customer?._id || data.customer || '',
+          address1: data.address1 || '',
+          address2: data.address2 || '',
+          city: data.city || '',
+          remark: data.remark || '',
+        });
+        if (data.customer) {
+          setCustomerSearchTerm(data.customer.name || data.customer.username || '');
+        }
       }
     } catch (error) {
       console.error('Error fetching shifting request:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -90,20 +103,24 @@ const AddShiftingRequest = () => {
   const handleCustomerSearchChange = (e) => {
     const value = e.target.value;
     setCustomerSearchTerm(value);
-    setFormData(prev => ({
-      ...prev,
-      customer: value,
-      customer_id: ''
-    }));
+  
+    if (!value.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        customer: ''
+      }));
+    }
+    
+    setShowCustomerDropdown(true);
   };
 
   const handleCustomerSelect = (customer) => {
     setFormData(prev => ({
       ...prev,
-      customer: customer.name || customer.username,
-      customer_id: customer._id || customer.id,
-      address1: customer.address || '',
-      mobile: customer.mobile || ''
+      customer: customer._id,
+      address1: customer.address1 || customer.address || '',
+      address2: customer.address2 || '',
+      city: customer.city || ''
     }));
     setCustomerSearchTerm(customer.name || customer.username);
     setShowCustomerDropdown(false);
@@ -123,12 +140,11 @@ const AddShiftingRequest = () => {
     e.preventDefault();
 
     let newErrors = {};
-    if (!formData.date) newErrors.date = 'Date is required';
-    if (!formData.customer) newErrors.customer = 'Customer is required';
-    if (!formData.address1) newErrors.address1 = 'Address 1 is required';
-    if (!formData.remark) newErrors.remark = 'Remark is required';
-    if (!formData.shiftingAmount) newErrors.shiftingAmount = 'Shifting Amount is required';
-    if (!formData.wireChangeAmount) newErrors.wireChangeAmount = 'Wire Change Amount is required';
+    if (!formData.date) newErrors.date = 'This is a required field';
+    if (!formData.toCenter) newErrors.toCenter = 'This is a required field';
+    if (!formData.customer) newErrors.customer = 'This is a required field';
+    if (!formData.address1) newErrors.address1 = 'This is a required field';
+    if (!formData.remark) newErrors.remark = 'This is a required field';
 
     if (Object.keys(newErrors).length) {
       setErrors(newErrors);
@@ -137,16 +153,21 @@ const AddShiftingRequest = () => {
 
     try {
       const payload = {
-        ...formData,
-        date: formData.date
+        date: formData.date,
+        toCenter: formData.toCenter,
+        customer: formData.customer,
+        address1: formData.address1,
+        address2: formData.address2,
+        city: formData.city,
+        remark: formData.remark
       };
 
       if (id) {
-        await axiosInstance.put(`/shifting-requests/${id}`, payload);
+        await axiosInstance.put(`/shiftingRequest/${id}`, payload);
       } else {
-        await axiosInstance.post('/shifting-requests', payload);
+        await axiosInstance.post('/shiftingRequest', payload);
       }
-      navigate('/shifting-request-list');
+      navigate('/shifting-request');
     } catch (error) {
       console.error('Error saving shifting request:', error);
     }
@@ -156,13 +177,11 @@ const AddShiftingRequest = () => {
     setFormData({
       date: new Date().toISOString().split('T')[0],
       customer: '',
-      customer_id: '',
+      toCenter: '',
       address1: '',
       address2: '',
-      landmark: '',
+      city: '',
       remark: '',
-      shiftingAmount: '',
-      wireChangeAmount: ''
     });
     setCustomerSearchTerm('');
     setErrors({});
@@ -171,6 +190,16 @@ const AddShiftingRequest = () => {
   const handleBack = () => {
     navigate('/shifting-request');
   };
+
+  if (loading && id) {
+    return (
+      <div className="form-container">
+        <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
+          Loading...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="form-container">
@@ -230,9 +259,12 @@ const AddShiftingRequest = () => {
                     onFocus={handleCustomerInputFocus}
                     onBlur={handleCustomerInputBlur}
                     placeholder="Search User"
+                    disabled={!!id} 
+                    
                   />
                 </div>
-                {showCustomerDropdown && (
+                {showCustomerDropdown && !id && (
+                  
                   <div className="select-dropdown">
                     <div className="select-dropdown-header">
                       <span>Select Customer</span>
@@ -241,12 +273,12 @@ const AddShiftingRequest = () => {
                       {filteredCustomers.length > 0 ? (
                         filteredCustomers.map((customer) => (
                           <div
-                            key={customer._id || customer.id}
+                            key={customer._id}
                             className="select-item"
                             onClick={() => handleCustomerSelect(customer)}
                           >
                             <div className="select-name">
-                              {customer.username}-{customer.mobile}
+                              {customer.name || customer.username} - {customer.mobile}
                             </div>
                           </div>
                         ))
@@ -260,6 +292,27 @@ const AddShiftingRequest = () => {
               </div>
 
               <div className="form-group">
+                <label className={`form-label 
+                  ${errors.toCenter ? 'error-label' : formData.toCenter ? 'valid-label' : ''}`}
+                  htmlFor="toCenter">
+                  To Center <span className="required">*</span>
+                </label>
+                <select
+                  id="toCenter"
+                  name="toCenter"
+                  className={`form-input 
+                    ${errors.toCenter ? 'error-input' : formData.toCenter ? 'valid-input' : ''}`}
+                  value={formData.toCenter}
+                  onChange={handleChange}
+                >
+                  <option value="">SELECT</option>
+                  {centers.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.centerName}
+                    </option>
+                  ))}
+                </select>
+                {errors.toCenter && <span className="error-text">{errors.toCenter}</span>}
               </div>
             </div>
 
@@ -300,17 +353,17 @@ const AddShiftingRequest = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label" htmlFor="landmark">
+                <label className="form-label" htmlFor="city">
                   City
                 </label>
                 <input
                   type="text"
-                  id="landmark"
-                  name="landmark"
+                  id="city"
+                  name="city"
                   className="form-input"
-                  value={formData.landmark}
+                  value={formData.city}
                   onChange={handleChange}
-                  placeholder='New Mumbai'
+                  placeholder='City'
                 />
               </div>
             </div>
@@ -337,6 +390,7 @@ const AddShiftingRequest = () => {
               </div>
               <div className="form-group"></div>
             </div>
+
             <div className="form-footer">
               <button type="button" className="reset-button" onClick={handleReset}>
                 Reset

@@ -23,6 +23,7 @@ import axiosInstance from 'src/axiosInstance';
 import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
 import SearchCustomerModel from './SearchCustomerModel';
 import Pagination from 'src/utils/Pagination';
+import usePermission from 'src/utils/usePermission';
 
 const CustomersList = () => {
   const [customers, setCustomers] = useState([]);
@@ -39,7 +40,7 @@ const CustomersList = () => {
 
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
-
+  const { hasAnyPermission } = usePermission(); 
   const fetchCustomers = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
@@ -234,11 +235,13 @@ const CustomersList = () => {
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
+          {hasAnyPermission('Customer', ['manage_customer_all_center','manage_customer_own_center']) && (
             <Link to='/add-customer'>
               <CButton size="sm" className="action-btn me-1">
                 <CIcon icon={cilPlus} className='icon'/> Add
               </CButton>
             </Link>
+          )}
             <CButton 
               size="sm" 
               className="action-btn me-1"
@@ -279,7 +282,6 @@ const CustomersList = () => {
               <CFormLabel className='mt-1 m-1'>Search:</CFormLabel>
               <CFormInput
                 type="text"
-                style={{maxWidth: '350px', height: '30px', borderRadius: '0'}}
                 className="d-inline-block square-search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -365,6 +367,7 @@ const CustomersList = () => {
                     <CTableDataCell>{customer.email}</CTableDataCell>
                     <CTableDataCell>{customer.city}</CTableDataCell>
                     <CTableDataCell>
+                    {hasAnyPermission('Customer', ['manage_customer_all_center','manage_customer_own_center']) && (
                       <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
                         <CButton 
                           size="sm"
@@ -376,6 +379,7 @@ const CustomersList = () => {
                         </CButton>
                         {dropdownOpen[customer._id] && (
                           <div className="dropdown-menu show">
+
                             <button 
                               className="dropdown-item"
                               onClick={() => handleEditCustomer(customer._id)}
@@ -391,6 +395,7 @@ const CustomersList = () => {
                           </div>
                         )}
                       </div>
+                    )}
                     </CTableDataCell>
                   </CTableRow>
                 ))

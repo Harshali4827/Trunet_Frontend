@@ -123,15 +123,6 @@ const AreaList = () => {
     }
   };
  
-  // const handleAreaAdded = (partner, isEdit) => {
-  //   if (isEdit) {
-  //     setAreas((prev) =>
-  //       prev.map((p) => (p._id === partner._id ? partner : p))
-  //     )
-  //   } else {
-  //     setAreas((prev) => [...prev, partner])
-  //   }
-  // }
   const handleAreaAdded = async (newArea, isEdit) => {
     if (isEdit) {
       setAreas((prev) =>
@@ -253,7 +244,7 @@ const AreaList = () => {
               {filteredData.length > 0 ? (
                 filteredData.map((area) => (
                   <CTableRow key={area._id}>
-                    <CTableDataCell>{area.partner.partnerName}</CTableDataCell>
+                    <CTableDataCell>{area.partner?.partnerName}</CTableDataCell>
                     <CTableDataCell>{area.areaName}</CTableDataCell>
                     <CTableDataCell>
                       <div className="dropdown-container" ref={el => dropdownRefs.current[area._id] = el}>

@@ -22,6 +22,8 @@ import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilZoomOut } from '@co
 import { Link, useNavigate } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
+import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
+import ReportSearchmodel from './ReportSearchModel';
 
 // import SearchStockPurchase from './SearchStockPurchase';
 
@@ -34,9 +36,7 @@ const ReportSubmissionList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [activeSearch, setActiveSearch] = useState({ keyword: '', center: '' });
-  const [dropdownOpen, setDropdownOpen] = useState({});
-  
-  const dropdownRefs = useRef({});
+ 
   const navigate = useNavigate();
 
   const fetchData = async (searchParams = {}) => {
@@ -51,11 +51,12 @@ const ReportSubmissionList = () => {
         params.append('center', searchParams.center);
       }
 
-      const url = params.toString() ? `/customers?${params.toString()}` : '/customers';
+      const url = params.toString() ? `/reportsubmission?${params.toString()}` : '/reportsubmission';
+      
       const response = await axiosInstance.get(url);
       
       if (response.data.success) {
-        setData(response.data.data);
+        setData(response.data.data || []);
       } else {
         throw new Error('API returned unsuccessful response');
       }
@@ -135,8 +136,8 @@ const ReportSubmissionList = () => {
     fetchData();
   };
   
-  const handleUsernameClick = (itemId) => {
-    navigate(`/customer-profile/${itemId}`);
+  const handleClick = (itemId) => {
+    navigate(`/edit-reportSubmission/${itemId}`);
   };
 
   const filteredData = data.filter(customer => {
@@ -173,12 +174,12 @@ const ReportSubmissionList = () => {
     <div>
       <div className='title'>Closing Stock Logs </div>
     
-      {/* <SearchStockPurchase
+     <ReportSearchmodel
         visible={searchModalVisible}
         onClose={() => setSearchModalVisible(false)}
         onSearch={handleSearch}
         centers={centers}
-      /> */}
+      /> 
       
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
@@ -243,29 +244,26 @@ const ReportSubmissionList = () => {
           </div>
           
           <div className="responsive-table-wrapper">
-          <CTable striped bordered hover responsive className='responsive-table'>
+          <CTable striped bordered hover className='responsive-table'>
             <CTableHead>
               <CTableRow>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('username')} className="sortable-header">
+                <CTableHeaderCell scope="col" onClick={() => handleSort('date')} className="sortable-header">
                    Date {getSortIcon('username')}
                 </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('name')} className="sortable-header">
-                 Center {getSortIcon('name')}
-                </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
-                  Remark {getSortIcon('center.centerName')}
+                 Center {getSortIcon('center.centerName')}
                 </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('center.partner.partnerName')} className="sortable-header">
-                  Created At {getSortIcon('center.partner.partnerName')}
+                <CTableHeaderCell scope="col" onClick={() => handleSort('remark')} className="sortable-header">
+                  Remark {getSortIcon('remark')}
                 </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('center.area.areaName')} className="sortable-header">
-                  Created By {getSortIcon('center.area.areaName')}
+                <CTableHeaderCell scope="col" onClick={() => handleSort('createdAt')} className="sortable-header">
+                  Created At {getSortIcon('createdAt')}
                 </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('mobile')} className="sortable-header">
-                  Approve Remark {getSortIcon('mobile')}
+                <CTableHeaderCell scope="col" onClick={() => handleSort('createdBy.fullname')} className="sortable-header">
+                  Created By {getSortIcon('createdBy.fullname')}
                 </CTableHeaderCell>
-                <CTableHeaderCell scope="col">
-                  Action
+                <CTableHeaderCell scope="col" onClick={() => handleSort('remark')} className="sortable-header">
+                  Approve Remark {getSortIcon('remark')}
                 </CTableHeaderCell>
               </CTableRow>
             </CTableHead>
@@ -276,17 +274,17 @@ const ReportSubmissionList = () => {
                     <CTableDataCell>
                       <button 
                         className="btn btn-link p-0 text-decoration-none"
-                        onClick={() => handleUsernameClick(customer._id)}
+                        onClick={() => handleClick(customer._id)}
                         style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
                       >
-                        {customer.username}
+                        {formatDate(customer.date || '')}
                       </button>
                     </CTableDataCell>
-                    <CTableDataCell>{customer.name}</CTableDataCell>
                     <CTableDataCell>{customer.center?.centerName || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{customer.center?.partner?.partnerName || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{customer.center?.area?.areaName || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{customer.mobile}</CTableDataCell>
+                    <CTableDataCell>{customer.remark || ''}</CTableDataCell>
+                    <CTableDataCell>{formatDateTime(customer.createdAt || 'N/A')}</CTableDataCell>
+                    <CTableDataCell>{customer.createdBy.email || 'N/A'}</CTableDataCell>
+                    <CTableDataCell>{customer.remark || ''}</CTableDataCell>
                   </CTableRow>
                 ))
               ) : (
@@ -306,4 +304,3 @@ const ReportSubmissionList = () => {
 };
 
 export default ReportSubmissionList;
-

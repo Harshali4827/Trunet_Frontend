@@ -87,8 +87,26 @@
     color: #3c8dbc;
   }
   
-  
-  
+  .use_product {
+    width: 15px ! important;
+    height: 15px ! important;
+    background: #dff0d8;
+    margin-left: 5px;
+    display: inline-block;
+}
+.damage_product {
+  width: 15px ! important;
+  height: 15px ! important;
+  background: #f2dede;
+  margin-left: 5px;
+  display: inline-block;
+}
+.damage-prouct td{
+  background-color: #f2dede;
+}
+.use-product td{
+  background-color:#dff0d8;
+}
   @media (max-width: 768px) {
     .profile-header {
       padding: 0.75rem 1rem;
@@ -224,6 +242,12 @@
   background-color: #999999; 
 }
 
+.status-badge.pending {
+  background-color: #00acd6;
+}
+.status-badge.approve{
+  background-color: #00a65a;
+}
 .print-btn {
   background-color: #2759a2;
   color: #fff;
@@ -239,7 +263,16 @@
   border-color: #122b40;
 }
 
-
+.back-button{
+  background: #2759a2;
+  border: none;
+  color: #fff;
+  padding: 5px;
+}
+.back-button:hover{
+  background: #2759a2;
+  color: #fff;
+}
 
 .subtitle-row {
   padding: 10px 15px;

@@ -13,17 +13,16 @@ import {
   CCardHeader,
   CButton,
   CFormInput,
-  CPaginationItem,
-  CPagination,
   CSpinner
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilSettings, cilPencil, cilTrash } from '@coreui/icons';
+import { cilArrowTop, cilArrowBottom,cilPlus, cilSettings, cilPencil, cilTrash } from '@coreui/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
 import Pagination from 'src/utils/Pagination';
+import usePermission from 'src/utils/usePermission';
 
 const CenterList = () => {
   const [customers, setCustomers] = useState([]);
@@ -35,7 +34,7 @@ const CenterList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const dropdownRefs = useRef({});
-
+  const { hasAnyPermission } = usePermission(); 
  const navigate = useNavigate();
     const fetchData = async () => {
       try {
@@ -189,11 +188,13 @@ const CenterList = () => {
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
+          {hasAnyPermission('Center', ['manage_own_center','manage_all_center']) && (
             <Link to='/add-center'>
               <CButton size="sm" className="action-btn me-1">
                 <CIcon icon={cilPlus} className='icon'/> Add
               </CButton>
             </Link>
+          )}
           </div>
           
           <div>
@@ -259,6 +260,7 @@ const CenterList = () => {
                     <CTableDataCell>{customer.mobile}</CTableDataCell>
                     <CTableDataCell>{customer.addressLine1}</CTableDataCell>
                     <CTableDataCell>
+                    {hasAnyPermission('Center', ['manage_own_center','manage_all_center']) && (
                       <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
                         <CButton 
                           size="sm"
@@ -284,6 +286,7 @@ const CenterList = () => {
                           </div>
                         )}
                       </div>
+                    )}
                     </CTableDataCell>
                   </CTableRow>
                 ))

@@ -61,10 +61,21 @@ const AddStockUsage = React.lazy(() => import('./views/stockUsage/AddStockUsage'
 
 const AddRole = React.lazy(() => import('./views/Settings/role/AddRole'))
 const RoleList = React.lazy(() => import('./views/Settings/role/RoleList'))
-const Cards = React.lazy(() => import('./views/base/cards/Cards'))
 
+//REPORT
 
-
+const CenterStock = React.lazy(() => import('./views/Report/CentersStock'))
+const AvailableStock = React.lazy(() => import('./views/Report/AvailableStock'))
+const TransactionReport = React.lazy(() => import('./views/Report/TransactionReport'))
+const PurchaseDetail = React.lazy(() => import('./views/Report/PurchaseDetail'))
+const IndentSummary = React.lazy(() => import('./views/Report/IndentSummary'))
+const IndentDetail = React.lazy(() => import('./views/Report/IndentDetail'))
+const TransferDetail = React.lazy(() => import('./views/Report/TransferDetail'))
+const TransferSummary = React.lazy(() => import('./views/Report/TransferSummary'))
+const UsageDetail = React.lazy(() => import('./views/Report/UsageDetail'))
+const UsageSummary = React.lazy(() => import('./views/Report/UsageSummary'))
+const StolenReport = React.lazy(() => import('./views/Report/StolenReport'))
+const ProductSerialTrack = React.lazy(() => import('./views/Report/ProductSerialTrack'))
 const routes = [
 
   { path: '/', exact: true, name: <Translation>{(t) => t('home')}</Translation> },
@@ -292,7 +303,7 @@ const routes = [
   },
 
   {
-    path:'/theme/stockUsg',
+    path:'/stock-usage',
     name: <Translation>{(t) => t('Stock Usage')}</Translation>,
     element:StockUsage,
     exact: true,
@@ -304,6 +315,12 @@ const routes = [
     exact: true,
   },
 
+  {
+    path:'/edit-stockUsage/:id',
+    name: <Translation>{(t) => t('Edit Stock Usage')}</Translation>,
+    element:AddStockUsage,
+    exact: true,
+  },
 
   {
     path: '/stock-purchase',
@@ -381,12 +398,11 @@ const routes = [
     exact: true,
   },
   {
-    path:'/master',
-    name: <Translation>{(t) => t('master')}</Translation>,
-    element: Cards,
+    path: '/edit-reportSubmission/:id',
+    name: <Translation>{(t) => t('Closing Stock Logs')}</Translation>,
+    element: AddReportSubmission,
     exact: true,
   },
-
   {
     path: '/add-role',
     name: <Translation>{(t) => t('Add Role')}</Translation>,
@@ -403,6 +419,81 @@ const routes = [
     path:'/role-list',
     name: <Translation>{(t) => t('Role List')}</Translation>,
     element: RoleList,
+    exact: true,
+  },
+
+  //REPORT
+
+  {
+    path:'/center-stock',
+    name: <Translation>{(t) => t('Center Stock')}</Translation>,
+    element: CenterStock,
+    exact: true,
+  },
+  {
+    path:'/available-stock',
+    name: <Translation>{(t) => t('Available Stock')}</Translation>,
+    element: AvailableStock,
+    exact: true,
+  },
+  {
+    path:'transaction-report',
+    name: <Translation>{(t) => t('Transaction Report')}</Translation>,
+    element: TransactionReport,
+    exact: true,
+  },
+  {
+    path:'purchase-detail',
+    name: <Translation>{(t) => t('Purchase Detail')}</Translation>,
+    element: PurchaseDetail,
+    exact: true,
+  },
+  {
+    path:'indent-summary',
+    name: <Translation>{(t) => t('Indent Summary')}</Translation>,
+    element: IndentSummary,
+    exact: true,
+  },
+  {
+    path:'indent-detail',
+    name: <Translation>{(t) => t('Indent Detail')}</Translation>,
+    element: IndentDetail,
+    exact: true,
+  },
+  {
+    path:'transfer-detail',
+    name: <Translation>{(t) => t('Transfer Detail')}</Translation>,
+    element: TransferDetail,
+    exact: true,
+  },
+  {
+    path:'transfer-summary',
+    name: <Translation>{(t) => t('Transfer Summary')}</Translation>,
+    element: TransferSummary,
+    exact: true,
+  },
+  {
+    path:'usage-detail',
+    name: <Translation>{(t) => t('Usage Details')}</Translation>,
+    element:UsageDetail,
+    exact: true,
+  },
+  {
+    path:'usage-summary',
+    name: <Translation>{(t) => t('Usage Summary')}</Translation>,
+    element: UsageSummary,
+    exact: true,
+  },
+  {
+    path:'stolen-report',
+    name: <Translation>{(t) => t('Stolen Report')}</Translation>,
+    element: StolenReport,
+    exact: true,
+  },
+  {
+    path:'product-serial-track',
+    name: <Translation>{(t) => t('Product Serial Track')}</Translation>,
+    element: ProductSerialTrack,
     exact: true,
   }
 ]

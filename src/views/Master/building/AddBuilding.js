@@ -43,11 +43,21 @@ const AddBuilding = () => {
   const fetchBuilding = async (buildingId) => {
     try {
       const res = await axiosInstance.get(`/buildings/${buildingId}`);
-      setFormData(res.data.data);
+      const data = res.data.data;
+  
+      setFormData({
+        center: data.center?._id || '',
+        buildingName: data.buildingName || '',
+        displayName: data.displayName || '',
+        address1: data.address1 || '',
+        address2: data.address2 || '',
+        landmark: data.landmark || '',
+        pincode: data.pincode || '',
+      });
     } catch (error) {
       console.error('Error fetching building:', error);
     }
-  };
+  };  
 
   const handleChange = (e) => {
     const { name, value } = e.target;

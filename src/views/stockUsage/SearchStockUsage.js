@@ -14,12 +14,13 @@ import '../../css/form.css'
 const SearchStockUsage = ({ visible, onClose, onSearch, centers }) => {
   const [searchData, setSearchData] = useState({
     keyword: '',
-    center: ''
+    center: '',
+    usageType:''
   })
 
   useEffect(() => {
     if (!visible) {
-      setSearchData({ keyword: '', center: '' })
+      setSearchData({ keyword: '', center: '', usageType:'' })
     }
   }, [visible])
 
@@ -34,8 +35,8 @@ const SearchStockUsage = ({ visible, onClose, onSearch, centers }) => {
   }
 
   const handleReset = () => {
-    setSearchData({ keyword: '', center: '' })
-    onSearch({ keyword: '', center: '' })
+    setSearchData({ keyword: '', center: '', usageType:'' })
+    onSearch({ keyword: '', center: '', usageType:'' })
   }
 
   return (

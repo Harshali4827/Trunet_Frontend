@@ -50,13 +50,17 @@ const VendorModal = ({ visible, onClose, onVendorAdded }) => {
               }
             onClose();
         } catch (error) {
-            console.error('Error saving vendors:', error);
-            if (error.response?.data?.message) {
-              setApiError(error.response.data.message);
-            } else {
-              setApiError('Something went wrong. Please try again.');
-            }
+          console.error('Error saving vendors:', error);
+        
+          if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+            const validationMessages = error.response.data.errors.map(err => err.msg).join(', ');
+            setApiError(validationMessages); 
+          } else if (error.response?.data?.message) {
+            setApiError(error.response.data.message);
+          } else {
+            setApiError('Something went wrong. Please try again.');
           }
+        }        
       };
     
       const handleReset = () => {

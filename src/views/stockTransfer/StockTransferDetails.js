@@ -4,11 +4,11 @@ import { CCard, CCardBody, CButton, CSpinner, CContainer, CTable, CTableHead, CT
 import axiosInstance from 'src/axiosInstance';
 import '../../css/profile.css'
 import '../../css/form.css';
-// import ShipGoodsModal from './ShipGoodsModal';
-// import IncompleteRemarkModal from './IncompleteRemarkModal';
 import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
 import ShipGoodsModal from '../stockRequest/ShipGoodsModal';
 import IncompleteRemarkModal from '../stockRequest/IncompleteRemarkModal';
+import usePermission from 'src/utils/usePermission';
+import StockSerialNumber from './StockSerialNumber';
 
 const StockTransferDetails = () => {
   const { id } = useParams();
@@ -23,11 +23,14 @@ const StockTransferDetails = () => {
   const [errors, setErrors] = useState({});
   const [currentShipmentAction, setCurrentShipmentAction] = useState(null);
   const [incompleteModal, setIncompleteModal] = useState(false);
-  const userCenter = JSON.parse(localStorage.getItem('userCenter')) || {};
-  const userCenterType = userCenter.centerType || 'Outlet';
   const [productReceipts, setProductReceipts] = useState([]);
+  const [serialModalVisible, setSerialModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [assignedSerials, setAssignedSerials] = useState({});
 
- const [shipmentData, setShipmentData] = useState({
+  const { hasPermission} = usePermission(); 
+  
+  const [shipmentData, setShipmentData] = useState({
     shippedDate: '',
     expectedDeliveryDate: '',
     shipmentDetails: '',
@@ -36,11 +39,25 @@ const StockTransferDetails = () => {
   });
 
   const user = JSON.parse(localStorage.getItem('user')) || {};
-  //const userRole = toLowerCase(user.role.roleTitle || '');
   const userRole = (user?.role?.roleTitle || '').toLowerCase();
+  const userCenter = JSON.parse(localStorage.getItem('userCenter')) || {};
+  const userCenterType = userCenter.centerType || 'Outlet';
 
-  
-  console.log(userRole);
+  const userCenterId = userCenter._id;
+  const isToCenterUser = data?.toCenter?._id === userCenterId;
+  const isFromCenterUser = data?.fromCenter?._id === userCenterId;
+
+  const handleOpenSerialModal = (product) => {
+    setSelectedProduct(product);
+    setSerialModalVisible(true);
+  };
+   
+  const handleSerialNumbersUpdate = (productId, serialsArray) => {
+    setAssignedSerials(prev => ({
+      ...prev,
+      [productId]: serialsArray
+    }));
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -93,9 +110,9 @@ const StockTransferDetails = () => {
   useEffect(() => {
     if (data?.products) {
       const initialReceipts = data.products.map(item => ({
-        productId: item._id,
-        receivedQuantity: item.approvedQuantity || item.quantity || 0,
-        receivedRemark: ''
+        productId: item.product?._id, 
+        receivedQuantity: item.receivedQuantity,
+        receivedRemark:item.receivedRemark
       }));
       setProductReceipts(initialReceipts);
     }
@@ -133,7 +150,8 @@ const handleApprove = async () => {
     return {
       productId: p.productId,
       approvedQuantity: Number(p.approvedQty),
-      approvedRemark: p.approvedRemark || ''
+      approvedRemark: p.approvedRemark || '',
+      approvedSerials: (assignedSerials[p.productId] || []).map(s => s.serialNumber)
     };
   });
 
@@ -224,7 +242,7 @@ const handleRejectAdmin = async () => {
 // Reject
 const handleReject = async () => {
   try {
-    const response = await axiosInstance.post(`/stocktransfer/${id}`, { status: 'Rejected' });
+    const response = await axiosInstance.post(`/stocktransfer/${id}/reject`);
     if (response.data.success) {
       setAlert({ type: 'success', message: 'Data rejected successfully', visible: true });
       setTimeout(() => window.location.reload(), 1000);
@@ -270,6 +288,7 @@ const handleChangeApprovedQty = async () => {
       productId: p.productId,
       approvedQuantity: Number(p.approvedQty),
       approvedRemark: p.approvedRemark || '',
+      approvedSerials: (assignedSerials[p.productId] || []).map(s => s.serialNumber),
     };
   });
 
@@ -311,7 +330,7 @@ const handleChangeApprovedQty = async () => {
 //Cancel Shipment
 const handleCancelShipment = async () => {
   try {
-    const response = await axiosInstance.post(`/stocktransfer/${id}/reject-shipment`);
+    const response = await axiosInstance.patch(`/stocktransfer/${id}/reject-shipment`);
     if (response.data.success) {
       setAlert({ type: 'success', message: 'Shipment canceled successfully', visible: true });
       setTimeout(() => window.location.reload(), 1000);
@@ -326,37 +345,90 @@ const handleCancelShipment = async () => {
 
 // complete
 
+// const handleCompleteIndent = async () => {
+//   try {
+//     let payload = [];
+
+//     if (userCenterType === 'Center') {
+//       payload = productReceipts;
+//     } else {
+//       payload = data.products.map(item => ({
+//         productId: item.product?._id,   
+//         receivedQuantity: item.approvedQuantity || item.receivedQuantity || 0,
+//         receivedRemark: item.receivedRemark
+//       }));
+//     }
+
+//     const response = await axiosInstance.post(`/stocktransfer/${id}/complete`, {
+//       productReceipts: payload,
+//     });
+
+//     if (response.data.success) {
+//       setAlert({ type: 'success', message: 'Indent completed successfully', visible: true });
+//       setTimeout(() => window.location.reload(), 1000);
+//     } else {
+//       setAlert({ type: 'danger', message: response.data.message || 'Failed to complete indent', visible: true });
+//     }
+//   } catch (err) {
+//     console.error(err);
+//     setAlert({ type: 'danger', message: 'Error completing indent', visible: true });
+//   }
+// };
+
+
 const handleCompleteIndent = async () => {
   try {
     let payload = [];
 
-    if (userCenterType === 'Center') {
-      payload = productReceipts;
+    if (isFromCenterUser) {
+      payload = productReceipts.map(item => ({
+        productId: item.productId,
+        receivedQuantity: Number(item.receivedQuantity) || 0,
+        receivedRemark: item.receivedRemark || '',
+      }));
     } else {
       payload = data.products.map(item => ({
-        // productId: item._id,
-        productId: item.product?._id,   
-        receivedQuantity: item.approvedQuantity || item.quantity || 0,
-        receivedRemark: ''
+        productId: item.product?._id,
+        receivedQuantity: item.approvedQuantity || item.receivedQuantity || 0,
+        receivedRemark: item.receivedRemark || '',
       }));
     }
 
     const response = await axiosInstance.post(`/stocktransfer/${id}/complete`, {
       productReceipts: payload,
     });
-
-    if (response.data.success) {
-      setAlert({ type: 'success', message: 'Indent completed successfully', visible: true });
-      setTimeout(() => window.location.reload(), 1000);
-    } else {
-      setAlert({ type: 'danger', message: response.data.message || 'Failed to complete indent', visible: true });
+    
+    if (!response.data.success) {
+      setAlert({
+        type: 'danger',
+        message: response.data.message || 'Failed to complete indent',
+        visible: true,
+      });
+      return;
     }
+    
+    setAlert({
+      type: 'success',
+      message: 'Indent completed successfully',
+      visible: true,
+    });
+
+    setTimeout(() => window.location.reload(), 1000);
   } catch (err) {
-    console.error(err);
-    setAlert({ type: 'danger', message: 'Error completing indent', visible: true });
+    console.error('Error in handleCompleteIndent:', err);
+
+    const errorMessage =
+      err.response?.data?.message ||
+      err.message ||
+      'An unexpected error occurred while completing the indent';
+
+    setAlert({
+      type: 'danger',
+      message: errorMessage,
+      visible: true,
+    });
   }
 };
-
 // Update Shipment
 const handleOpenUpdateShipment = () => {
   if (data.shippingInfo) {
@@ -391,12 +463,22 @@ const handleUpdateShipment = async (shipmentData) => {
 
 const handleMarkIncomplete = async (remark) => {
   try {
+
+    const receivedProducts = productReceipts.map(item => ({
+      productId: item.productId,
+      receivedQuantity: Number(item.receivedQuantity) || 0,
+      receivedRemark: item.receivedRemark || '',
+    }));
+    const payload = {
+      incompleteRemark: remark,
+      receivedProducts,
+    };
     const response = await axiosInstance.post(
       `/stocktransfer/${id}/mark-incomplete`,
-      { incompleteRemark: remark }
+       payload
     );
     if (response.data.success) {
-      setAlert({ type: 'success', message: 'Stock request marked as incomplete', visible: true });
+      setAlert({ type: 'success', message: 'marked as incomplete', visible: true });
       setIncompleteModal(false);
       setTimeout(() => window.location.reload(), 1000);
     } else {
@@ -416,10 +498,10 @@ const handleInomplete = async () => {
       approvedQuantity: Number(p.approvedQty) || 0,
       approvedRemark: p.approvedRemark || ''
     }));
-    const receiptsPayload = approvalsPayload.map(a => ({
-      productId: a.productId,
-      receivedQuantity: a.approvedQuantity,
-      receivedRemark: '',
+    const receiptsPayload = productReceipts.map(r => ({
+      productId: r.productId,
+     receivedQuantity: Number(r.receivedQuantity) || 0,
+      receivedRemark: r.receivedRemark || ''
     }));
 
     const response = await axiosInstance.patch(
@@ -480,11 +562,12 @@ const handleInomplete = async () => {
 
     <div className="d-flex align-items-center">
 
-    {data.status === 'Shipped' && (
+    {data.status === 'Shipped' && isFromCenterUser &&(
       <CButton className='btn-action btn-incomplete me-2' onClick={handleCompleteIndent}>
       Complete The Indent
       </CButton>
     )}
+
      <CButton className="print-btn">
       <i className="fa fa-print me-1"></i> Print Indent
     </CButton>
@@ -506,7 +589,7 @@ const handleInomplete = async () => {
 
       <tr className="table-row">
         <td className="profile-label-cell">Indent Date:</td>
-        <td className="profile-value-cell">{data.date || ''}</td>
+        <td className="profile-value-cell">{formatDate(data.date || '')}</td>
 
         <td className="profile-label-cell">Expected Delivery:</td>
         <td className="profile-value-cell">{formatDate(data.shippingInfo.expectedDeliveryDate || '')}</td>
@@ -550,7 +633,7 @@ const handleInomplete = async () => {
 
        <tr className="table-row">
         <td className="profile-label-cell">Approved at:</td>
-        <td className="profile-value-cell">{formatDateTime(data.approvalInfo?.approvedAt || '')}</td>
+        <td className="profile-value-cell">{formatDateTime(data.centerApproval?.approvedAt || '')}</td>
 
         <td className="profile-label-cell">Shipped at:</td>
         <td className="profile-value-cell">{formatDateTime(data.shippingInfo?.shippedAt || '')}</td>
@@ -561,7 +644,7 @@ const handleInomplete = async () => {
 
       <tr className="table-row">
         <td className="profile-label-cell">Approved by:</td>
-        <td className="profile-value-cell">{data.approvalInfo?.approvedBy.fullName || ''}</td>
+        <td className="profile-value-cell">{data.centerApproval?.approvedBy?.fullName || ''}</td>
 
         <td className="profile-label-cell">Shipped by:</td>
         <td className="profile-value-cell">{data.shippingInfo?.shippedBy?.fullName || ''}</td>
@@ -574,6 +657,7 @@ const handleInomplete = async () => {
 </CCardBody>
 
      </CCard>
+
      <CCard className="profile-card" style={{ marginTop: '20px' }}>
         <div className="subtitle-row d-flex justify-content-between align-items-center">
           <div className="subtitle">Product Details</div>
@@ -585,14 +669,15 @@ const handleInomplete = async () => {
         </CButton>
       )}
      
-      {data.status === 'Incompleted' && userRole !== 'admin' && (
+      {data.status === 'Incompleted' && userRole !== 'admin' && isFromCenterUser &&(
         <>
           <CButton className="btn-action btn-incomplete me-2" onClick={handleInomplete}>
             Change Qty And Complete Request
           </CButton>
         </>
       )}
-      {data.status === 'Confirmed' && userRole !== 'admin' &&(
+
+      {data.status === 'Confirmed' && userRole !== 'admin' && isToCenterUser &&  (
         <>
           <CButton className="btn-action btn-submitted me-2" onClick={handleChangeApprovedQty}>
             Change Approved Qty
@@ -612,7 +697,8 @@ const handleInomplete = async () => {
         </>
       )}
 
-      {data.status === 'Shipped' && userRole !== 'admin' &&(
+
+      {data.status === 'Shipped' && userRole !== 'admin' && isToCenterUser &&(
         <>
           <CButton className="btn-action btn-update me-2" onClick={handleOpenUpdateShipment}>
             Update Shipment
@@ -623,6 +709,12 @@ const handleInomplete = async () => {
           <CButton className="btn-action btn-reject me-2" onClick={handleReject}>
             Reject Request
           </CButton>
+        </>
+      )}
+
+
+       {data.status === 'Shipped' && userRole !== 'admin' && isFromCenterUser &&(
+        <>
           <CButton className="btn-action btn-update"
            onClick={() => setIncompleteModal(true)}
           >
@@ -631,7 +723,7 @@ const handleInomplete = async () => {
         </>
       )}
 
-      {data.status === 'Admin_Approved' && userRole !== 'admin' && (
+      {data.status === 'Admin_Approved' && userRole !== 'admin' && hasPermission('Transfer', 'approval_transfer_center') && isToCenterUser &&(
         <>
           <CButton className="btn-action btn-submitted me-2" onClick={handleApprove}>
             Submit &amp; Approve Request
@@ -641,9 +733,9 @@ const handleInomplete = async () => {
           </CButton>
         </>
       )}
+      
 
-
-    {data.status === 'Submitted' && userRole == 'admin' && (
+      {data.status === 'Submitted' && userRole === 'admin' && (
         <>
          <CButton className="btn-action btn-incomplete me-2" onClick={handleApproveAdmin}>
           Approval
@@ -653,34 +745,6 @@ const handleInomplete = async () => {
         </CButton>
         </>
       )}
-
-
-{/* {(data.status === 'Submitted' || data.status === 'Approval_Admin') && (
-  <>
-    {data.status === 'Submitted' && userRole === 'admin' && (
-      <>
-        <CButton className="btn-action btn-incomplete me-2" onClick={handleApproveAdmin}>
-          Approval
-        </CButton>
-        <CButton className="btn-action btn-reject" onClick={handleRejectAdmin}>
-          Reject
-        </CButton>
-      </>
-    )}
-
-    {data.status === 'Admin_Approved' && userRole !== 'admin' && (
-      <>
-        <CButton className="btn-action btn-submitted me-2" onClick={handleApprove}>
-          Submit &amp; Approve Request
-        </CButton>
-        <CButton className="btn-action btn-reject" onClick={handleReject}>
-          Submit &amp; Reject Request
-        </CButton>
-      </>
-    )}
-  </>
-)} */}
-
 
     </div>
     </div>
@@ -712,51 +776,74 @@ const handleInomplete = async () => {
                       <CTableDataCell>{item.productInStock || 0}</CTableDataCell>
                       <CTableDataCell>{item.productRemark || ''}</CTableDataCell>
 
-                
                       <CTableDataCell>
-                      <CFormInput
-  type="text"
-  value={approvedItem.approvedQty}
-  onChange={e => handleApprovedChange(item._id, 'approvedQty', e.target.value)}
-  onBlur={e => handleApprovedBlur(item._id, e.target.value)}
-  className={errors[item._id] ? 'is-invalid' : ''}
-/>
-  {errors[item._id] && <CFormText className="text-danger">{errors[item._id]}</CFormText>}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        { isToCenterUser ? (
+                          <>
+                        <CFormInput
+                              type="text"
+                              value={approvedItem.approvedQty}
+                              onChange={e => handleApprovedChange(item._id, 'approvedQty', e.target.value)}
+                              onBlur={e => handleApprovedBlur(item._id, e.target.value)}
+                              className={errors[item._id] ? 'is-invalid' : ''}
+                              style={{ width: '80px' }}
+                        />
+                       {item.product?.trackSerialNumber === "Yes" && (
+                       <span
+                          style={{ fontSize: '18px', cursor: 'pointer', color: '#337ab7' }}
+                          onClick={() => handleOpenSerialModal(item)}
+                          title="Add Serial Numbers"
+                        >
+                          ☰
+                        </span>
+                      )}
+                      </>
+                    ):( approvedItem.approvedQty || '')}
+  </div>
+
+  {errors[item._id] && (
+    <CFormText className="text-danger">{errors[item._id]}</CFormText>
+  )}
 </CTableDataCell>
 
 
                       <CTableDataCell>
-                      <CFormInput
-  type="text"
-  value={approvedItem.approvedRemark || ''}
-  onChange={e => handleApprovedChange(item._id, 'approvedRemark', e.target.value)}
-/>
-                      </CTableDataCell>
+                        { isToCenterUser ? (
+                            <CFormInput
+                            type="text"
+                            value={approvedItem.approvedRemark || ''}
+                            onChange={e => handleApprovedChange(item._id, 'approvedRemark', e.target.value)}
+                          />
+                        ):(
+                          item.approvedRemark || ''
+                        )
+                        }
+                     
+         </CTableDataCell>
 
-                      {/* <CTableDataCell>{item.receivedQty || '-'}</CTableDataCell>
-                      <CTableDataCell>{item.receivedRemark || '-'}</CTableDataCell> */}
+        
 
 <CTableDataCell>
-  {userCenterType === 'Center' && data.status === 'Shipped' ? (
+  {userCenterType === 'Center' && isFromCenterUser && data.status === 'Shipped' ? (
     <CFormInput
       type="text"
-      value={productReceipts.find(p => p.productId === item._id)?.receivedQuantity || ''}
-      onChange={e => handleReceiptChange(item._id, 'receivedQuantity', e.target.value)}
+      value={productReceipts.find(p => p.productId === item.product?._id)?.receivedQuantity || ''}
+      onChange={e => handleReceiptChange(item.product?._id, 'receivedQuantity', e.target.value)}
     />
   ) : (
-    item.receivedQty || item.approvedQuantity || 0
+     item.receivedQuantity ||  ''
   )}
 </CTableDataCell>
 
 <CTableDataCell>
-  {userCenterType === 'Center' && data.status === 'Shipped' ? (
+  {userCenterType === 'Center' && isFromCenterUser && data.status === 'Shipped' ? (
     <CFormInput
       type="text"
-      value={productReceipts.find(p => p.productId === item._id)?.receivedRemark || ''}
-      onChange={e => handleReceiptChange(item._id, 'receivedRemark', e.target.value)}
+      value={productReceipts.find(p => p.productId === item.product?._id)?.receivedRemark || ''}
+      onChange={e => handleReceiptChange(item.product?._id, 'receivedRemark', e.target.value)}
     />
   ) : (
-    item.receivedRemark || '-'
+    item.receivedRemark || ''
   )}
 </CTableDataCell>
 
@@ -784,7 +871,15 @@ const handleInomplete = async () => {
   onSubmit={handleMarkIncomplete}
   initialRemark={data.incompleteRemark}
 />
-
+<StockSerialNumber
+  visible={serialModalVisible}
+  onClose={() => setSerialModalVisible(false)}
+  product={selectedProduct}
+  approvedQty={approvedProducts.find(p => p._id === selectedProduct?._id)?.approvedQty || 0}
+  initialSerials={assignedSerials[selectedProduct?.product?._id] || []} 
+  onSerialNumbersUpdate={handleSerialNumbersUpdate}
+  warehouseId={data?.fromCenter?._id}
+/>
     </CContainer>
   );
 };

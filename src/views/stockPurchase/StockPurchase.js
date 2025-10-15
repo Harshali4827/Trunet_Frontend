@@ -13,8 +13,6 @@ import {
   CCardHeader,
   CButton,
   CFormInput,
-  CPaginationItem,
-  CPagination,
   CSpinner
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
@@ -24,6 +22,9 @@ import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import SearchStockPurchase from './SearchStockPurchase';
 import Pagination from 'src/utils/Pagination';
+import { showError } from 'src/utils/sweetAlerts';
+import { formatDateTime } from 'src/utils/FormatDateTime';
+import usePermission from 'src/utils/usePermission';
 
 const StockPurchase = () => {
   const [customers, setCustomers] = useState([]);
@@ -33,7 +34,7 @@ const StockPurchase = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [searchTerm, setSearchTerm] = useState('');
   const [searchModalVisible, setSearchModalVisible] = useState(false);
-  const [activeSearch, setActiveSearch] = useState({ keyword: '', center: '' });
+  const [activeSearch, setActiveSearch] = useState({ keyword: '', outlet: '' });
   const [dropdownOpen, setDropdownOpen] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -41,6 +42,7 @@ const StockPurchase = () => {
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
 
+  const { hasPermission} = usePermission(); 
   const fetchData = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
@@ -49,8 +51,8 @@ const StockPurchase = () => {
       if (searchParams.keyword) {
         params.append('search', searchParams.keyword);
       }
-      if (searchParams.center) {
-        params.append('center', searchParams.center);
+      if (searchParams.outlet) {
+        params.append('outlet', searchParams.outlet);
       }
       params.append('page', page);
       const url = params.toString() ? `/stockpurchase?${params.toString()}` : '/stockpurchase';
@@ -78,7 +80,7 @@ const StockPurchase = () => {
         setCenters(response.data.data);
       }
     } catch (error) {
-      console.error('Error fetching centers:', error);
+      console.error('Error fetching data:', error);
     }
   };
 
@@ -92,7 +94,6 @@ const StockPurchase = () => {
     fetchData(activeSearch, page);
   };
   
-  // Calculate totals
   const calculateTotals = () => {
     const totals = {
       amount: 0,
@@ -160,13 +161,13 @@ const StockPurchase = () => {
   };
 
   const handleResetSearch = () => {
-    setActiveSearch({ keyword: '', center: '' });
+    setActiveSearch({ keyword: '', outlet: '' });
     setSearchTerm('');
     fetchData({},1);
   };
 
   const filteredCustomers = customers.filter(customer => {
-    if (activeSearch.keyword || activeSearch.center) {
+    if (activeSearch.keyword || activeSearch.outlet) {
       return true;
     }
     return Object.values(customer).some(value => {
@@ -228,10 +229,124 @@ const StockPurchase = () => {
       year: 'numeric',
     });
   };
+
+
+  const fetchAllDataForExport = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get('/stockpurchase');
+      if (response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error('API returned unsuccessful response');
+      }
+    } catch (err) {
+      console.error('Error fetching data for export:', err);
+      showError('Error fetching data for export');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const generateDetailExport = async () => {
+    try {
+      setLoading(true);
+    
+      const allData = await fetchAllDataForExport();
+      
+      if (!allData || allData.length === 0) {
+        showError('No data available for export');
+        return;
+      }
+  
+      const headers = [
+        'Invoice No',
+        'Vendor',
+        'Transport Amount',
+        'Created At',
+        'Center Title',
+        'Product Title',
+        'Purchase Date',
+        'Note',
+        'Quantity',
+        'Price',
+        'Total Amount',
+        'Type',
+        'Status'
+      ];
+  
+      const csvData = allData.flatMap(purchase => {
+        if (purchase.products && purchase.products.length > 0) {
+          return purchase.products.map(product => [
+            purchase.invoiceNo,
+            purchase.vendor?.businessName || 'N/A',
+            purchase.transportAmount || 0,
+            formatDateTime(purchase.createdAt),
+            purchase.outlet?.centerName || 'N/A',
+            product.product?.productTitle || 'N/A',
+            formatDate(purchase.date),
+            purchase.remark || '',
+            product.purchasedQuantity || 0,
+            product.price || 0,
+            purchase.totalAmount || 0,
+            purchase.type || 'N/A',
+            purchase.status || 'N/A'
+          ]);
+        } else {
+          return [[
+            purchase.invoiceNo,
+            purchase.vendor?.businessName || 'N/A',
+            purchase.transportAmount || 0,
+            formatDateTime(purchase.createdAt),
+            purchase.outlet?.centerName || 'N/A',
+            'No Product',
+            formatDate(purchase.date),
+            purchase.remark || '',
+            0,
+            0,
+            purchase.totalAmount || 0,
+            purchase.type || 'N/A',
+            purchase.status || 'N/A'
+          ]];
+        }
+      });
+  
+      const csvContent = [
+        headers.join(','),
+        ...csvData.map(row => 
+          row.map(field => {
+            const stringField = String(field || '');
+            return `"${stringField.replace(/"/g, '""')}"`;
+          }).join(',')
+        )
+      ].join('\n');
+  
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `stock_purchase_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    
+    } catch (error) {
+      console.error('Error generating export:', error);
+      showError('Error generating export file');
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const handleClick = (itemId) => {
     navigate(`/edit-stockPurchase/${itemId}`);
   };
+
   return (
     <div>
       <div className='title'>Stock Purchase</div>
@@ -246,11 +361,13 @@ const StockPurchase = () => {
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
+          {hasPermission('Purchase', 'add_purchase_stock') && (
             <Link to='/add-stockPurchase'>
               <CButton size="sm" className="action-btn me-1">
                 <CIcon icon={cilPlus} className='icon'/> Add
               </CButton>
             </Link>
+          )}
             <CButton 
               size="sm" 
               className="action-btn me-1"
@@ -258,7 +375,7 @@ const StockPurchase = () => {
             >
               <CIcon icon={cilSearch} className='icon' /> Search
             </CButton>
-            {(activeSearch.keyword || activeSearch.center) && (
+            {(activeSearch.keyword || activeSearch.outlet) && (
               <CButton 
                 size="sm" 
                 color="secondary" 
@@ -272,6 +389,7 @@ const StockPurchase = () => {
               <CButton 
               size="sm" 
               className="action-btn me-1"
+              onClick={generateDetailExport}
             >
               <i className="fa fa-fw fa-file-excel"></i>
                Detail Export
@@ -311,7 +429,7 @@ const StockPurchase = () => {
           </div>
           
           <div className="responsive-table-wrapper">
-          <CTable striped bordered hover responsive className='responsive-table'>
+          <CTable striped bordered hover className='responsive-table'>
             <CTableHead>
               <CTableRow>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('outlet')} className="sortable-header">
@@ -359,7 +477,6 @@ const StockPurchase = () => {
                       </CTableDataCell>
                       <CTableDataCell>{formatDate(customer.date)}</CTableDataCell>
                       <CTableDataCell>
-                        {/* {customer.invoiceNo || 'N/A'} */}
                         <button 
                     className="btn btn-link p-0 text-decoration-none"
                     onClick={() => handleClick(customer._id)}

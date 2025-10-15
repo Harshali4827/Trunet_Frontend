@@ -121,16 +121,15 @@ const AddStockRequest = () => {
   };  
 
   const handleRowSelect = (productId, productStock) => {
-    setSelectedRows((prev) => ({
-      ...prev,
-      [productId]: prev[productId]
-        ? undefined
-        : { 
-            quantity: '', 
-            productRemark: '',
-            productInStock: productStock || 0
-          },
-    }));
+    setSelectedRows((prev) => {
+      const updated = { ...prev };
+      if (updated[productId]) {
+        delete updated[productId];
+      } else {
+        updated[productId] = { quantity: '', productRemark: '', productInStock: productStock || 0 };
+      }
+      return updated;
+    });
   };
 
   const handleRowInputChange = (productId, field, value) => {
@@ -177,7 +176,9 @@ const AddStockRequest = () => {
     if (!validateForm()) {
       return;
     }
-    const productsData = Object.keys(selectedRows).map((productId) => ({
+    const productsData = Object.keys(selectedRows)
+    .filter((productId) => selectedRows[productId]) 
+    .map((productId) => ({
       product: productId,
       quantity: parseInt(selectedRows[productId].quantity),
       productRemark: selectedRows[productId].productRemark,
@@ -212,7 +213,9 @@ const AddStockRequest = () => {
   };
 
   const handleSaveDraft = async () => {
-    const productsData = Object.keys(selectedRows).map((productId) => ({
+    const productsData = Object.keys(selectedRows)
+    .filter((productId) => selectedRows[productId]) 
+    .map((productId) => ({
       product: productId,
       quantity: parseInt(selectedRows[productId].quantity) || 0,
       productRemark: selectedRows[productId].productRemark,
@@ -415,7 +418,7 @@ const AddStockRequest = () => {
                             />
                           </CTableDataCell>
                           <CTableDataCell>{p.productTitle}</CTableDataCell>
-                          <CTableDataCell>{p.stock?.totalAvailable || 0}</CTableDataCell>
+                          <CTableDataCell>{p.stock?.currentStock || 0}</CTableDataCell>
                           <CTableDataCell>
                             {selectedRows[p._id] && (
                               <>

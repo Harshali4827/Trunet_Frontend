@@ -1,0 +1,21 @@
+.permission-section table {
+    width: 100%;
+    border-collapse: collapse;
+    /* font-size: 14px; */
+  }
+  
+  .permission-section th, 
+  .permission-section td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+  
+  .permission-section .table-warning {
+    background-color: #fff8e1 !important;
+  }
+  
+  .permission-section input[type='checkbox'] {
+    transform: scale(1.2);
+  }
+ 

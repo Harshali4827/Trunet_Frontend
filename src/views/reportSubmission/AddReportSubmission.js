@@ -1,185 +1,26 @@
-// import React, { useState, useEffect } from 'react';
-// import { useNavigate, useParams } from 'react-router-dom';
-// import axiosInstance from 'src/axiosInstance';
-// import '../../css/form.css';
-
-// const AddReportSubmission = () => {
-//   const navigate = useNavigate();
-//   const { id } = useParams();
-
-//   const [formData, setFormData] = useState({
-//     date: new Date().toISOString().split('T')[0],
-//     name: '',
-//     mobile: '',
-//     email: '',
-   
-//   });
-//   const [errors, setErrors] = useState({});
-//   const [centers, setCenters] = useState([]);
-//   useEffect(() => {
-//     const fetchCenters = async () => {
-//       try {
-//         const res = await axiosInstance.get('/centers');
-//         setCenters(res.data.data || []);
-//       } catch (error) {
-//        console.log(error)
-//       }
-//     };
-//     fetchCenters();
-//   }, []);
-
-//   useEffect(() => {
-//     if (id) {
-//       fetchCustomer(id);
-//     }
-//   }, [id]);
-
-//   const fetchCustomer = async (customerId) => {
-//     try {
-//       const res = await axiosInstance.get(`/customers/${customerId}`);
-//       setFormData(res.data.data);
-//     } catch (error) {
-//      console.log("error fetching customers", error)
-//     }
-//   };
-
-//   const handleChange = (e) => {
-//     const { name, value } = e.target;
-//     setFormData((prev) => ({ ...prev, [name]: value }));
-//     setErrors((prev) => ({ ...prev, [name]: '' }));
-//   };
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-
-//     let newErrors = {};
-//     ['username', 'mobile'].forEach((field) => {
-//       if (!formData[field]) newErrors[field] = 'This is a required field';
-//     });
-
-//     if (Object.keys(newErrors).length) {
-//       setErrors(newErrors);
-//       return;
-//     }
-
-//     try {
-//       if (id) {
-//         await axiosInstance.put(`/customers/${id}`, formData);
-//       } else {
-//         await axiosInstance.post('/customers', formData);
-//       }
-//       navigate('/customers-list');
-//     } catch (error) {
-//       console.error('Error saving customer:', error);
-//     }
-//   };
-
-//   return (
-//     <div className="form-container">
-//       <div className="title">{id ? 'Edit' : 'Add'} Closing Stock</div>
-//       <div className="form-card">
-//         <div className="form-body">
-//           <form onSubmit={handleSubmit}>
-//             <div className="form-row">
-//             <div className="form-group">
-//                 <label 
-//                   className={`form-label 
-//                     ${errors.date ? 'error-label' : formData.date ? 'valid-label' : ''}`}
-//                   htmlFor="date">
-//                   Date <span className="required">*</span>
-//                 </label>
-//                 <input
-//                   type="date"
-//                   id="date"
-//                   name="date"
-//                   className={`form-input 
-//                     ${errors.date ? 'error-input' : formData.date ? 'valid-input' : ''}`}
-//                   value={formData.date}
-//                   onChange={handleChange}
-//                 />
-//                 {errors.date && <span className="error-text">{errors.date}</span>}
-//               </div>
-//               <div className="form-group">
-//               Stock closing for other center
-//                 </div>
-//                 <div className="form-group">
-//                 <label className={`form-label 
-//                   ${errors.centerId ? 'error-label' : formData.centerId ? 'valid-label' : ''}`}
-//                   htmlFor="centerId">
-//                   Center <span className="required">*</span>
-//                 </label>
-//                 <select
-//                   id="centerId"
-//                   name="centerId"
-//                   className={`form-input 
-//                     ${errors.centerId ? 'error-input' : formData.centerId ? 'valid-input' : ''}`}
-//                   value={formData.centerId}
-//                   onChange={handleChange}
-//                 >
-//                   <option value="">SELECT</option>
-//                   {centers.map((c) => (
-//                     <option key={c._id} value={c._id}>
-//                       {c.centerName}
-//                     </option>
-//                   ))}
-//                 </select>
-//                 {errors.centerId && <span className="error">{errors.centerId}</span>}
-//               </div>
-
-//               <div className="form-group">
-//                 <label className="form-label" htmlFor="remark">
-//                   Remark  <span className="required">*</span>
-//                 </label>
-//                 <textarea
-//                   id="remark"
-//                   name="remark"
-//                   className="form-textarea"
-//                   value={formData.remark}
-//                   onChange={handleChange}
-//                   placeholder="Remark"
-//                 />
-//                  {errors.remark && <span className="error">{errors.remark}</span>}
-//               </div>
-//             </div>
-//             <div className="form-footer">
-//               <button type="submit" className="reset-button">
-//                 Submit
-//               </button>
-//             </div>
-//           </form>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default AddReportSubmission;
-
-
-
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../css/form.css';
-import { CButton } from '@coreui/react';
+import { CButton, CFormInput, CSpinner, CTable, CTableBody, CTableDataCell, CTableHead, CTableHeaderCell, CTableRow } from '@coreui/react';
 
 const AddReportSubmission = () => {
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [selectedRows, setSelectedRows] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState([]);
   const navigate = useNavigate();
   const { id } = useParams();
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
-    name: '',
-    mobile: '',
-    email: '',
-    centerId: '',
     remark: '',
   });
 
   const [errors, setErrors] = useState({});
   const [centers, setCenters] = useState([]);
-  const [otherCenter, setOtherCenter] = useState(false); // 👈 for checkbox
+  const [otherCenter, setOtherCenter] = useState(false);
+  const [centerId, setCenterId] = useState('');
 
   useEffect(() => {
     const fetchCenters = async () => {
@@ -193,19 +34,85 @@ const AddReportSubmission = () => {
     fetchCenters();
   }, []);
 
-  useEffect(() => {
-    if (id) {
-      fetchCustomer(id);
-    }
-  }, [id]);
+  // useEffect(() => {
+  //   if (id) {
+  //     fetchExistingSubmission(id);
+  //   }
+  //   fetchProducts();
+  // }, [id]);
 
-  const fetchCustomer = async (customerId) => {
+  useEffect(() => {
+    const loadData = async () => {
+      await fetchProducts();
+      if (id) await fetchExistingSubmission(id);
+    };
+    loadData();
+  }, [id]);  
+
+  const fetchExistingSubmission = async (submissionId) => {
     try {
-      const res = await axiosInstance.get(`/customers/${customerId}`);
-      setFormData(res.data.data);
+      const res = await axiosInstance.get(`/reportsubmission/${submissionId}`);
+      const data = res.data.data;
+      
+      setFormData({
+        date: data.date ? new Date(data.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        remark: data.remark || '',
+      });      
+      
+      setOtherCenter(data.stockClosingForOtherCenter || false);
+      setCenterId(data.center?._id || '');
+      const existingSelectedRows = {};
+      if (data.products && Array.isArray(data.products)) {
+        data.products.forEach(product => {
+
+          existingSelectedRows[product.product._id || product.product] = {
+            productQty: product.productQty || 0,
+            damageQty: product.damageQty || 0,
+            comment: product.comment || '',
+          };          
+
+        });
+        setSelectedRows(existingSelectedRows);
+      }
     } catch (error) {
-      console.log("error fetching customers", error);
+      console.log("Error fetching existing submission", error);
     }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const res = await axiosInstance.get('/stocktransfer/summary/original-outlet');
+      if (res.data.success) {
+        const productSummary = res.data.data?.summary || [];
+        setProducts(productSummary);
+       
+        if (!id) {
+          const initialSelectedRows = {};
+          productSummary.forEach(product => {
+            initialSelectedRows[product.productId] = {
+              productQty: product.currentStock?.warehouse?.available || 0,
+              damageQty: product.currentStock?.distributedCenters?.damaged || 0,
+              comment: '',
+            };
+          });
+          setSelectedRows(initialSelectedRows);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRowInputChange = (productId, field, value) => {
+    setSelectedRows((prev) => ({
+      ...prev,
+      [productId]: {
+        ...prev[productId],
+        [field]: value,
+      },
+    }));
   };
 
   const handleChange = (e) => {
@@ -214,49 +121,94 @@ const AddReportSubmission = () => {
     setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
+  const handleCenterChange = (e) => {
+    setCenterId(e.target.value);
+    setErrors((prev) => ({ ...prev, centerId: '' }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     let newErrors = {};
     if (!formData.date) newErrors.date = 'This is a required field';
-    if (otherCenter && !formData.centerId) newErrors.centerId = 'This is a required field';
+    if (otherCenter && !centerId) newErrors.centerId = 'This is a required field';
     if (!formData.remark) newErrors.remark = 'This is a required field';
+
+    const hasProductData = Object.keys(selectedRows).some(productId => 
+      selectedRows[productId].productQty > 0 || 
+      selectedRows[productId].damageQty > 0 || 
+      selectedRows[productId].comment !== ''
+    );
+
+    if (!hasProductData) {
+      newErrors.products = 'At least one product must have data';
+    }
 
     if (Object.keys(newErrors).length) {
       setErrors(newErrors);
       return;
     }
 
+    const submissionData = {
+      date: formData.date,
+      stockClosingForOtherCenter: otherCenter,
+      center: otherCenter ? centerId : undefined,
+      remark: formData.remark,
+      products: Object.keys(selectedRows)
+        .filter(productId => 
+          selectedRows[productId].productQty > 0 || 
+          selectedRows[productId].damageQty > 0 || 
+          selectedRows[productId].comment !== ''
+        )
+        .map(productId => ({
+          product: productId,
+          productQty: Number(selectedRows[productId].productQty) || 0,
+          damageQty: Number(selectedRows[productId].damageQty) || 0,
+          comment: selectedRows[productId].comment || ''
+        })),
+      status: "Submitted"
+    };
+
+    if (!otherCenter) {
+      delete submissionData.center;
+    }
+
     try {
       if (id) {
-        await axiosInstance.put(`/customers/${id}`, formData);
+        await axiosInstance.put(`/reportsubmission/${id}`, submissionData);
       } else {
-        await axiosInstance.post('/customers', formData);
+        await axiosInstance.post('/reportsubmission', submissionData);
       }
-      navigate('/customers-list');
+      navigate('/report-submission');
     } catch (error) {
-      console.error('Error saving customer:', error);
+      console.error('Error saving shifting request:', error);
     }
   };
+
   const handleBack = () => {
     navigate('/report-submission');
   };
+
+  const filteredProducts = products.filter((p) =>
+    p.productName?.toLowerCase().includes(productSearchTerm.toLowerCase())
+  );
+
   return (
     <div className="form-container">
       <div className="title">
-      <CButton
+        <CButton
           size="sm"
           className="back-button me-3"
           onClick={handleBack}
         >
           <i className="fa fa-fw fa-arrow-left"></i>Back
         </CButton>
-        {id ? 'Edit' : 'Add'} Closing Stock</div>
+        {id ? 'Edit' : 'Add'} Closing Stock
+      </div>
       <div className="form-card">
         <div className="form-body">
           <form onSubmit={handleSubmit}>
             <div className="form-row">
-              {/* Date */}
               <div className="form-group">
                 <label 
                   className={`form-label ${errors.date ? 'error-label' : formData.date ? 'valid-label' : ''}`}
@@ -289,7 +241,7 @@ const AddReportSubmission = () => {
               {otherCenter && (
                 <div className="form-group">
                   <label 
-                    className={`form-label ${errors.centerId ? 'error-label' : formData.centerId ? 'valid-label' : ''}`}
+                    className={`form-label ${errors.centerId ? 'error-label' : centerId ? 'valid-label' : ''}`}
                     htmlFor="centerId"
                   >
                     Center <span className="required">*</span>
@@ -297,9 +249,9 @@ const AddReportSubmission = () => {
                   <select
                     id="centerId"
                     name="centerId"
-                    className={`form-input ${errors.centerId ? 'error-input' : formData.centerId ? 'valid-input' : ''}`}
-                    value={formData.centerId}
-                    onChange={handleChange}
+                    className={`form-input ${errors.centerId ? 'error-input' : centerId ? 'valid-input' : ''}`}
+                    value={centerId}
+                    onChange={handleCenterChange}
                   >
                     <option value="">SELECT</option>
                     {centers.map((c) => (
@@ -308,7 +260,7 @@ const AddReportSubmission = () => {
                       </option>
                     ))}
                   </select>
-                  {errors.centerId && <span className="error">{errors.centerId}</span>}
+                  {errors.centerId && <span className="error-text">{errors.centerId}</span>}
                 </div>
               )}
 
@@ -325,14 +277,100 @@ const AddReportSubmission = () => {
                   value={formData.remark}
                   onChange={handleChange}
                   placeholder="Remark"
+                  rows="3"
                 />
-                {errors.remark && <span className="error">{errors.remark}</span>}
+                {errors.remark && <span className="error-text">{errors.remark}</span>}
               </div>
             </div>
+            
+            <div className="mt-4">
+              <div className="d-flex justify-content-between mb-2">
+                <h5>Products</h5>
+                {errors.products && <span className="error-text">{errors.products}</span>}
+                <div className="d-flex">
+                  <label className="me-2 mt-1">Search:</label>
+                  <CFormInput
+                    type="text"
+                    value={productSearchTerm}
+                    onChange={(e) => setProductSearchTerm(e.target.value)}
+                    style={{ maxWidth: '250px' }}
+                    placeholder="Search products..."
+                  />
+                </div>
+              </div>
 
+              {loading ? (
+                <div className="text-center my-3">
+                  <CSpinner color="primary" />
+                </div>
+              ) : (
+                <CTable bordered striped responsive>
+                  <CTableHead>
+                    <CTableRow>
+                      <CTableHeaderCell>#</CTableHeaderCell>
+                      <CTableHeaderCell>Product</CTableHeaderCell>
+                      <CTableHeaderCell>Current Stock</CTableHeaderCell>
+                      <CTableHeaderCell>Product Qty</CTableHeaderCell>
+                      <CTableHeaderCell>Damage Qty</CTableHeaderCell>
+                      <CTableHeaderCell>Comment</CTableHeaderCell>
+                    </CTableRow>
+                  </CTableHead>
+                  <CTableBody>
+                    {filteredProducts.length > 0 ? (
+                      filteredProducts.map((p, index) => (
+                        <CTableRow key={p.productId}>
+                          <CTableDataCell>
+                            {index + 1}
+                          </CTableDataCell>
+                          <CTableDataCell>
+                            {p.productName}
+                          </CTableDataCell>
+                          <CTableDataCell>
+                            {p.currentStock?.warehouse?.available || 0}
+                          </CTableDataCell>
+                          <CTableDataCell>
+                            <CFormInput
+                              type="number"
+                              min="0"
+                              value={selectedRows[p.productId]?.productQty || 0}
+                              onChange={(e) => handleRowInputChange(p.productId, 'productQty', e.target.value)}
+                              placeholder="Product Qty"
+                            />
+                          </CTableDataCell>
+                          <CTableDataCell>
+                            <CFormInput
+                              type="number"
+                              min="0"
+                              value={selectedRows[p.productId]?.damageQty || 0}
+                              onChange={(e) => handleRowInputChange(p.productId, 'damageQty', e.target.value)}
+                              placeholder="Damage Qty"
+                            />
+                          </CTableDataCell>
+                          <CTableDataCell>
+                            <CFormInput
+                              type="text"
+                              value={selectedRows[p.productId]?.comment || ''}
+                              onChange={(e) => handleRowInputChange(p.productId, 'comment', e.target.value)}
+                              placeholder="Add comment..."
+                            />
+                          </CTableDataCell>
+                        </CTableRow>
+                      ))
+                    ) : (
+                      <CTableRow>
+                        <CTableDataCell colSpan={6} className="text-center">
+                          No products found
+                        </CTableDataCell>
+                      </CTableRow>
+                    )}
+                  </CTableBody>
+                </CTable>
+              )}
+            </div>
+            
             <div className="form-footer">
               <button type="submit" className="reset-button">
-                Submit
+                {id ? 'Update' : 'Submit'}
               </button>
             </div>
           </form>

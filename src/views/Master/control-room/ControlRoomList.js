@@ -13,8 +13,6 @@ import {
   CCardHeader,
   CButton,
   CFormInput,
-  CPaginationItem,
-  CPagination,
   CSpinner
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
@@ -25,6 +23,7 @@ import axiosInstance from 'src/axiosInstance';
 import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
 import SearchControlModel from './SearchControlModel';
 import Pagination from 'src/utils/Pagination';
+import usePermission from 'src/utils/usePermission';
 
 const ControlRoomList = () => {
   const [controlRooms, setControlRooms] = useState([]);
@@ -40,7 +39,7 @@ const ControlRoomList = () => {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
+  const { hasAnyPermission } = usePermission(); 
     const fetchData = async (searchParams = {},  page = 1) => {
       try {
         setLoading(true);
@@ -234,11 +233,13 @@ const ControlRoomList = () => {
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
+          {hasAnyPermission('Settings', ['manage_control_room_own_center','manage_control_room_all_center']) && (
             <Link to='/add-controlRoom'>
               <CButton size="sm" className="action-btn me-1">
                 <CIcon icon={cilPlus} className='icon'/> Add
               </CButton>
             </Link>
+          )}
             <CButton size="sm" className="action-btn me-1" onClick={() => setSearchModalVisible(true)}>
               <CIcon icon={cilSearch} className='icon' /> Search
             </CButton>
@@ -313,6 +314,7 @@ const ControlRoomList = () => {
                     <CTableDataCell>{building.address1}</CTableDataCell>
                     <CTableDataCell>{building.center?.centerName || 'N/A'}</CTableDataCell>
                     <CTableDataCell>
+                    {hasAnyPermission('Settings', ['manage_control_room_own_center','manage_control_room_all_center']) && (
                       <div className="dropdown-container" ref={el => dropdownRefs.current[building._id] = el}>
                         <CButton 
                           size="sm"
@@ -338,6 +340,7 @@ const ControlRoomList = () => {
                           </div>
                         )}
                       </div>
+                    )}
                     </CTableDataCell>
                   </CTableRow>
                 ))

@@ -11,15 +11,16 @@ import {
 } from '@coreui/react'
 import PropTypes from 'prop-types'
 import '../../css/form.css'
+import DatePicker from 'src/utils/DatePicker'
 const SearchStockPurchase = ({ visible, onClose, onSearch, centers }) => {
   const [searchData, setSearchData] = useState({
     keyword: '',
-    center: ''
+    outlet: ''
   })
 
   useEffect(() => {
     if (!visible) {
-      setSearchData({ keyword: '', center: '' })
+      setSearchData({ keyword: '', outlet: '' })
     }
   }, [visible])
 
@@ -28,14 +29,38 @@ const SearchStockPurchase = ({ visible, onClose, onSearch, centers }) => {
     setSearchData(prev => ({ ...prev, [name]: value }))
   }
 
+  const handleDateChange = (dateValue) => {
+    if (dateValue && dateValue.includes(' to ')) {
+      const [startDate, endDate] = dateValue.split(' to ');
+      const formatDateForAPI = (dateStr) => {
+        const [day, month, year] = dateStr.split('-');
+        return `${year}-${month}-${day}`;
+      };
+      
+      setSearchData(prev => ({ 
+        ...prev, 
+        dateFilter: 'Custom',
+        startDate: formatDateForAPI(startDate),
+        endDate: formatDateForAPI(endDate)
+      }));
+    } else {
+      setSearchData(prev => ({ 
+        ...prev, 
+        dateFilter: '',
+        startDate: '',
+        endDate: ''
+      }));
+    }
+  };
+
   const handleSearch = () => {
     onSearch(searchData)
     onClose()
   }
 
   const handleReset = () => {
-    setSearchData({ keyword: '', center: '' })
-    onSearch({ keyword: '', center: '' })
+    setSearchData({ keyword: '', outlet: '' })
+    onSearch({ keyword: '', outlet: '' })
   }
 
   return (
@@ -61,13 +86,13 @@ const SearchStockPurchase = ({ visible, onClose, onSearch, centers }) => {
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="center">
-              Center
+            <label className="form-label" htmlFor="outlet">
+              Outlet
             </label>
             <CFormSelect
-              id="center"
-              name="center"
-              value={searchData.center}
+              id="outlet"
+              name="outlet"
+              value={searchData.outlet}
               onChange={handleChange}
               className="form-input no-radius-input"
             >
@@ -80,6 +105,20 @@ const SearchStockPurchase = ({ visible, onClose, onSearch, centers }) => {
             </CFormSelect>
           </div>
         </div>
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label" htmlFor="date">
+              Date
+            </label>
+            <DatePicker
+              value={searchData.date}
+              onChange={handleDateChange}
+              placeholder="Date"
+              className="no-radius-input date-input"
+            />
+          </div>
+          <div className="form-group"></div>
+          </div>
       </CModalBody>
 
       <CModalFooter>

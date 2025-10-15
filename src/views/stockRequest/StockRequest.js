@@ -26,9 +26,11 @@ import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilSettings, cilPencil
 import { Link, useNavigate } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
-import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
+import { confirmDelete, showError, showSuccess } from 'src/utils/sweetAlerts';
 import SearchStockModel from './SearchStockModel';
 import Pagination from 'src/utils/Pagination';
+import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
+import usePermission from 'src/utils/usePermission';
 
 const StockRequest = () => {
   const [customers, setCustomers] = useState([]);
@@ -46,29 +48,47 @@ const StockRequest = () => {
   
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
+  
+  const { hasPermission, hasAnyPermission } = usePermission();
+  
   const statusFilters = {
     open: ['Confirmed', 'Submitted', 'Shipped', 'Incompleted', 'Draft'],
     closed: ['Rejected', 'Completed']
   };
 
-  const fetchData = async (searchParams = {}, tab = activeTab,page = 1) => {
+  const fetchData = async (searchParams = {}, tab = activeTab, page = 1) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-
-      const statuses = statusFilters[tab];
-      statuses.forEach(status => {
-        params.append('status', status);
-      });
       
+      if (!searchParams.status) {
+        const statuses = statusFilters[tab];
+        statuses.forEach(status => {
+          params.append('status', status);
+        });
+      } else {
+        params.append('status', searchParams.status);
+      }
+
       if (searchParams.keyword) {
-        params.append('search', searchParams.keyword);
+        params.append('orderNumber', searchParams.keyword);
       }
       if (searchParams.center) {
         params.append('center', searchParams.center);
       }
+      if (searchParams.outlet) {
+        params.append('outlet', searchParams.outlet);
+      }
+      if (searchParams.startDate) {
+        params.append('startDate', searchParams.startDate);
+      }
+      if (searchParams.endDate) {
+        params.append('endDate', searchParams.endDate);
+      }
+      
       params.append('page', page);
-      const url = `/stockrequest/?${params.toString()}`;
+      
+      const url = `/stockrequest?${params.toString()}`;
       const response = await axiosInstance.get(url);
       
       if (response.data.success) {
@@ -101,13 +121,12 @@ const StockRequest = () => {
     fetchData();
     fetchCenters();
   }, []);
+  
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
-    fetchData(activeSearch, page);
+    fetchData(activeSearch, activeTab, page);
   };
   
-
-
   useEffect(() => {
     fetchData(activeSearch, activeTab);
   }, [activeTab]);
@@ -155,18 +174,18 @@ const StockRequest = () => {
 
   const handleSearch = (searchData) => {
     setActiveSearch(searchData);
-    fetchData(searchData, activeTab,1);
+    fetchData(searchData, activeTab, 1);
   };
 
   const handleResetSearch = () => {
-    setActiveSearch({ keyword: '', center: '' });
+    setActiveSearch({ keyword: '', center: '', status: '' });
     setSearchTerm('');
     fetchData({}, activeTab, 1);
   };
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setActiveSearch({ keyword: '', center: '' });
+    setActiveSearch({ keyword: '', center: '', status: '' });
     setSearchTerm('');
   };
   
@@ -175,7 +194,7 @@ const StockRequest = () => {
   };
 
   const filteredCustomers = customers.filter(customer => {
-    if (activeSearch.keyword || activeSearch.center) {
+    if (activeSearch.keyword || activeSearch.center || activeSearch.status) {
       return true;
     }
     return Object.values(customer).some(value => {
@@ -201,16 +220,27 @@ const StockRequest = () => {
     }
   };
   
+  const fetchAllDataForExport = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get('/stockrequest');
+      if (response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error('API returned unsuccessful response');
+      }
+    } catch (err) {
+      console.error('Error fetching data for export:', err);
+      showError('Error fetching data for export');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   const handleEditCustomer = (customerId) => {
     navigate(`/edit-stockRequest/${customerId}`)
   };
-
-  // const toggleDropdown = (id) => {
-  //   setDropdownOpen(prev => ({
-  //     ...prev,
-  //     [id]: !prev[id]
-  //   }));
-  // };
 
   const toggleDropdown = (id) => {
     setDropdownOpen(prev => {
@@ -238,15 +268,108 @@ const StockRequest = () => {
       </div>
     );
   }
+  
+  const generateDetailExport = async () => {
+    try {
+      setLoading(true);
+    
+      const allData = await fetchAllDataForExport();
+      
+      if (!allData || allData.length === 0) {
+        showError('No data available for export');
+        return;
+      }
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
+      const headers = [
+        'Order Date',
+        'Order Number', 
+        'Status',
+        'Center Title',
+        'Approved At',
+        'Shipped At',
+        'Shipped Date',
+        'Reject At',
+        'Reject Remark',
+        'Completed At',
+        'Product Title',
+        'Product Qty',
+        'Approved Qty',
+        'Approved Remark',
+        'Received Qty',
+        'Received Remark'
+      ];
+
+      const csvData = allData.flatMap(request => {
+        if (!request.products || request.products.length === 0) {
+          return [[
+            formatDate(request.date),
+            request.orderNumber,
+            request.status,
+            request.center?.centerName || 'N/A',
+            request.approvalInfo?.approvedAt ? formatDateTime(request.approvalInfo.approvedAt) : '',
+            request.shippingInfo?.shippedAt ? formatDateTime(request.shippingInfo.shippedAt) : '',
+            request.shippingInfo?.shippedDate ? formatDate(request.shippingInfo.shippedDate) : '',
+            request.completionInfo?.incompleteOn ? formatDateTime(request.completionInfo.incompleteOn) : '',
+            '',
+            request.completionInfo?.completedOn ? formatDateTime(request.completionInfo.completedOn) : '',
+            'No Product',
+            0,
+            0,
+            '',
+            0,
+            ''
+          ]];
+        }
+  
+        return request.products.map(product => [
+          formatDate(request.date),
+          request.orderNumber,
+          request.status,
+          request.center?.centerName || 'N/A',
+          request.approvalInfo?.approvedAt ? formatDateTime(request.approvalInfo.approvedAt) : '',
+          request.shippingInfo?.shippedAt ? formatDateTime(request.shippingInfo.shippedAt) : '',
+          request.shippingInfo?.shippedDate ? formatDate(request.shippingInfo.shippedDate) : '',
+          request.completionInfo?.incompleteOn ? formatDateTime(request.completionInfo.incompleteOn) : '',
+          '',
+          request.completionInfo?.completedOn ? formatDateTime(request.completionInfo.completedOn) : '',
+          product.product?.productTitle || '',
+          product.quantity || 0,
+          product.approvedQuantity || 0,
+          product.approvedRemark || '',
+          product.receivedQuantity || 0,
+          product.receivedRemark || ''
+        ]);
+      });
+      
+      const csvContent = [
+        headers.join(','),
+        ...csvData.map(row => 
+          row.map(field => {
+            const stringField = String(field || '');
+            return `"${stringField.replace(/"/g, '""')}"`;
+          }).join(',')
+        )
+      ].join('\n');
+
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `indent_detail_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url)
+      
+    } catch (error) {
+      console.error('Error generating export:', error);
+      showError('Error generating export file');
+    } finally {
+      setLoading(false);
+    }
   };
   
   const renderTable = () => (
@@ -314,43 +437,42 @@ const StockRequest = () => {
                   )}
                 </CTableDataCell>
                 <CTableDataCell>{item.products[0].productRemark}</CTableDataCell>
-<CTableDataCell>
-  {['Shipped', 'Incompleted', 'Rejected'].includes(item.status) ? null : (
-    <div
-      className="dropdown-container"
-      ref={el => dropdownRefs.current[item._id] = el}
-      onClick={(e) => e.stopPropagation()}
-    >
-      <CButton
-        size="sm"
-        className='option-button btn-sm'
-        onClick={() => toggleDropdown(item._id)}
-      >
-        <CIcon icon={cilSettings} />
-        Options
-      </CButton>
-      {dropdownOpen[item._id] && (
-        <div className="dropdown-menu show">
-          {item.status === 'Submitted' && (
-            <button
-              className="dropdown-item"
-              onClick={() => handleEditCustomer(item._id)}
-            >
-              <CIcon icon={cilPencil} className="me-2" /> Edit
-            </button>
-          )}
-          <button
-            className="dropdown-item"
-            onClick={() => handleDeleteCustomer(item._id)}
-          >
-            <CIcon icon={cilTrash} className="me-2" /> Delete
-          </button>
-        </div>
-      )}
-    </div>
-  )}
-</CTableDataCell>
+                <CTableDataCell>
+                  {['Shipped', 'Incompleted', 'Rejected'].includes(item.status) ? null : (
+                    <div
+                      className="dropdown-container"
+                      ref={el => dropdownRefs.current[item._id] = el}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <CButton
+                        size="sm"
+                        className='option-button btn-sm'
+                        onClick={() => toggleDropdown(item._id)}
+                      >
+                        <CIcon icon={cilSettings} />
+                        Options
+                      </CButton>
+                      {dropdownOpen[item._id] && (
+                        <div className="dropdown-menu show">
+                          {item.status === 'Submitted' && hasPermission('Indent', 'manage_indent') && (
+                            <button
+                              className="dropdown-item"
+                              onClick={() => handleEditCustomer(item._id)}
+                            >
+                              <CIcon icon={cilPencil} className="me-2" /> Edit
+                            </button>
+                          )}
 
+                          {hasAnyPermission('Indent', ['delete_indent_own_center','delete_indent_all_center']) && (
+                           <button className="dropdown-item" onClick={() => handleDeleteCustomer(item._id)}>
+                                <CIcon icon={cilTrash} className="me-2" /> Delete
+                           </button>
+                           )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CTableDataCell>
               </CTableRow>
             ))
           ) : (
@@ -379,11 +501,13 @@ const StockRequest = () => {
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
-            <Link to='/add-stockRequest'>
-              <CButton size="sm" className="action-btn me-1">
-                <CIcon icon={cilPlus} className='icon'/> Add
-              </CButton>
-            </Link>
+              {hasPermission('Indent', 'manage_indent') && (
+                  <Link to='/add-stockRequest'>
+                  <CButton size="sm" className="action-btn me-1">
+                       <CIcon icon={cilPlus} className='icon'/> Add
+                  </CButton>
+                </Link>
+              )}
             <CButton 
               size="sm" 
               className="action-btn me-1"
@@ -391,7 +515,7 @@ const StockRequest = () => {
             >
               <CIcon icon={cilSearch} className='icon' /> Search
             </CButton>
-            {(activeSearch.keyword || activeSearch.center) && (
+            {(activeSearch.keyword || activeSearch.center || activeSearch.status || activeSearch.outlet || activeSearch.startDate || activeSearch.endDate) && (
               <CButton 
                 size="sm" 
                 color="secondary" 
@@ -404,6 +528,8 @@ const StockRequest = () => {
              <CButton 
               size="sm" 
               className="action-btn me-1"
+              onClick={generateDetailExport}
+              disabled={customers.length === 0}
             >
               <i className="fa fa-fw fa-file-excel"></i>
                Detail Export
@@ -416,7 +542,6 @@ const StockRequest = () => {
             totalPages={totalPages}
             onPageChange={handlePageChange}
           />
-
           </div>
         </CCardHeader>
         
@@ -460,8 +585,13 @@ const StockRequest = () => {
                 </span>
               )}
               {activeSearch.center && (
-                <span className="badge bg-info">
+                <span className="badge bg-info me-2">
                   Center: {centers.find(c => c._id === activeSearch.center)?.centerName || activeSearch.center}
+                </span>
+              )}
+              {activeSearch.status && (
+                <span className="badge bg-warning">
+                  Status: {activeSearch.status}
                 </span>
               )}
             </div>
@@ -473,8 +603,8 @@ const StockRequest = () => {
                 className="d-inline-block square-search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                disabled={!!(activeSearch.keyword || activeSearch.center)} 
-                placeholder={activeSearch.keyword || activeSearch.center ? "Disabled during advanced search" : " "}
+                disabled={!!(activeSearch.keyword || activeSearch.center || activeSearch.status)} 
+                placeholder={activeSearch.keyword || activeSearch.center || activeSearch.status ? "Disabled during advanced search" : " "}
               />
             </div>
           </div>

@@ -40,7 +40,7 @@ const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
   useEffect(() => {
     if (area) {
       setFormData({
-        partnerId: area.partnerId || '',
+        partnerId: area.partner?._id || '',
         areaName: area.areaName || ''
       })
     } else {
@@ -49,7 +49,7 @@ const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
     setErrors({})
     setAlert({ type: '', message: '' })
   }, [area, visible])
-
+  
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))

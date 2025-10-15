@@ -23,6 +23,7 @@ import axiosInstance from 'src/axiosInstance';
 import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
 import SearchBuildingModel from './SearchBuildingModel';
 import Pagination from 'src/utils/Pagination';
+import usePermission from 'src/utils/usePermission';
 
 const BuildingList = () => {
   const [buildings, setBuildings] = useState([]);
@@ -36,7 +37,7 @@ const BuildingList = () => {
   const [dropdownOpen, setDropdownOpen] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
+  const { hasAnyPermission } = usePermission();
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
 
@@ -235,11 +236,13 @@ const BuildingList = () => {
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
+          {hasAnyPermission('Settings', ['manage_building_all_center','manage_building_own_center']) && (
             <Link to='/add-building'>
               <CButton size="sm" className="action-btn me-1">
                 <CIcon icon={cilPlus} className='icon'/> Add
               </CButton>
             </Link>
+          )}
             <CButton size="sm" className="action-btn me-1" onClick={() => setSearchModalVisible(true)}>
               <CIcon icon={cilSearch} className='icon' /> Search
             </CButton>
@@ -315,6 +318,7 @@ const BuildingList = () => {
                     <CTableDataCell>{building.address1}</CTableDataCell>
                     <CTableDataCell>{building.center?.centerName || 'N/A'}</CTableDataCell>
                     <CTableDataCell>
+                    {hasAnyPermission('Settings', ['manage_building_all_center','manage_building_own_center']) && (
                       <div className="dropdown-container" ref={el => dropdownRefs.current[building._id] = el}>
                         <CButton 
                           size="sm"
@@ -340,6 +344,7 @@ const BuildingList = () => {
                           </div>
                         )}
                       </div>
+                    )}
                     </CTableDataCell>
                   </CTableRow>
                 ))
@@ -360,3 +365,52 @@ const BuildingList = () => {
 };
 
 export default BuildingList;
+
+
+
+// import React from 'react';
+// import axiosInstance from 'src/axiosInstance';
+// import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
+// import SearchBuildingModel from './SearchBuildingModel';
+// import { useNavigate } from 'react-router-dom';
+// import ReusableTable from 'src/views/common/ReusableTable';
+// const BuildingList = () => {
+//   const navigate = useNavigate();
+//   const fetchBuildings = async (searchParams = {}, page = 1) => {
+//     const params = new URLSearchParams(searchParams);
+//     params.append('page', page);
+//     const response = await axiosInstance.get(`/buildings?${params.toString()}`);
+//     return { data: response.data.data, pagination: response.data.pagination };
+//   };
+
+//   const fetchCenters = async () => {
+//     const res = await axiosInstance.get('/centers');
+//     return res.data.data;
+//   };
+
+//   const handleDelete = async (id) => {
+//     const result = await confirmDelete();
+//     if (result.isConfirmed) {
+//       await axiosInstance.delete(`/buildings/${id}`);
+//       showSuccess('Building deleted successfully!');
+//     }
+//   };
+
+//   return (
+//     <ReusableTable
+//       title="Building List"
+//       fetchData={fetchBuildings}
+//       fetchCenters={fetchCenters}
+//       addLink="/add-building"
+//       searchComponent={SearchBuildingModel}
+//       onEdit={(id) => navigate(`/edit-building/${id}`)}
+//       onDelete={handleDelete}
+//       columns={[
+//         { key: 'buildingName', label: 'Building', sortable: true },
+//         { key: 'address1', label: 'Address', sortable: true },
+//         { key: 'center.centerName', label: 'Center', sortable: true },
+//       ]}
+//     />
+//   );
+// };
+// export default BuildingList;

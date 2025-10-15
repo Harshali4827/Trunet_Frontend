@@ -52,12 +52,23 @@ const AddUser = () => {
 
   const fetchData = async (itemId) => {
     try {
-      const res = await axiosInstance.get(`/auth/${itemId}`);
-      setFormData(res.data.data);
+      const res = await axiosInstance.get(`/auth/user/${itemId}`);
+      const user = res.data.data.user;
+  
+      setFormData({
+        fullName: user.fullName || '',
+        email: user.email || '',
+        mobile: user.mobile || '',
+        password: '',
+        confirmPassword: '',
+        role: user.role?._id || '',
+        center: user.center?._id || '',
+        status: user.status || ''
+      });
     } catch (error) {
-     console.log("error fetching data", error)
+      console.log("error fetching data", error);
     }
-  };
+  };  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -194,6 +205,7 @@ const AddUser = () => {
                     ${errors.fullName ? 'error-input' : formData.fullName ? 'valid-input' : ''}`}
                   value={formData.fullName}
                   onChange={handleChange}
+                  placeholder='Full Name'
                 />
                  {errors.fullName && <span className="error">{errors.fullName}</span>}
               </div>
@@ -215,6 +227,7 @@ const AddUser = () => {
                     ${errors.email ? 'error-input' : formData.email ? 'valid-input' : ''}`}
                   value={formData.email}
                   onChange={handleChange}
+                  placeholder='Email'
                 />
                 {errors.email && <span className="error">{errors.email}</span>}
               </div>
@@ -233,6 +246,7 @@ const AddUser = () => {
                     ${errors.mobile ? 'error-input' : formData.mobile ? 'valid-input' : ''}`}
                   value={formData.mobile}
                   onChange={handleChange}
+                  placeholder='10 Digit Mobile No.'
                 />
                 {errors.mobile && <span className="error">{errors.mobile}</span>}
               </div>
@@ -276,6 +290,7 @@ const AddUser = () => {
                     ${errors.password ? 'error-input' : formData.password ? 'valid-input' : ''}`}
                   value={formData.password}
                   onChange={handleChange}
+                  placeholder='Password'
                 />
                 {errors.password && <span className="error">{errors.password}</span>}
               </div>
@@ -294,6 +309,7 @@ const AddUser = () => {
                     ${errors.confirmPassword ? 'error-input' : formData.confirmPassword ? 'valid-input' : ''}`}
                   value={formData.confirmPassword}
                   onChange={handleChange}
+                   placeholder='Confirm Password'
                 />
                 {errors.confirmPassword && <span className="error">{errors.confirmPassword}</span>}
               </div>

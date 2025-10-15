@@ -16,7 +16,7 @@ import {
   CSpinner
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilSettings, cilPencil, cilTrash, cilZoomOut } from '@coreui/icons';
+import { cilArrowTop, cilArrowBottom, cilPlus, cilSettings, cilPencil, cilTrash} from '@coreui/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
@@ -225,7 +225,7 @@ const RoleList = () => {
           </div>
           
           <div className="responsive-table-wrapper">
-          <CTable striped bordered hover responsive className='responsive-table'>
+          <CTable striped bordered hover  className='responsive-table'>
             <CTableHead>
               <CTableRow>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('username')} className="sortable-header">
@@ -260,7 +260,20 @@ const RoleList = () => {
                 
                     </CTableDataCell>
                     <CTableDataCell>{item.roleTitle}</CTableDataCell>
-                    <CTableDataCell></CTableDataCell>
+                    <CTableDataCell>
+                          {item.permissions && item.permissions.length > 0 ? (
+                          <div>
+                          {item.permissions.map((perm, idx) =>
+                            perm.permissions.map((p, i) => (
+                            <div key={`${idx}-${i}`}>{p}</div>
+                          ))
+                         )}
+                        </div>
+                        ) : (
+                      <span className="text-muted">No Permissions</span>
+                        )}
+                      </CTableDataCell>
+
                     <CTableDataCell>
                       <div className="dropdown-container" ref={el => dropdownRefs.current[item._id] = el}>
                         <CButton 

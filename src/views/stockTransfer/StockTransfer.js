@@ -15,8 +15,6 @@ import {
   CCardHeader,
   CButton,
   CFormInput,
-  CPaginationItem,
-  CPagination,
   CSpinner,
   CNav,
   CNavItem,
@@ -29,10 +27,12 @@ import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilSettings, cilPencil
 import { Link, useNavigate } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
-import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
-import { formatDate } from 'src/utils/FormatDateTime';
-// import SearchStockModel from './SearchStockModel';
-
+import { confirmDelete, showError, showSuccess } from 'src/utils/sweetAlerts';
+import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
+import './challan.css';
+import Pagination from 'src/utils/Pagination';
+import usePermission from 'src/utils/usePermission';
+import SearchStockModel from '../stockRequest/SearchStockModel';
 const StockTransfer = () => {
   const [customers, setCustomers] = useState([]);
   const [centers, setCenters] = useState([]);
@@ -44,27 +44,60 @@ const StockTransfer = () => {
   const [activeSearch, setActiveSearch] = useState({ keyword: '', center: '' });
   const [dropdownOpen, setDropdownOpen] = useState({});
   const [activeTab, setActiveTab] = useState('open');
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
+  const { hasAnyPermission } = usePermission(); 
+  const statusFilters = {
+    open: ['Confirmed', 'Submitted', 'Shipped', 'Incompleted', 'Draft','Admin_Approved'],
+    closed: ['Rejected', 'Completed','Admin_Rejected']
+  };
 
-  const fetchData = async (searchParams = {}) => {
+
+  const fetchData = async (searchParams = {}, tab = activeTab, page = 1) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      
+
+      // const statuses = statusFilters[tab];
+      // statuses.forEach(status => {
+      //   params.append('status', status);
+      // });
+
+      if (!searchParams.status) {
+        const statuses = statusFilters[tab];
+        statuses.forEach(status => {
+          params.append('status', status);
+        });
+      } else {
+        params.append('status', searchParams.status);
+      }
+
       if (searchParams.keyword) {
         params.append('search', searchParams.keyword);
       }
       if (searchParams.center) {
         params.append('center', searchParams.center);
       }
-
+      if (searchParams.outlet) {
+        params.append('outlet', searchParams.outlet);
+      }
+      if (searchParams.startDate) {
+        params.append('startDate', searchParams.startDate);
+      }
+      if (searchParams.endDate) {
+        params.append('endDate', searchParams.endDate);
+      }
+      params.append('page', page);
       const url = params.toString() ? `/stocktransfer?${params.toString()}` : '/stocktransfer';
       const response = await axiosInstance.get(url);
       
       if (response.data.success) {
         setCustomers(response.data.data);
+        setCurrentPage(response.data.pagination.currentPage);
+        setTotalPages(response.data.pagination.totalPages);
       } else {
         throw new Error('API returned unsuccessful response');
       }
@@ -87,11 +120,39 @@ const StockTransfer = () => {
     }
   };
 
+  const fetchAllDataForExport = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get('/stocktransfer');
+      if (response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error('API returned unsuccessful response');
+      }
+    } catch (err) {
+      console.error('Error fetching data for export:', err);
+      showError('Error fetching data for export');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
     fetchData();
     fetchCenters();
   }, []);
 
+  
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    fetchData(activeSearch, activeTab, page);
+  };
+
+  useEffect(() => {
+    fetchData(activeSearch, activeTab);
+  }, [activeTab]);
+  
   const handleSort = (key) => {
     let direction = 'ascending';
     if (sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -135,13 +196,19 @@ const StockTransfer = () => {
 
   const handleSearch = (searchData) => {
     setActiveSearch(searchData);
-    fetchData(searchData);
+    fetchData(searchData,activeTab, 1);
   };
 
   const handleResetSearch = () => {
     setActiveSearch({ keyword: '', center: '' });
     setSearchTerm('');
-    fetchData();
+    fetchData({},activeTab,1);
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setActiveSearch({ keyword: '', center: '' });
+    setSearchTerm('');
   };
 
   const filteredCustomers = customers.filter(customer => {
@@ -176,11 +243,16 @@ const StockTransfer = () => {
   };
 
   const toggleDropdown = (id) => {
-    setDropdownOpen(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
+    setDropdownOpen(prev => {
+      const isCurrentlyOpen = !!prev[id];
+      const newState = {};
+      if (!isCurrentlyOpen) {
+        newState[id] = true;
+      }
+      return newState;
+    });
   };
+  
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
@@ -192,7 +264,7 @@ const StockTransfer = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading customers: {error}
+        Error loading data: {error}
       </div>
     );
   }
@@ -200,9 +272,112 @@ const StockTransfer = () => {
   const handleClick = (itemId) => {
     navigate(`/stockTransfer-details/${itemId}`);
   };
+
+  const generateDetailExport = async () => {
+    try {
+      setLoading(true);
+    
+      const allData = await fetchAllDataForExport();
+      
+      if (!allData || allData.length === 0) {
+        showError('No data available for export');
+        return;
+      }
+
+      const headers = [
+        'Order Date',
+        'Order Number', 
+        'Status',
+        'Center Title',
+        'Approved At',
+        'Shipped At',
+        'Shipped Date',
+        'Reject At',
+        'Reject Remark',
+        'Completed At',
+        'Product Title',
+        'Product Qty',
+        'Approved Qty',
+        'Approved Remark',
+        'Received Qty',
+        'Received Remark'
+      ];
+
+      const csvData = allData.flatMap(request => {
+        if (!request.products || request.products.length === 0) {
+          return [[
+            formatDate(request.date),
+            request.transferNumber,
+            request.status,
+            request.toCenter?.centerName || 'N/A',
+            request.centerApproval?.approvedAt ? formatDateTime(request.centerApproval.approvedAt) : '',
+            request.shippingInfo?.shippedAt ? formatDateTime(request.shippingInfo.shippedAt) : '',
+            request.shippingInfo?.shippedDate ? formatDate(request.shippingInfo.shippedDate) : '',
+            request.completionInfo?.incompleteOn ? formatDateTime(request.completionInfo.incompleteOn) : '',
+            '',
+            request.completionInfo?.completedOn ? formatDateTime(request.completionInfo.completedOn) : '',
+            'No Product',
+            0,
+            0,
+            '',
+            0,
+            ''
+          ]];
+        }
+  
+        return request.products.map(product => [
+          formatDate(request.date),
+          request.transferNumber,
+          request.status,
+          request.toCenter?.centerName || 'N/A',
+          request.centerApproval?.approvedAt ? formatDateTime(request.centerApproval.approvedAt) : '',
+          request.shippingInfo?.shippedAt ? formatDateTime(request.shippingInfo.shippedAt) : '',
+          request.shippingInfo?.shippedDate ? formatDate(request.shippingInfo.shippedDate) : '',
+          request.completionInfo?.incompleteOn ? formatDateTime(request.completionInfo.incompleteOn) : '',
+          '',
+          request.completionInfo?.completedOn ? formatDateTime(request.completionInfo.completedOn) : '',
+          product.product?.productTitle || '',
+          product.quantity || 0,
+          product.approvedQuantity || 0,
+          product.approvedRemark || '',
+          product.receivedQuantity || 0,
+          product.receivedRemark || ''
+        ]);
+      });
+      const csvContent = [
+        headers.join(','),
+        ...csvData.map(row => 
+          row.map(field => {
+            const stringField = String(field || '');
+            return `"${stringField.replace(/"/g, '""')}"`;
+          }).join(',')
+        )
+      ].join('\n');
+
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `indent_detail_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url)
+      
+    } catch (error) {
+      console.error('Error generating export:', error);
+      showError('Error generating export file');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderTable = () => (
     <div className="responsive-table-wrapper">
-      <CTable striped bordered hover responsive className='responsive-table'>
+      <CTable striped bordered hover className='responsive-table'>
         <CTableHead>
           <CTableRow>
             <CTableHeaderCell scope="col" onClick={() => handleSort('date')} className="sortable-header">
@@ -234,7 +409,7 @@ const StockTransfer = () => {
         <CTableBody>
           {filteredCustomers.length > 0 ? (
             filteredCustomers.map((item) => (
-              <CTableRow key={item._id}>
+              <CTableRow key={item._id} className={item.status === 'Submitted' ? 'selected-row' : ''}>
                 <CTableDataCell>{formatDate(item.date)}</CTableDataCell>
                 <CTableDataCell>
                   <button 
@@ -273,18 +448,24 @@ const StockTransfer = () => {
                     </CButton>
                     {dropdownOpen[item._id] && (
                       <div className="dropdown-menu show">
+
+                         {hasAnyPermission('Transfer', ['manage_stock_transfer_all_center','manage_stock_transfer_own_center']) && (
                         <button 
                           className="dropdown-item"
                           onClick={() => handleEditData(item._id)}
                         >
                           <CIcon icon={cilPencil} className="me-2" /> Edit
                         </button>
+                         )}
+
+                        {hasAnyPermission('Transfer', ['delete_transfer_own_center','delete_transfer_all_center']) && (
                         <button 
                           className="dropdown-item"
                           onClick={() => handleDeleteData(item._id)}
                         >
                           <CIcon icon={cilTrash} className="me-2" /> Delete
                         </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -307,21 +488,23 @@ const StockTransfer = () => {
     <div>
       <div className='title'>Stock Transfer Request List </div>
     
-      {/* <SearchStockModel
+      <SearchStockModel
         visible={searchModalVisible}
         onClose={() => setSearchModalVisible(false)}
         onSearch={handleSearch}
         centers={centers}
-      /> */}
+      /> 
       
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
+          {hasAnyPermission('Transfer', ['manage_stock_transfer_own_center','manage_stock_transfer_all_center']) && (
             <Link to='/add-stockTransfer'>
               <CButton size="sm" className="action-btn me-1">
                 <CIcon icon={cilPlus} className='icon'/> Add
               </CButton>
             </Link>
+          )}
             <CButton 
               size="sm" 
               className="action-btn me-1"
@@ -329,7 +512,7 @@ const StockTransfer = () => {
             >
               <CIcon icon={cilSearch} className='icon' /> Search
             </CButton>
-            {(activeSearch.keyword || activeSearch.center) && (
+            {(activeSearch.keyword || activeSearch.center || activeSearch.status || activeSearch.outlet || activeSearch.startDate || activeSearch.endDate) && (
               <CButton 
                 size="sm" 
                 color="secondary" 
@@ -342,6 +525,7 @@ const StockTransfer = () => {
              <CButton 
               size="sm" 
               className="action-btn me-1"
+              onClick={generateDetailExport}
             >
               <i className="fa fa-fw fa-file-excel"></i>
                Detail Export
@@ -349,13 +533,12 @@ const StockTransfer = () => {
           </div>
           
           <div>
-            <CPagination size="sm" aria-label="Page navigation">
-              <CPaginationItem>First</CPaginationItem>
-              <CPaginationItem>&lt;</CPaginationItem>
-              <CPaginationItem>1</CPaginationItem>
-              <CPaginationItem>&gt;</CPaginationItem>
-              <CPaginationItem>Last</CPaginationItem>
-            </CPagination>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+
           </div>
         </CCardHeader>
         
@@ -392,18 +575,7 @@ const StockTransfer = () => {
           </CNav>
 
           <div className="d-flex justify-content-between mb-3">
-            <div>
-              {activeSearch.keyword && (
-                <span className="badge bg-primary me-2">
-                  Keyword: {activeSearch.keyword}
-                </span>
-              )}
-              {activeSearch.center && (
-                <span className="badge bg-info">
-                  Center: {centers.find(c => c._id === activeSearch.center)?.centerName || activeSearch.center}
-                </span>
-              )}
-            </div>
+            <div></div>
             <div className='d-flex'>
               <CFormLabel className='mt-1 m-1'>Search:</CFormLabel>
               <CFormInput

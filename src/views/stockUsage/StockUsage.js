@@ -1,4 +1,3 @@
-
 import '../../css/table.css';
 import '../../css/form.css';
 import React, { useState, useRef, useEffect } from 'react';
@@ -14,8 +13,6 @@ import {
   CCardHeader,
   CButton,
   CFormInput,
-  CPaginationItem,
-  CPagination,
   CSpinner,
   CNav,
   CNavItem,
@@ -28,8 +25,11 @@ import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilSettings, cilPencil
 import { Link, useNavigate } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
-import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
+import { confirmDelete, showError, showSuccess } from 'src/utils/sweetAlerts';
 import SearchStockUsage from './SearchStockUsage';
+import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
+import Pagination from 'src/utils/Pagination';
+import usePermission from 'src/utils/usePermission';
 
 const StockUsage = () => {
   const [customers, setCustomers] = useState([]);
@@ -41,34 +41,83 @@ const StockUsage = () => {
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [activeSearch, setActiveSearch] = useState({ keyword: '', center: '' });
   const [dropdownOpen, setDropdownOpen] = useState({});
-  const [activeTab, setActiveTab] = useState('open');
-  
+  const [activeTab, setActiveTab] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
+  const { hasPermission, hasAnyPermission } = usePermission();
 
-  const fetchCustomers = async (searchParams = {}) => {
+  const fetchData = async (searchParams = {}, tab = activeTab, page = 1) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      
       if (searchParams.keyword) {
         params.append('search', searchParams.keyword);
       }
       if (searchParams.center) {
         params.append('center', searchParams.center);
       }
+      if(searchParams.usageType){
+        params.append('usageType', searchParams.usageType);
+      }
+      if (tab === 'pending') {
+        params.append('usageType', 'Damage');
+      } else if (tab === 'all') {
+        if (!searchParams.usageType) {
+          const otherUsageTypes = [
+            'Customer', 
+            'Building', 
+            'Building to Building', 
+            'Control Room', 
+            'Stolen from Center', 
+            'Stolen from Field', 
+            'Other'
+          ];
+          otherUsageTypes.forEach(type => {
+            params.append('usageType', type);
+          });
+        } else {
+          params.append('usageType', searchParams.usageType);
+        }
+      }      
 
-      const url = params.toString() ? `/customers?${params.toString()}` : '/customers';
+      params.append('page', page);
+      const url = params.toString() ? `/stockusage?${params.toString()}` : '/stockusage';
+      console.log('Fetching URL:', url);
+      
       const response = await axiosInstance.get(url);
       
       if (response.data.success) {
         setCustomers(response.data.data);
+        setCurrentPage(response.data.pagination.currentPage);
+        setTotalPages(response.data.pagination.totalPages);
       } else {
         throw new Error('API returned unsuccessful response');
       }
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching customers:', err);
+      console.error('Error fetching data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const fetchAllDataForExport = async () => {
+    try {
+      setLoading(true);
+      const response = await axiosInstance.get('/stockusage');
+      if (response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error('API returned unsuccessful response');
+      }
+    } catch (err) {
+      console.error('Error fetching data for export:', err);
+      showError('Error fetching data for export');
+      return [];
     } finally {
       setLoading(false);
     }
@@ -86,9 +135,18 @@ const StockUsage = () => {
   };
 
   useEffect(() => {
-    fetchCustomers();
+    fetchData();
     fetchCenters();
   }, []);
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    fetchData(activeSearch,activeTab, page);
+  };
+
+  useEffect(() => {
+    fetchData(activeSearch, activeTab);
+  }, [activeTab]);
 
   const handleSort = (key) => {
     let direction = 'ascending';
@@ -133,21 +191,27 @@ const StockUsage = () => {
 
   const handleSearch = (searchData) => {
     setActiveSearch(searchData);
-    fetchCustomers(searchData);
+    fetchData(searchData, activeTab, 1);
   };
 
   const handleResetSearch = () => {
-    setActiveSearch({ keyword: '', center: '' });
+    setActiveSearch({ keyword: '', center: '', usageType:'' });
     setSearchTerm('');
-    fetchCustomers();
+    fetchData({}, activeTab, 1);
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setActiveSearch({ keyword: '', center: '', usageType:'' });
+    setSearchTerm('');
   };
   
-  const handleUsernameClick = (customerId) => {
-    navigate(`/customer-profile/${customerId}`);
+  const handleClick = (itemId) => {
+    navigate(`/edit-stockUsage/${itemId}`);
   };
 
   const filteredCustomers = customers.filter(customer => {
-    if (activeSearch.keyword || activeSearch.center) {
+    if (activeSearch.keyword || activeSearch.center || activeSearch.usageType) {
       return true;
     }
     return Object.values(customer).some(value => {
@@ -160,12 +224,12 @@ const StockUsage = () => {
     });
   });
 
-  const handleDeleteCustomer = async (customerId) => {
+  const handleDeleteCustomer = async (itemId) => {
     const result = await confirmDelete();
     if (result.isConfirmed) {
       try {
-        await axiosInstance.delete(`/customers/${customerId}`);
-        setCustomers((prev) => prev.filter((c) => c._id !== customerId));
+        await axiosInstance.delete(`/customers/${itemId}`);
+        setCustomers((prev) => prev.filter((c) => c._id !== itemId));
         showSuccess('Customer deleted successfully!');
       } catch (error) {
         console.error('Error deleting customer:', error);
@@ -173,8 +237,8 @@ const StockUsage = () => {
     }
   };
   
-  const handleEditCustomer = (customerId) => {
-    navigate(`/edit-customer/${customerId}`)
+  const handleEditCustomer = (itemId) => {
+    navigate(`/edit-customer/${itemId}`)
   };
 
   const toggleDropdown = (id) => {
@@ -218,33 +282,140 @@ const StockUsage = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading customers: {error}
+        Error loading data: {error}
       </div>
     );
   }
 
+
+  const generateDetailExport = async () => {
+    try {
+      setLoading(true);
+    
+      const allData = await fetchAllDataForExport();
+      
+      if (!allData || allData.length === 0) {
+        showError('No data available for export');
+        return;
+      }
+  
+      const headers = [
+        'Date',
+        'Type', 
+        'Center',
+        'Remark',
+        'Detail',
+        'Status',
+        'Created At'
+      ];
+  
+      const csvData = allData.flatMap(request => {
+        let detail = '';
+        
+        switch(request.usageType) {
+          case 'Customer':
+            detail = `User: ${request.customer?.username || 'N/A'}, Mobile: ${request.customer?.mobile || ''}, Package: ${request.packageAmount || 'N/A'}/-, Type: ${request.connectionType || 'N/A'}, Reason: ${request.reason || 'N/A'}`;
+            break;
+          case 'Building':
+            detail = `Building: ${request.fromBuilding?.buildingName || 'N/A'}`;
+            break;
+          case 'Building to Building':
+            detail = `From: ${request.fromBuilding?.buildingName || 'N/A'} → To: ${request.toBuilding?.buildingName || 'N/A'}`;
+            break;
+          case 'Control Room':
+            detail = `Control Room: ${request.controlRoom?.name || 'N/A'}`;
+            break;
+          case 'Damage':
+            detail = 'Pending Damage Return';
+            break;
+          case 'Stolen from Field':
+            detail = `Stolen From: ${request.stolenFrom || 'N/A'}`;
+            break;
+          case 'Stolen from Center':
+            detail = `Stolen From Center: ${request.center?.centerName || 'N/A'}`;
+            break;
+          case 'Other':
+            detail = `Address: ${request.address || 'N/A'}`;
+            break;
+          default:
+            detail = 'N/A';
+        }
+        if (request.items && request.items.length > 0) {
+          return request.items.map(item => [
+            formatDate(request.date),
+            request.usageType,
+            request.center?.centerName || 'N/A',
+            request.remark || '',
+            detail,
+            request.status,
+            formatDateTime(request.createdAt)
+          ]);
+        } else {
+          return [[
+            formatDate(request.date),
+            request.usageType,
+            request.center?.centerName || 'N/A',
+            request.remark || '',
+            detail,
+            request.status,
+            formatDateTime(request.createdAt)
+          ]];
+        }
+      });
+  
+      const csvContent = [
+        headers.join(','),
+        ...csvData.map(row => 
+          row.map(field => {
+            const stringField = String(field || '');
+            return `"${stringField.replace(/"/g, '""')}"`;
+          }).join(',')
+        )
+      ].join('\n');
+  
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Usage_report_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Error generating export:', error);
+      showError('Error generating export file');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderTable = () => (
     <div className="responsive-table-wrapper">
-      <CTable striped bordered hover responsive className='responsive-table'>
+      <CTable striped bordered hover className='responsive-table'>
         <CTableHead>
           <CTableRow>
-            <CTableHeaderCell scope="col" onClick={() => handleSort('username')} className="sortable-header">
-              Date {getSortIcon('username')}
+            <CTableHeaderCell scope="col" onClick={() => handleSort('date')} className="sortable-header">
+              Date {getSortIcon('date')}
             </CTableHeaderCell>
-            <CTableHeaderCell scope="col" onClick={() => handleSort('name')} className="sortable-header">
-             Type {getSortIcon('name')}
+            <CTableHeaderCell scope="col" onClick={() => handleSort('usageType')} className="sortable-header">
+             Type {getSortIcon('usageType')}
             </CTableHeaderCell>
             <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
               Center {getSortIcon('center.centerName')}
             </CTableHeaderCell>
-            <CTableHeaderCell scope="col" onClick={() => handleSort('center.partner.partnerName')} className="sortable-header">
-              Remark {getSortIcon('center.partner.partnerName')}
+            <CTableHeaderCell scope="col" onClick={() => handleSort('remark')} className="sortable-header">
+              Remark {getSortIcon('remark')}
             </CTableHeaderCell>
-            <CTableHeaderCell scope="col" onClick={() => handleSort('center.area.areaName')} className="sortable-header">
-              Detail {getSortIcon('center.area.areaName')}
+            <CTableHeaderCell scope="col" onClick={() => handleSort('customer.username')} className="sortable-header">
+              Detail {getSortIcon('customer.username')}
             </CTableHeaderCell>
-            <CTableHeaderCell scope="col" onClick={() => handleSort('mobile')} className="sortable-header">
-              Created At{getSortIcon('mobile')}
+            <CTableHeaderCell scope="col" onClick={() => handleSort('createdAt')} className="sortable-header">
+              Created At{getSortIcon('createdAt')}
             </CTableHeaderCell>
             <CTableHeaderCell scope="col">
               Action
@@ -254,22 +425,47 @@ const StockUsage = () => {
         <CTableBody>
           {filteredCustomers.length > 0 ? (
             filteredCustomers.map((customer) => (
-              <CTableRow key={customer._id}>
+              <CTableRow key={customer._id} className={customer.usageType === 'Damage' ? 'damage-row' : ''}>
                 <CTableDataCell>
                   <button 
                     className="btn btn-link p-0 text-decoration-none"
-                    onClick={() => handleUsernameClick(customer._id)}
+                    onClick={() => handleClick(customer._id)}
                     style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
                   >
-                    {customer.username}
+                    {formatDate(customer.date)}
                   </button>
                 </CTableDataCell>
-                <CTableDataCell>{customer.name}</CTableDataCell>
-                <CTableDataCell>{customer.center?.centerName || 'N/A'}</CTableDataCell>
-                <CTableDataCell>{customer.center?.partner?.partnerName || 'N/A'}</CTableDataCell>
-                <CTableDataCell>{customer.center?.area?.areaName || 'N/A'}</CTableDataCell>
-                <CTableDataCell>{customer.mobile}</CTableDataCell>
+                <CTableDataCell>{customer.usageType}</CTableDataCell>
+                <CTableDataCell>{customer.center?.centerName || ''}</CTableDataCell>
+                <CTableDataCell>{customer.remark || ''}</CTableDataCell>
                 <CTableDataCell>
+                  {customer.usageType === 'Customer' ? (
+                    <>
+                      User: {customer.customer?.username || 'N/A'}<br />
+                      ({customer.customer?.mobile || ''})<br />
+                      Package: {customer.packageAmount || 'N/A'}/-<br />
+                      Type: {customer.connectionType || 'N/A'}<br />
+                      Reason: {customer.reason || 'N/A'}
+                    </>
+                  ) : customer.usageType === 'Building' ? (
+                    `Building: ${customer.fromBuilding?.buildingName || 'N/A'}`
+                  ) : customer.usageType === 'Building to Building' ? (
+                    `From: ${customer.fromBuilding?.buildingName || 'N/A'} → To: ${customer.toBuilding?.buildingName || 'N/A'}`
+                  ) : customer.usageType === 'Control Room' ? (
+                    `Control Room: ${customer.controlRoom?.name || 'N/A'}`
+                  ) : customer.usageType === 'Damage' ? (
+                    'Pending Damage Return'
+                  ) : customer.usageType === 'Stolen from Field' ? (
+                    `Stolen From: ${customer.stolenFrom || 'N/A'}`
+                  ) : customer.usageType === 'Other' ? (
+                    `Address: ${customer.address || 'N/A'}`
+                  ) : (
+                    'N/A'
+                  )}
+                </CTableDataCell>
+                <CTableDataCell>{formatDateTime(customer.createdAt)}</CTableDataCell>
+                <CTableDataCell>
+                {activeTab === 'pending' &&(
                   <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
                     <CButton 
                       size="sm"
@@ -279,30 +475,32 @@ const StockUsage = () => {
                       <CIcon icon={cilSettings} />
                       Options
                     </CButton>
-                    {dropdownOpen[customer._id] && (
+
+                    {dropdownOpen[customer._id] && hasPermission('Usage', 'accept_damage_return') &&(
                       <div className="dropdown-menu show">
                         <button 
                           className="dropdown-item"
                           onClick={() => handleEditCustomer(customer._id)}
                         >
-                          <CIcon icon={cilPencil} className="me-2" /> Edit
+                        Accept Damage Return
                         </button>
                         <button 
                           className="dropdown-item"
                           onClick={() => handleDeleteCustomer(customer._id)}
                         >
-                          <CIcon icon={cilTrash} className="me-2" /> Delete
+                        Reject Damage Return 
                         </button>
                       </div>
                     )}
                   </div>
+                    )}
                 </CTableDataCell>
               </CTableRow>
             ))
           ) : (
             <CTableRow>
-              <CTableDataCell colSpan="9" className="text-center">
-                No {activeTab} stock requests found
+              <CTableDataCell colSpan="7" className="text-center">
+                No {activeTab === 'pending' ? 'pending' : ''} stock usage records found
               </CTableDataCell>
             </CTableRow>
           )}
@@ -325,11 +523,13 @@ const StockUsage = () => {
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
+          {hasAnyPermission('Usage', ['manage_usage_own_center','manage_usage_all_center']) && (
             <Link to='/add-stockUsage'>
               <CButton size="sm" className="action-btn me-1">
                 <CIcon icon={cilPlus} className='icon'/> Add
               </CButton>
             </Link>
+          )}
             <CButton 
               size="sm" 
               className="action-btn me-1"
@@ -337,7 +537,7 @@ const StockUsage = () => {
             >
               <CIcon icon={cilSearch} className='icon' /> Search
             </CButton>
-            {(activeSearch.keyword || activeSearch.center) && (
+            {(activeSearch.keyword || activeSearch.center || activeSearch.usageType) && (
               <CButton 
                 size="sm" 
                 color="secondary" 
@@ -350,6 +550,7 @@ const StockUsage = () => {
              <CButton 
               size="sm" 
               className="action-btn me-1"
+              onClick={generateDetailExport}
             >
               <i className="fa fa-fw fa-file-excel"></i>
                Detail Export
@@ -357,13 +558,11 @@ const StockUsage = () => {
           </div>
           
           <div>
-            <CPagination size="sm" aria-label="Page navigation">
-              <CPaginationItem>First</CPaginationItem>
-              <CPaginationItem>&lt;</CPaginationItem>
-              <CPaginationItem>1</CPaginationItem>
-              <CPaginationItem>&gt;</CPaginationItem>
-              <CPaginationItem>Last</CPaginationItem>
-            </CPagination>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
           </div>
         </CCardHeader>
         
@@ -371,30 +570,30 @@ const StockUsage = () => {
           <CNav variant="tabs" className="mb-3 border-bottom">
             <CNavItem>
               <CNavLink
-                active={activeTab === 'open'}
-                onClick={() => setActiveTab('open')}
+                active={activeTab === 'all'}
+                onClick={() => handleTabChange('all')}
                 style={{ 
                   cursor: 'pointer',
-                  borderTop: activeTab === 'open' ? '4px solid #2759a2' : '3px solid transparent',
+                  borderTop: activeTab === 'all' ? '4px solid #2759a2' : '3px solid transparent',
                   color:'black',
                   borderBottom: 'none'
                 }}
               >
-                Open
+               All
               </CNavLink>
             </CNavItem>
             <CNavItem>
               <CNavLink
-                active={activeTab === 'closed'}
-                onClick={() => setActiveTab('closed')}
+                active={activeTab === 'pending'}
+                onClick={() => handleTabChange('pending')}
                 style={{ 
                   cursor: 'pointer',
-                  borderTop: activeTab === 'closed' ? '4px solid #2759a2' : '3px solid transparent',
+                  borderTop: activeTab === 'pending' ? '4px solid #2759a2' : '3px solid transparent',
                   borderBottom: 'none',
                   color:'black'
                 }}
               >
-                Closed
+                Pending
               </CNavLink>
             </CNavItem>
           </CNav>
@@ -427,10 +626,10 @@ const StockUsage = () => {
           </div>
 
           <CTabContent>
-            <CTabPane visible={activeTab === 'open'}>
+            <CTabPane visible={activeTab === 'all'}>
               {renderTable()}
             </CTabPane>
-            <CTabPane visible={activeTab === 'closed'}>
+            <CTabPane visible={activeTab === 'pending'}>
               {renderTable()}
             </CTabPane>
           </CTabContent>

@@ -128,11 +128,11 @@ const AddCustomer = () => {
       <div className="title">{id ? 'Edit' : 'Add'} Customer</div>
       <div className="form-card">
         <div className="form-body">
-        {alert.message && (
-  <CAlert color={alert.type} dismissible onClose={() => setAlert({ type: '', message: '' })}>
-    {alert.message}
-  </CAlert>
-)}
+            {alert.message && (
+              <CAlert color={alert.type} dismissible onClose={() => setAlert({ type: '', message: '' })}>
+              {alert.message}
+              </CAlert>
+            )}
           <form onSubmit={handleSubmit}>
             <div className="form-row">
               <div className="form-group">

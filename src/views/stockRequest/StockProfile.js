@@ -7,6 +7,8 @@ import '../../css/form.css';
 import ShipGoodsModal from './ShipGoodsModal';
 import IncompleteRemarkModal from './IncompleteRemarkModal';
 import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
+import SerialNumbers from './SerialNumbers';
+import usePermission from 'src/utils/usePermission';
 
 const StockProfile = () => {
   const { id } = useParams();
@@ -21,11 +23,23 @@ const StockProfile = () => {
   const [errors, setErrors] = useState({});
   const [currentShipmentAction, setCurrentShipmentAction] = useState(null);
   const [incompleteModal, setIncompleteModal] = useState(false);
-  const userCenter = JSON.parse(localStorage.getItem('userCenter')) || {};
-  const userCenterType = userCenter.centerType || 'Outlet';
-  const [productReceipts, setProductReceipts] = useState([]);
 
- const [shipmentData, setShipmentData] = useState({
+  const [productReceipts, setProductReceipts] = useState([]);
+  const [serialModalVisible, setSerialModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [assignedSerials, setAssignedSerials] = useState({});
+  
+  const user = JSON.parse(localStorage.getItem('user')) || {};
+  const userRole = (user?.role?.roleTitle || '').toLowerCase();
+  const userCenter = JSON.parse(localStorage.getItem('userCenter')) || {};
+  // const userCenterType = userCenter.centerType || 'Outlet';
+  const userCenterType = (userCenter.centerType || 'Outlet').toLowerCase();
+  
+  const userCenterId = userCenter._id;
+  const isCenter = data?.center?._id === userCenterId;
+  const isWarehouse = data?.warehouse?._id === userCenterId;
+
+  const [shipmentData, setShipmentData] = useState({
     shippedDate: '',
     expectedDeliveryDate: '',
     shipmentDetails: '',
@@ -33,23 +47,47 @@ const StockProfile = () => {
     documents: []
   });
   
-
+  const { hasPermission, hasAnyPermission } = usePermission();
+  const handleOpenSerialModal = (product) => {
+    setSelectedProduct(product);
+    setSerialModalVisible(true);
+  };
+   
+  const handleSerialNumbersUpdate = (productId, serialsArray) => {
+    setAssignedSerials(prev => ({
+      ...prev,
+      [productId]: serialsArray
+    }));
+  };
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         const response = await axiosInstance.get(`/stockrequest/${id}`);
         if (response.data.success) {
-          setData(response.data.data);
-          const initialApproved = response.data.data.products.map(item => ({
-            _id: item._id,    
-            productId: item.product?._id,   
-            approvedQty:item.approvedQuantity !== undefined && item.approvedQuantity !== null? item.approvedQuantity: item.quantity || '',
-  
+          const stockData = response.data.data;
+          setData(stockData);
+
+          const initialApproved = stockData.products.map(item => ({
+            _id: item._id,
+            productId: item.product?._id,
+            approvedQty:
+              item.approvedQuantity !== undefined && item.approvedQuantity !== null
+                ? item.approvedQuantity
+                : item.quantity || '',
             approvedRemark: item.approvedRemark || ''
           }));
           setApprovedProducts(initialApproved);
-          
+  
+          const initialSerials = {};
+          stockData.products.forEach(item => {
+            if (item.product?.trackSerialNumber === "Yes" && item.approvedSerials?.length > 0) {
+              initialSerials[item.product._id] = item.approvedSerials.map(sn => ({ serialNumber: sn }));
+            }
+          });
+          setAssignedSerials(initialSerials);
+  
         } else {
           throw new Error('Failed to fetch data');
         }
@@ -64,6 +102,7 @@ const StockProfile = () => {
     if (id) fetchData();
   }, [id]);
 
+  
   const handleShipGoods = async (shipmentData) => {
     try {
       const response = await axiosInstance.post(`/stockrequest/${id}/ship`, shipmentData)
@@ -85,9 +124,9 @@ const StockProfile = () => {
   useEffect(() => {
     if (data?.products) {
       const initialReceipts = data.products.map(item => ({
-        productId: item._id,
-        receivedQuantity: item.approvedQuantity || item.quantity || 0,
-        receivedRemark: ''
+        productId: item.product?._id, 
+        receivedQuantity: item.receivedQuantity || 0,
+        receivedRemark: item.receivedRemark,
       }));
       setProductReceipts(initialReceipts);
     }
@@ -117,15 +156,18 @@ const StockProfile = () => {
 
 const handleApprove = async () => {
   let hasError = false;
+
   const payload = approvedProducts.map(p => {
     if (p.approvedQty === '' || !/^\d+$/.test(p.approvedQty)) {
       setErrors(prev => ({ ...prev, [p._id]: 'The input value was not a correct number' }));
       hasError = true;
     }
+
     return {
       productId: p.productId,
       approvedQuantity: Number(p.approvedQty),
-      approvedRemark: p.approvedRemark || ''
+      approvedRemark: p.approvedRemark || '',
+      approvedSerials: (assignedSerials[p.productId] || []).map(s => s.serialNumber),
     };
   });
 
@@ -133,18 +175,35 @@ const handleApprove = async () => {
 
   try {
     const response = await axiosInstance.post(`/stockrequest/${id}/approve`, {
-      productApprovals: payload
+      productApprovals: payload,
     });
-
-    if (response.data.success) {
-      setAlert({ type: 'success', message: 'Stock request approved successfully', visible: true });
-      setTimeout(() => window.location.reload(), 1000);
-    } else {
-      setAlert({ type: 'danger', message: 'Failed to approve request', visible: true });
+    if (!response.data.success) {
+      setAlert({
+        type: 'danger',
+        message: response.data.message || 'Failed to approve request',
+        visible: true,
+      });
+      return;
     }
+    setAlert({
+      type: 'success',
+      message: 'Stock request approved successfully',
+      visible: true,
+    });
+    setTimeout(() => window.location.reload(), 1000);
   } catch (err) {
     console.error(err);
-    setAlert({ type: 'danger', message: 'Error approving stock request', visible: true });
+
+    const errorMessage =
+      err.response?.data?.message ||
+      err.message || 
+      'An unexpected error occurred';
+
+    setAlert({
+      type: 'danger',
+      message: errorMessage,
+      visible: true,
+    });
   }
 };
 
@@ -181,6 +240,7 @@ const handleSubmitRequest = async () => {
 };
 
 // approve qty
+
 const handleChangeApprovedQty = async () => {
   let hasError = false;
   const payload = approvedProducts.map(p => {
@@ -195,11 +255,12 @@ const handleChangeApprovedQty = async () => {
       productId: p.productId,
       approvedQuantity: Number(p.approvedQty),
       approvedRemark: p.approvedRemark || '',
+      approvedSerials: (assignedSerials[p.productId] || []).map(s => s.serialNumber),
     };
   });
 
   if (hasError) return;
-
+  console.log("Final payload sent to API:", payload); 
   try {
     const response = await axiosInstance.patch(
       `/stockrequest/${id}/approved-quantities`,
@@ -249,36 +310,110 @@ const handleCancelShipment = async () => {
   }
 };
 
-// complete
+//complete
+
+// const handleCompleteIndent = async () => {
+//   try {
+//     let payload = [];
+
+//     if (userCenterType === 'Center') {
+//       payload = productReceipts;
+//     } else {
+//       payload = data.products.map(item => ({
+//         productId: item.product?._id,
+//         receivedQuantity: item.approvedQuantity || item.receivedQuantity || 0,
+//         receivedRemark: item.receivedRemark || '',
+//       }));
+//     }
+
+//     const response = await axiosInstance.post(`/stockrequest/${id}/complete`, {
+//       productReceipts: payload,
+//     });
+//     if (!response.data.success) {
+//       setAlert({
+//         type: 'danger',
+//         message: response.data.message || 'Failed to complete indent',
+//         visible: true,
+//       });
+//       return;
+//     }
+//     setAlert({
+//       type: 'success',
+//       message: 'Indent completed successfully',
+//       visible: true,
+//     });
+
+//     setTimeout(() => window.location.reload(), 1000);
+//   } catch (err) {
+//     console.error('Error in handleCompleteIndent:', err);
+
+//     const errorMessage =
+//       err.response?.data?.message ||
+//       err.message ||
+//       'An unexpected error occurred while completing the indent';
+
+//     setAlert({
+//       type: 'danger',
+//       message: errorMessage,
+//       visible: true,
+//     });
+//   }
+// };
+
 
 const handleCompleteIndent = async () => {
   try {
     let payload = [];
 
-    if (userCenterType === 'Center') {
-      payload = productReceipts;
+    if (isCenter) {
+      // For Center users, convert receivedQuantity from string to number
+      payload = productReceipts.map(item => ({
+        productId: item.productId,
+        receivedQuantity: Number(item.receivedQuantity) || 0,
+        receivedRemark: item.receivedRemark || '',
+      }));
     } else {
+      // For non-Center users, use approved quantities as received quantities
       payload = data.products.map(item => ({
-        // productId: item._id,
-        productId: item.product?._id,   
-        receivedQuantity: item.approvedQuantity || item.quantity || 0,
-        receivedRemark: ''
+        productId: item.product?._id,
+        receivedQuantity: item.approvedQuantity || item.receivedQuantity || 0,
+        receivedRemark: item.receivedRemark || '',
       }));
     }
 
     const response = await axiosInstance.post(`/stockrequest/${id}/complete`, {
       productReceipts: payload,
     });
-
-    if (response.data.success) {
-      setAlert({ type: 'success', message: 'Indent completed successfully', visible: true });
-      setTimeout(() => window.location.reload(), 1000);
-    } else {
-      setAlert({ type: 'danger', message: response.data.message || 'Failed to complete indent', visible: true });
+    
+    if (!response.data.success) {
+      setAlert({
+        type: 'danger',
+        message: response.data.message || 'Failed to complete indent',
+        visible: true,
+      });
+      return;
     }
+    
+    setAlert({
+      type: 'success',
+      message: 'Indent completed successfully',
+      visible: true,
+    });
+
+    setTimeout(() => window.location.reload(), 1000);
   } catch (err) {
-    console.error(err);
-    setAlert({ type: 'danger', message: 'Error completing indent', visible: true });
+    console.error('Error in handleCompleteIndent:', err);
+
+    const errorMessage =
+      err.response?.data?.message ||
+      err.message ||
+      'An unexpected error occurred while completing the indent';
+
+    setAlert({
+      type: 'danger',
+      message: errorMessage,
+      visible: true,
+    });
   }
 };
 
@@ -315,36 +450,64 @@ const handleUpdateShipment = async (shipmentData) => {
 
 const handleMarkIncomplete = async (remark) => {
   try {
+    const receivedProducts = productReceipts.map(item => ({
+      productId: item.productId,
+      receivedQuantity: Number(item.receivedQuantity) || 0,
+      receivedRemark: item.receivedRemark || '',
+    }));
+    const payload = {
+      incompleteRemark: remark,
+      receivedProducts,
+    };
+    console.log('Incomplete Payload:', payload);
     const response = await axiosInstance.post(
       `/stockrequest/${id}/mark-incomplete`,
-      { incompleteRemark: remark }
+      payload
     );
+
     if (response.data.success) {
-      setAlert({ type: 'success', message: 'Stock request marked as incomplete', visible: true });
+      setAlert({
+        type: 'success',
+        message: 'Stock request marked as incomplete',
+        visible: true,
+      });
       setIncompleteModal(false);
-      setTimeout(() => window.location.reload(), 1000);
+     setTimeout(() => window.location.reload(), 1000);
     } else {
-      setAlert({ type: 'danger', message: 'Failed to mark incomplete', visible: true });
+      setAlert({
+        type: 'danger',
+        message: 'Failed to mark incomplete',
+        visible: true,
+      });
     }
   } catch (err) {
     console.error(err);
-    setAlert({ type: 'danger', message: 'Error marking incomplete', visible: true });
+    setAlert({
+      type: 'danger',
+      message: 'Error marking incomplete',
+      visible: true,
+    });
   }
 };
 
-
-const handleInomplete = async () => {
+const handleIncomplete = async () => {
   try {
     const approvalsPayload = approvedProducts.map(p => ({
       productId: p.productId,
       approvedQuantity: Number(p.approvedQty) || 0,
-      approvedRemark: p.approvedRemark || ''
+      approvedRemark: p.approvedRemark || '',
     }));
-    const receiptsPayload = approvalsPayload.map(a => ({
-      productId: a.productId,
-      receivedQuantity: a.approvedQuantity,
-      receivedRemark: '',
+
+    const receiptsPayload = productReceipts.map(r => ({
+      productId: r.productId,
+      receivedQuantity: Number(r.receivedQuantity) || 0,
+      receivedRemark: r.receivedRemark || '',
     }));
+
+    console.log('Final Incomplete Payload:', {
+      productApprovals: approvalsPayload,
+      productReceipts: receiptsPayload,
+    });
 
     const response = await axiosInstance.patch(
       `/stockrequest/${id}/complete-incomplete`,
@@ -353,18 +516,36 @@ const handleInomplete = async () => {
         productReceipts: receiptsPayload,
       }
     );
-
-    if (response.data.success) {
-      setAlert({ type: 'success', message: 'Indent completed successfully', visible: true });
-      setTimeout(() => window.location.reload(), 1000);
-    } else {
-      setAlert({ type: 'danger', message: response.data.message || 'Failed to complete indent', visible: true });
+    if (!response.data.success) {
+      setAlert({
+        type: 'danger',
+        message: response.data.message || 'Failed to complete indent',
+        visible: true,
+      });
+      return;
     }
+    setAlert({
+      type: 'success',
+      message: 'Indent completed successfully',
+      visible: true,
+    });
+
+    setTimeout(() => window.location.reload(), 1000);
   } catch (err) {
-    console.error(err);
-    setAlert({ type: 'danger', message: 'Error completing indent', visible: true });
+    console.error('Error in handleIncomplete:', err);
+    const errorMessage =
+      err.response?.data?.message ||
+      err.message ||
+      'An unexpected error occurred while completing the indent';
+
+    setAlert({
+      type: 'danger',
+      message: errorMessage,
+      visible: true,
+    });
   }
 };
+
 
   const handleApprovedBlur = (productId, value) => {
     if (value === '' || !/^\d+$/.test(value)) {
@@ -404,11 +585,12 @@ const handleInomplete = async () => {
 
     <div className="d-flex align-items-center">
 
-    {data.status === 'Shipped' && (
+    {data.status === 'Shipped' && hasPermission('Indent', 'complete_indent') && (
       <CButton className='btn-action btn-incomplete me-2' onClick={handleCompleteIndent}>
       Complete The Indent
       </CButton>
     )}
+
      <CButton className="print-btn">
       <i className="fa fa-print me-1"></i> Print Indent
     </CButton>
@@ -511,7 +693,7 @@ const handleInomplete = async () => {
         </>
       )}
 
-      {data.status === 'Confirmed' && (
+      {data.status === 'Confirmed' && userCenterType === 'outlet' && userRole === 'admin' && isWarehouse && (
         <>
           <CButton className="btn-action btn-submitted me-2" onClick={handleChangeApprovedQty}>
             Change Approved Qty
@@ -521,7 +703,7 @@ const handleInomplete = async () => {
               setCurrentShipmentAction(() => handleShipGoods);
               setShipmentModal(true);
             }}
-         >
+          >
               <i className="fa fa-truck me-1"></i> Ship the Goods
              </CButton>
 
@@ -531,7 +713,7 @@ const handleInomplete = async () => {
         </>
       )}
 
-      {data.status === 'Shipped' && (
+      {data.status === 'Shipped' && userCenterType === 'outlet' && userRole === 'admin' && isWarehouse &&(
         <>
           <CButton className="btn-action btn-update me-2" onClick={handleOpenUpdateShipment}>
             Update Shipment
@@ -542,6 +724,11 @@ const handleInomplete = async () => {
           <CButton className="btn-action btn-reject me-2" onClick={handleReject}>
             Reject Request
           </CButton>
+        </>
+      )}
+
+        {data.status === 'Shipped' && userCenterType === 'center' && userRole === 'center' && isCenter &&(
+        <>
           <CButton className="btn-action btn-update"
            onClick={() => setIncompleteModal(true)}
           >
@@ -550,7 +737,7 @@ const handleInomplete = async () => {
         </>
       )}
 
-      {data.status === 'Submitted' && (
+      {data.status === 'Submitted' && hasPermission('Indent','stock_transfer_approve_from_outlet') && isWarehouse && (
         <>
           <CButton className="btn-action btn-submitted me-2" onClick={handleApprove}>
             Submit &amp; Approve Request
@@ -561,9 +748,9 @@ const handleInomplete = async () => {
         </>
       )}
 
-        {data.status === 'Incompleted' && (
+        {data.status === 'Incompleted' && userCenterType === 'outlet' && userRole === 'admin' && isCenter && (
         <>
-          <CButton className="btn-action btn-incomplete me-2" onClick={handleInomplete}>
+          <CButton className="btn-action btn-incomplete me-2" onClick={handleIncomplete}>
             Change Qty And Complete Request
           </CButton>
         </>
@@ -598,52 +785,72 @@ const handleInomplete = async () => {
                       <CTableDataCell>{item.quantity || 0}</CTableDataCell>
                       <CTableDataCell>{item.productInStock || 0}</CTableDataCell>
                       <CTableDataCell>{item.productRemark || ''}</CTableDataCell>
-
-                
                       <CTableDataCell>
-                      <CFormInput
-  type="text"
-  value={approvedItem.approvedQty}
-  onChange={e => handleApprovedChange(item._id, 'approvedQty', e.target.value)}
-  onBlur={e => handleApprovedBlur(item._id, e.target.value)}
-  className={errors[item._id] ? 'is-invalid' : ''}
-/>
-  {errors[item._id] && <CFormText className="text-danger">{errors[item._id]}</CFormText>}
-</CTableDataCell>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+    {isWarehouse ? (
+      <>
+        <CFormInput
+          type="text"
+          value={approvedItem.approvedQty}
+          onChange={e => handleApprovedChange(item._id, 'approvedQty', e.target.value)}
+          onBlur={e => handleApprovedBlur(item._id, e.target.value)}
+          className={errors[item._id] ? 'is-invalid' : ''}
+          style={{ width: '80px' }}
+        />
+        {item.product?.trackSerialNumber === "Yes" && (
+          <span
+            style={{ fontSize: '18px', cursor: 'pointer', color: '#337ab7' }}
+            onClick={() => handleOpenSerialModal(item)}
+            title="Add Serial Numbers"
+          >
+            ☰
+          </span>
+        )}
+      </>
+    ) : (
+      approvedItem.approvedQty || ''
+    )}
+  </div>
 
-
-                      <CTableDataCell>
-                      <CFormInput
-  type="text"
-  value={approvedItem.approvedRemark || ''}
-  onChange={e => handleApprovedChange(item._id, 'approvedRemark', e.target.value)}
-/>
-                      </CTableDataCell>
-
-                      {/* <CTableDataCell>{item.receivedQty || '-'}</CTableDataCell>
-                      <CTableDataCell>{item.receivedRemark || '-'}</CTableDataCell> */}
-
-<CTableDataCell>
-  {userCenterType === 'Center' && data.status === 'Shipped' ? (
-    <CFormInput
-      type="text"
-      value={productReceipts.find(p => p.productId === item._id)?.receivedQuantity || ''}
-      onChange={e => handleReceiptChange(item._id, 'receivedQuantity', e.target.value)}
-    />
-  ) : (
-    item.receivedQty || item.approvedQuantity || 0
+  {errors[item._id] && (
+    <CFormText className="text-danger">{errors[item._id]}</CFormText>
   )}
 </CTableDataCell>
 
 <CTableDataCell>
-  {userCenterType === 'Center' && data.status === 'Shipped' ? (
+  {isWarehouse ? (
     <CFormInput
       type="text"
-      value={productReceipts.find(p => p.productId === item._id)?.receivedRemark || ''}
-      onChange={e => handleReceiptChange(item._id, 'receivedRemark', e.target.value)}
+      value={approvedItem.approvedRemark || ''}
+      onChange={e => handleApprovedChange(item._id, 'approvedRemark', e.target.value)}
     />
   ) : (
-    item.receivedRemark || '-'
+    item.approvedRemark || ''
+  )}
+</CTableDataCell>
+                
+            <CTableDataCell>
+                {userCenterType === 'center' && isCenter && data.status === 'Shipped' ? (
+                <CFormInput
+                type="text"
+                value={productReceipts.find(p => p.productId === item.product?._id)?.receivedQuantity || ''}
+                onChange={e => handleReceiptChange(item.product?._id, 'receivedQuantity', e.target.value)}
+            />
+               ) : (
+                  item.receivedQuantity ||  ''
+                 )}
+            </CTableDataCell>
+
+
+<CTableDataCell>
+  {userCenterType === 'center' && isCenter && data.status === 'Shipped' ? (
+    <CFormInput
+      type="text"
+      value={productReceipts.find(p => p.productId === item.product?._id)?.receivedRemark || ''}
+      onChange={e => handleReceiptChange(item.product?._id, 'receivedRemark', e.target.value)}
+    />
+  ) : (
+    item.receivedRemark || ''
   )}
 </CTableDataCell>
 
@@ -671,6 +878,16 @@ const handleInomplete = async () => {
   onSubmit={handleMarkIncomplete}
   initialRemark={data.incompleteRemark}
 />
+<SerialNumbers
+  visible={serialModalVisible}
+  onClose={() => setSerialModalVisible(false)}
+  product={selectedProduct}
+  approvedQty={approvedProducts.find(p => p._id === selectedProduct?._id)?.approvedQty || 0}
+  initialSerials={assignedSerials[selectedProduct?.product?._id] || []} 
+  onSerialNumbersUpdate={handleSerialNumbersUpdate}
+  warehouseId={data?.warehouse?._id}
+/>
+
 
     </CContainer>
   );

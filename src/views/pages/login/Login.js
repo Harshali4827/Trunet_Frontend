@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import {
   CButton,
   CCard,
@@ -26,6 +26,7 @@ import logo from '../../../assets/images/logo.png'
 import axiosInstance from 'src/axiosInstance'
 import { useNavigate } from 'react-router-dom'
 import './login.css'
+import { AuthContext } from 'src/context/AuthContext'
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' })
@@ -36,7 +37,7 @@ const Login = () => {
   const navigate = useNavigate()
   const user = JSON.parse(localStorage.getItem('user')) || {};
   const userRole = user.role || '';
-
+  const { refreshPermissions } = useContext(AuthContext)
    
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -83,6 +84,7 @@ const Login = () => {
               localStorage.setItem('userCenter', JSON.stringify(response.data.data.user.center))
             }
           }
+          await refreshPermissions()
           navigate('/');
         } else {
           setError(response.data.message || 'Login failed')
