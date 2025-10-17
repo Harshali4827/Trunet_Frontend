@@ -273,6 +273,9 @@ export const hasPermission = (permissions, module, requiredPermissions = []) => 
   return requiredPermissions.some(p => modulePermissions.permissions.includes(p))
 }
 
+const userCenter = JSON.parse(localStorage.getItem('userCenter')) || {};
+const userCenterType = (userCenter.centerType || 'Outlet').toLowerCase();
+
 const getNav = (permissions = []) => {
   const _nav = []
 
@@ -303,7 +306,7 @@ const getNav = (permissions = []) => {
     })
   }
 
-  if (hasPermission(permissions, 'Purchase', ['add_purchase_stock', 'view_all_purchase_stock','view_own_purchase_stock'])) {
+  if (userCenterType == 'outlet' && hasPermission(permissions, 'Purchase', ['add_purchase_stock', 'view_all_purchase_stock','view_own_purchase_stock'])) {
     _nav.push({
       component: CNavItem,
       name: <Translation>{(t) => t('Stock Purchase')}</Translation>,
