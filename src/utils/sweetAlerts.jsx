@@ -136,3 +136,22 @@ export const showAppError = (error, defaultMessage = 'Something went wrong') => 
 export const showError = (error, defaultMessage) => showAppError(error, defaultMessage)
 export const showFormSubmitError = (error) =>
   showAppError(error, 'Something went wrong. Please try again later.')
+
+export const confirmAction = (
+  title = 'Are you sure?',
+  html = '',
+  icon = 'warning',
+  confirmButtonText = 'Yes, proceed!',
+) => {
+  return Swal.fire({
+    title,
+    html,
+    icon,
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: 'rgb(170, 170, 170);',
+    confirmButtonText,
+    cancelButtonText: 'Cancel',
+    reverseButtons: false,
+  })
+}

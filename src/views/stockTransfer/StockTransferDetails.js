@@ -345,36 +345,6 @@ const handleCancelShipment = async () => {
 
 // complete
 
-// const handleCompleteIndent = async () => {
-//   try {
-//     let payload = [];
-
-//     if (userCenterType === 'Center') {
-//       payload = productReceipts;
-//     } else {
-//       payload = data.products.map(item => ({
-//         productId: item.product?._id,   
-//         receivedQuantity: item.approvedQuantity || item.receivedQuantity || 0,
-//         receivedRemark: item.receivedRemark
-//       }));
-//     }
-
-//     const response = await axiosInstance.post(`/stocktransfer/${id}/complete`, {
-//       productReceipts: payload,
-//     });
-
-//     if (response.data.success) {
-//       setAlert({ type: 'success', message: 'Indent completed successfully', visible: true });
-//       setTimeout(() => window.location.reload(), 1000);
-//     } else {
-//       setAlert({ type: 'danger', message: response.data.message || 'Failed to complete indent', visible: true });
-//     }
-//   } catch (err) {
-//     console.error(err);
-//     setAlert({ type: 'danger', message: 'Error completing indent', visible: true });
-//   }
-// };
-
 
 const handleCompleteIndent = async () => {
   try {

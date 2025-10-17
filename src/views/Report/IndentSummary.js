@@ -21,10 +21,12 @@ import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import Pagination from 'src/utils/Pagination';
 import { showError } from 'src/utils/sweetAlerts';
+import SearchIndentSummary from './SearchIndentSummary';
 
 const IndentSummary = () => {
   const [data, setData] = useState([]);
   const [centers, setCenters] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
@@ -75,9 +77,20 @@ const IndentSummary = () => {
     }
   };
 
+  const fetchProducts = async () => {
+    try {
+      const response = await axiosInstance.get('/products');
+      if (response.data.success) {
+        setProducts(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
   useEffect(() => {
     fetchData();
     fetchCenters();
+    fetchProducts();
   }, []);
 
   const handlePageChange = (page) => {
@@ -291,7 +304,13 @@ const IndentSummary = () => {
   return (
     <div>
       <div className='title'>Indent Summary Report</div>
-    
+      <SearchIndentSummary
+        visible={searchModalVisible}
+        onClose={() => setSearchModalVisible(false)}
+        onSearch={handleSearch}
+        centers={centers}
+        products={products}
+      />
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../../css/profile.css';
@@ -23,7 +23,9 @@ import {
   CBadge
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import { cilArrowBottom, cilArrowTop } from '@coreui/icons';
+import { cilArrowBottom, cilArrowTop, cilSettings } from '@coreui/icons';
+import { confirmAction, showError, showSuccess } from 'src/utils/sweetAlerts';
+import CustomerSerialNumber from './CustomerSerialNumber';
 
 const CustomerProfile = () => {
   const { id } = useParams();
@@ -32,12 +34,15 @@ const CustomerProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('device');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
   const [deviceData, setDeviceData] = useState([]);
   const [usageData, setUsageData] = useState([]);
   const [shiftingData, setShiftingData] = useState([]);
+  const [dropdownOpen, setDropdownOpen] = useState({});
+
+  const [serialModalVisible, setSerialModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  
   const [loadingTabs, setLoadingTabs] = useState({
     device: false,
     usage: false,
@@ -50,6 +55,12 @@ const CustomerProfile = () => {
     tab: 'device'
   });
 
+  const dropdownRefs = useRef({});
+
+  const handleOpenSerialModal = (product) => {
+    setSelectedProduct(product);
+    setSerialModalVisible(true);
+  };
   useEffect(() => {
     const fetchCustomer = async () => {
       try {
@@ -222,6 +233,69 @@ const CustomerProfile = () => {
       </CBadge>
     );
   };
+  const toggleDropdown = (id) => {
+    setDropdownOpen(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const newDropdownState = {};
+      let shouldUpdate = false;
+      
+      Object.keys(dropdownRefs.current).forEach(key => {
+        if (dropdownRefs.current[key] && !dropdownRefs.current[key].contains(event.target)) {
+          newDropdownState[key] = false;
+          shouldUpdate = true;
+        }
+      });
+      
+      if (shouldUpdate) {
+        setDropdownOpen(prev => ({ ...prev, ...newDropdownState }));
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+
+
+  const handleDamageReturn = async (usageId) => {
+    try {
+      const html = `Are you sure you want to mark this device as Damage?<br><br>`;
+      
+      const result = await confirmAction(
+        'Are you sure to damage?',
+        html,
+        'warning',
+        'Yes,Damage it!'
+      );
+  
+      if (result.isConfirmed) {
+        const response = await axiosInstance.patch(
+          `/stockusage/damage/${usageId}/damage-return`,
+          {
+            remark: "Product marked as damaged - returned from customer"
+          }
+        );
+  
+        if (response.data.success) {
+          showSuccess('Device has been marked as Damage Return successfully');
+          fetchDeviceData();
+        } else {
+          throw new Error(response.data.message || 'Failed to mark as Damage Return');
+        }
+      }
+    } catch (error) {
+      console.error('Error in damage return:', error);
+      showError(error);
+    }
+  };
 
 const renderDeviceTable = () => (
   <div>
@@ -259,6 +333,7 @@ const renderDeviceTable = () => (
           <CTableHeaderCell scope="col" onClick={() => handleSort('Remark', 'device')} className="sortable-header">
             Remark {getSortIcon('Remark', 'device')}
           </CTableHeaderCell>
+          <CTableDataCell scope="col" className="sortable-header">Action</CTableDataCell>
         </CTableRow>
       </CTableHead>
       <CTableBody>
@@ -281,6 +356,48 @@ const renderDeviceTable = () => (
               <CTableDataCell>{item['ONU Charges'] || 'N/A'}</CTableDataCell>
               <CTableDataCell>{item['Installation Charges'] || 'N/A'}</CTableDataCell>
               <CTableDataCell>{item.Remark || 'N/A'}</CTableDataCell>
+               <CTableDataCell>
+                      <div className="dropdown-container" ref={el => dropdownRefs.current[item._id] = el}>
+                        <CButton 
+                          size="sm"
+                          className='option-button btn-sm'
+                          onClick={() => toggleDropdown(item._id)}
+                        >
+                          <CIcon icon={cilSettings} />
+                          Options
+                        </CButton>
+                        {dropdownOpen[item._id] && (
+                          <div className="dropdown-menu show">
+
+                            <button 
+                              className="dropdown-item"
+                            >
+                              <i className="fa fa-reply fa-margin "></i> Return
+                            </button>
+                            <button 
+                              className="dropdown-item"
+                              onClick={() => {
+                                setSelectedProduct({
+                                  productId: item.productId,
+                                  productName: item.Product,
+                                  warehouseId: item.center?.id,
+                                });
+                                setSerialModalVisible(true);
+                              }}
+                            >
+                              <i className="fa fa-refresh"></i> Replace
+                            </button>
+                            <button 
+                              className="dropdown-item"
+                              onClick={() => handleDamageReturn(item.usageId,
+)}
+                            >
+                              <i className="fa fa-recycle fa-margin "></i> Damage
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </CTableDataCell>
             </CTableRow>
           ))
         ) : (
@@ -567,6 +684,15 @@ const renderDeviceTable = () => (
           </CTabContent>
         </CCardBody>
       </CCard>
+
+      <CustomerSerialNumber
+  visible={serialModalVisible}
+  onClose={() => setSerialModalVisible(false)}
+  productId={selectedProduct?.productId}
+  productName={selectedProduct?.productName}
+  warehouseId={selectedProduct?.warehouseId}
+/>
+
     </CContainer>
   );
 };

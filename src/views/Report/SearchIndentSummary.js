@@ -11,24 +11,31 @@ import {
 import PropTypes from 'prop-types'
 import '../../css/form.css'
 import DatePicker from 'src/utils/DatePicker'
-
-const CommonSearch = ({ visible, onClose, onSearch, centers, products }) => {
+const SearchIndentSummary = ({ visible, onClose, onSearch, centers,products }) => {
   const [searchData, setSearchData] = useState({
     product: '',
-    center: '',
-    startDate: '',
-    endDate: ''
+    center: ''
   })
 
   useEffect(() => {
     if (!visible) {
-      setSearchData({ product: '', center: '', startDate: '', endDate: '' })
+      setSearchData({ product: '', center: '' })
     }
   }, [visible])
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setSearchData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleSearch = () => {
+    onSearch(searchData)
+    onClose()
+  }
+
+  const handleReset = () => {
+    setSearchData({ product: '', center: '' })
+    onSearch({ product: '', center: '' })
   }
 
   const handleDateChange = (dateValue) => {
@@ -47,30 +54,12 @@ const CommonSearch = ({ visible, onClose, onSearch, centers, products }) => {
       }));
     }
   }
-
-  const handleSearch = () => {
-    const formattedSearchData = {
-      ...searchData,
-      date: searchData.startDate && searchData.endDate 
-        ? `${searchData.startDate} to ${searchData.endDate}`
-        : ''
-    };
-    onSearch(formattedSearchData)
-    onClose()
-  }
-
-  const handleReset = () => {
-    setSearchData({ product: '', center: '', startDate: '', endDate: '' })
-    onSearch({ product: '', center: '', startDate: '', endDate: '' })
-  }
-
   const getDateDisplayValue = () => {
     if (searchData.startDate && searchData.endDate) {
       return `${searchData.startDate} to ${searchData.endDate}`;
     }
     return '';
   }
-
   return (
     <CModal size="lg" visible={visible} onClose={onClose}>
       <CModalHeader>
@@ -99,27 +88,30 @@ const CommonSearch = ({ visible, onClose, onSearch, centers, products }) => {
             </CFormSelect>
           </div>
           <div className="form-group">
-            <label className="form-label" htmlFor="product">
-              Product
+            <label className="form-label" htmlFor="usageType">
+              Usage Type
             </label>
             <CFormSelect
-              id="product"
-              name="product"
-              value={searchData.product}
+              id="usageType"
+              name="usageType"
+              value={searchData.usageType}
               onChange={handleChange}
               className="form-input no-radius-input"
             >
-              <option value="">SELECT PRODUCT</option>
-              {products.map((product) => (
-                <option key={product._id} value={product._id}>
-                  {product.productTitle}
-                </option>
-              ))}
+                <option value="">-SELECT-</option>
+                <option value="Customer">Customer</option>
+                <option value="Building">Building</option>
+                <option value="Building to Building">Building to Building</option>
+                <option value="Control Room">Control Room</option>
+                <option value="Damage">Damage</option>
+                <option value="Stolen from Center">Stolen from Center</option>
+                <option value="Stolen from Field">Stolen from Field</option>
+                <option value="Other">Other</option>
             </CFormSelect>
           </div>
         </div>
         <div className="form-row">
-          <div className="form-group">
+        <div className="form-group">
             <label className="form-label" htmlFor="date">
               Date
             </label>
@@ -130,7 +122,27 @@ const CommonSearch = ({ visible, onClose, onSearch, centers, products }) => {
               className="no-radius-input date-input"
             />
           </div>
+        <div className="form-group">
+            <label className="form-label" htmlFor="product">
+              Product
+            </label>
+            <CFormSelect
+              id="product"
+              name="product"
+              value={searchData.product}
+              onChange={handleChange}
+              className="form-input no-radius-input"
+            >
+              <option value="">SELECT CENTER</option>
+              {products.map((product) => (
+                <option key={product._id} value={product._id}>
+                  {product.productTitle}
+                </option>
+              ))}
+            </CFormSelect>
+          </div>
         </div>
+
       </CModalBody>
 
       <CModalFooter>
@@ -139,10 +151,10 @@ const CommonSearch = ({ visible, onClose, onSearch, centers, products }) => {
           className="me-2" 
           onClick={handleReset}
         >
-          Reset
+          Close
         </CButton>
         <CButton 
-          color="primary" 
+          className="reset-button" 
           onClick={handleSearch}
         >
           Search
@@ -152,12 +164,12 @@ const CommonSearch = ({ visible, onClose, onSearch, centers, products }) => {
   )
 }
 
-CommonSearch.propTypes = {
+SearchIndentSummary.propTypes = {
   visible: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSearch: PropTypes.func.isRequired,
   centers: PropTypes.array.isRequired,
-  products: PropTypes.array.isRequired
+  products:PropTypes.array.isRequired
 }
 
-export default CommonSearch
+export default SearchIndentSummary
