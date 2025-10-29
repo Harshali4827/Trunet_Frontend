@@ -261,16 +261,12 @@ const CustomersList = () => {
               </CButton>
             )}
           </div>
-          
           <div>
-   
-          
-          <Pagination 
-      currentPage={currentPage}
-      totalPages={totalPages}
-      onPageChange={handlePageChange}
-    />
-
+            <Pagination 
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+            />
           </div>
         </CCardHeader>
         

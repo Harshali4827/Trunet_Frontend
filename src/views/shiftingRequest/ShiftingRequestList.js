@@ -23,8 +23,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import SearchShiftingModel from './SearchShiftingModel';
-import { formatDate } from 'src/utils/FormatDateTime';
-import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
+import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
+import { confirmDelete, showSuccess, showError } from 'src/utils/sweetAlerts';
 import Pagination from 'src/utils/Pagination';
 import usePermission from 'src/utils/usePermission';
 
@@ -74,9 +74,34 @@ const ShiftinRequestList = () => {
     }
   };
 
+  const fetchDataForExport = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+
+      if (activeSearch.keyword) params.append('search', activeSearch.keyword);
+      if (activeSearch.center) params.append('center', activeSearch.center);
+      
+      const url = params.toString() ? `/shiftingRequest?${params.toString()}` : '/shiftingRequest';
+      const response = await axiosInstance.get(url);
+
+      if (response.data.success) {
+        return response.data.data;
+      } else {
+        throw new Error('API returned unsuccessful response');
+      }
+    } catch (err) {
+      console.error('Error fetching data for export:', err);
+      showError('Error fetching data for export');
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchCenters = async () => {
     try {
-      const response = await axiosInstance.get('/centers');
+      const response = await axiosInstance.get('/centers?centerType=Center');
       if (response.data.success) setCenters(response.data.data);
     } catch (error) {
       console.error('Error fetching centers:', error);
@@ -173,7 +198,6 @@ const ShiftinRequestList = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-
   const handleStatusChange = async (id, status) => {
     try {
       const response = await axiosInstance.put(`/shiftingRequest/${id}/status`, { status });
@@ -199,6 +223,86 @@ const ShiftinRequestList = () => {
     }
   };
 
+  // CSV Export function
+  const generateDetailExport = async () => {
+    try {
+      setLoading(true);
+    
+      const allData = await fetchDataForExport();
+      
+      if (!allData || allData.length === 0) {
+        showError('No data available for export');
+        return;
+      }
+  
+      const headers = [
+        'User',
+        'From Center',
+        'To Center',
+        'Remark',
+        'Status',
+        'Status Detail',
+        'Date',
+        'Created At'
+      ];
+  
+      const csvData = allData.map(building => [
+        building.customer?.name || 'N/A',
+        building.fromCenter?.centerName || 'N/A',
+        building.toCenter?.centerName || 'N/A',
+        building.remark || '',
+        building.status || 'N/A',
+        building.status === 'Approve' && building.approvedBy
+          ? `Approve At ${formatDate(building.approvedAt)} by ${building.approvedBy.fullName}`
+          : building.status === 'Reject' && building.rejectedBy
+          ? `Rejecte At ${formatDate(building.rejectedAt)} by ${building.rejectedBy.fullName}`
+          : 'Pending',
+        formatDate(building.date),
+        formatDateTime(building.createdAt)
+      ]);
+  
+      const csvContent = [
+        headers.join(','),
+        ...csvData.map(row => 
+          row.map(field => {
+            const stringField = String(field || '');
+            return `"${stringField.replace(/"/g, '""')}"`;
+          }).join(',')
+        )
+      ].join('\n');
+  
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+
+      let filename = `shifting_requests_${new Date().toISOString().split('T')[0]}`;
+      if (activeSearch.keyword) filename += `_search_${activeSearch.keyword}`;
+      if (activeSearch.center) {
+        const centerName = centers.find(c => c._id === activeSearch.center)?.centerName || 'center';
+        filename += `_${centerName}`;
+      }
+      filename += '.csv';
+      
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      showSuccess('CSV export completed successfully!');
+      
+    } catch (error) {
+      console.error('Error generating export:', error);
+      showError('Error generating export file');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
@@ -215,34 +319,37 @@ const ShiftinRequestList = () => {
     );
   }
 
-    const canEditDelete = (building) => {
-      return userCenter && building.fromCenter && building.fromCenter._id === userCenter;
-    };
-  
-    const canApproveReject = (building) => {
-      return userCenter && building.toCenter && building.toCenter._id === userCenter;
-    };
-  
-    const shouldShowActions = (building) => {
-      return building.status === 'Pending' && (canEditDelete(building) || canApproveReject(building));
-    };
+  const canEditDelete = (building) => {
+    return userCenter && building.fromCenter && building.fromCenter._id === userCenter;
+  };
 
-    const handleDelete = async (itemId) => {
-      const result = await confirmDelete();
-      if (result.isConfirmed) {
-        try {
-          await axiosInstance.delete(`/shiftingRequest/${itemId}`);
-          setBuildings((prev) => prev.filter((c) => c._id !== itemId));
-          showSuccess('Data deleted successfully!');
-        } catch (error) {
-          console.error('Error deleting data:', error);
-        }
+  const canApproveReject = (building) => {
+    return userCenter && building.toCenter && building.toCenter._id === userCenter;
+  };
+
+  const shouldShowActions = (building) => {
+    return building.status === 'Pending' && (canEditDelete(building) || canApproveReject(building));
+  };
+
+  const handleDelete = async (itemId) => {
+    const result = await confirmDelete();
+    if (result.isConfirmed) {
+      try {
+        await axiosInstance.delete(`/shiftingRequest/${itemId}`);
+        setBuildings((prev) => prev.filter((c) => c._id !== itemId));
+        showSuccess('Data deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting data:', error);
       }
-    };
-    
-    const handleEdit = (itemId) => {
-      navigate(`/edit-shiftingRequest/${itemId}`)
-    };
+    }
+  };
+  
+  const handleEdit = (itemId) => {
+    navigate(`/edit-shiftingRequest/${itemId}`)
+  };
+
+  const hasActiveFilters = activeSearch.keyword || activeSearch.center;
+
   return (
     <div>
       <div className='title'>Shifting Request List</div>
@@ -262,18 +369,17 @@ const ShiftinRequestList = () => {
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
-
-          {hasAnyPermission('Shifting', ['manage_shifting_all_center','manage_shifting_own_center']) && (
-            <Link to='/add-shiftingRequest'>
-              <CButton size="sm" className="action-btn me-1">
-                <CIcon icon={cilPlus} className='icon' /> Add
-              </CButton>
-            </Link>
-          )}
+            {hasAnyPermission('Shifting', ['manage_shifting_all_center','manage_shifting_own_center']) && (
+              <Link to='/add-shiftingRequest'>
+                <CButton size="sm" className="action-btn me-1">
+                  <CIcon icon={cilPlus} className='icon' /> Add
+                </CButton>
+              </Link>
+            )}
             <CButton size="sm" className="action-btn me-1" onClick={() => setSearchModalVisible(true)}>
               <CIcon icon={cilSearch} className='icon' /> Search
             </CButton>
-            {(activeSearch.keyword || activeSearch.center) && (
+            {hasActiveFilters && (
               <CButton
                 size="sm"
                 color="secondary"
@@ -283,20 +389,31 @@ const ShiftinRequestList = () => {
                 <CIcon icon={cilZoomOut} className='icon' /> Reset Search
               </CButton>
             )}
+            <CButton 
+              size="sm" 
+              className="action-btn me-1"
+              onClick={generateDetailExport}
+              disabled={loading}
+            >
+              <i className="fa fa-fw fa-file-excel"></i>
+              Detail Export
+            </CButton>
           </div>
 
           <div>
-          <Pagination
+            <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}
-          />
+            />
           </div>
         </CCardHeader>
 
         <CCardBody>
           <div className="d-flex justify-content-between mb-3">
-            <div></div>
+            <div>
+            
+            </div>
             <div className='d-flex'>
               <CFormLabel className='mt-1 m-1'>Search:</CFormLabel>
               <CFormInput
@@ -305,6 +422,7 @@ const ShiftinRequestList = () => {
                 className="d-inline-block square-search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                disabled={hasActiveFilters}
               />
             </div>
           </div>
@@ -332,10 +450,10 @@ const ShiftinRequestList = () => {
                       <CTableDataCell>{building.toCenter?.centerName || 'N/A'}</CTableDataCell>
                       <CTableDataCell>{building.remark}</CTableDataCell>
                       <CTableDataCell> {building.status && (
-                    <span className={`status-badge ${building.status.toLowerCase()}`}>
-                      {building.status}
-                    </span>
-                  )}</CTableDataCell>
+                        <span className={`status-badge ${building.status.toLowerCase()}`}>
+                          {building.status}
+                        </span>
+                      )}</CTableDataCell>
                       <CTableDataCell>
                         {building.status === 'Approve' && building.approvedBy
                           ? `Approve At ${formatDate(building.approvedAt)} by ${building.approvedBy.fullName}`
@@ -345,56 +463,56 @@ const ShiftinRequestList = () => {
                       </CTableDataCell>
                       <CTableDataCell>{formatDate(building.date)}</CTableDataCell>
 
-<CTableDataCell>
-  {building.status === 'Pending' && (
-             <div className="dropdown-container" ref={el => dropdownRefs.current[building._id] = el}>
-             <CButton
-               size="sm"
-               className='option-button btn-sm'
-               onClick={() => toggleDropdown(building._id)}
-               disabled={!shouldShowActions(building)}
-             >
-               <CIcon icon={cilSettings} /> Options
-             </CButton>
-             {dropdownOpen[building._id] && shouldShowActions(building) && (
-               <div className="dropdown-menu show">
-                 {canEditDelete(building) && hasAnyPermission('Shifting', ['manage_shifting_all_center','manage_shifting_own_center']) && (
-                   <>
-                     <button 
-                                       className="dropdown-item"
-                                       onClick={() => handleEdit(building._id)}
-                                     >
-                                       <CIcon icon={cilPencil} className="me-2" /> Edit
-                                     </button>
-                                     <button 
-                                       className="dropdown-item"
-                                       onClick={() => handleDelete(building._id)}
-                                     >
-                                       <CIcon icon={cilTrash} className="me-2" /> Delete
-                                     </button>
-                   </>
-                 )}
-                 {canApproveReject(building) && hasAnyPermission('Shifting', ['accept_shifting_all_center','accept_shifting_own_center']) &&(
-                   <>
-                     <button
-                       className="dropdown-item"
-                       onClick={() => handleStatusChange(building._id, 'Approve')}
-                     >
-                       Approve
-                     </button>
-                     <button
-                       className="dropdown-item"
-                       onClick={() => handleStatusChange(building._id, 'Reject')}
-                     >
-                       Reject
-                     </button>
-                   </>
-                 )}
-               </div>
-             )}
-           </div>
-  )}
-</CTableDataCell>
+                      <CTableDataCell>
+                        {building.status === 'Pending' && (
+                          <div className="dropdown-container" ref={el => dropdownRefs.current[building._id] = el}>
+                            <CButton
+                              size="sm"
+                              className='option-button btn-sm'
+                              onClick={() => toggleDropdown(building._id)}
+                              disabled={!shouldShowActions(building)}
+                            >
+                              <CIcon icon={cilSettings} /> Options
+                            </CButton>
+                            {dropdownOpen[building._id] && shouldShowActions(building) && (
+                              <div className="dropdown-menu show">
+                                {canEditDelete(building) && hasAnyPermission('Shifting', ['manage_shifting_all_center','manage_shifting_own_center']) && (
+                                  <>
+                                    <button 
+                                      className="dropdown-item"
+                                      onClick={() => handleEdit(building._id)}
+                                    >
+                                      <CIcon icon={cilPencil} className="me-2" /> Edit
+                                    </button>
+                                    <button 
+                                      className="dropdown-item"
+                                      onClick={() => handleDelete(building._id)}
+                                    >
+                                      <CIcon icon={cilTrash} className="me-2" /> Delete
+                                    </button>
+                                  </>
+                                )}
+                                {canApproveReject(building) && hasAnyPermission('Shifting', ['accept_shifting_all_center','accept_shifting_own_center']) &&(
+                                  <>
+                                    <button
+                                      className="dropdown-item"
+                                      onClick={() => handleStatusChange(building._id, 'Approve')}
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      className="dropdown-item"
+                                      onClick={() => handleStatusChange(building._id, 'Reject')}
+                                    >
+                                      Reject
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </CTableDataCell>
                     </CTableRow>
                   ))
                 ) : (

@@ -1,27 +1,79 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router-dom';
+import axiosInstance from 'src/axiosInstance';
 
 const TransactionReport = ({ onNotificationClick }) => {
-  const handleNotificationClick = (msg) => {
-    const parts = msg.split(' - ');
-    const notificationData = {
-      message: parts[0],
-      date: parts[1],
-      type: msg.includes('Approved') ? 'Approval' :
-            msg.includes('Rejected') ? 'Rejection' : 'Completion'
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState(null);
+  const [error, setError] = useState('');
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(true);
+  
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      try {
+        const res = await axiosInstance.get('/availableStock/transactions');
+        if (res.data.success) {
+          setTransactions(res.data.data || []);
+          setSummary(res.data.summary || null);
+        } else {
+          setError('Failed to load data.');
+        }
+      } catch (err) {
+        console.error(err);
+        setError('Error fetching transaction data.');
+      } finally {
+        setLoading(false);
+      }
     };
-    onNotificationClick(notificationData);
+
+    const fetchNotifications = async () => {
+      try {
+        const res = await axiosInstance.get('/stockrequest/notification?limit=10');
+        if (res.data.success) {
+          setNotifications(res.data.data || []);
+        } else {
+          console.error('Failed to load notifications');
+        }
+      } catch (err) {
+        console.error('Error fetching notifications:', err);
+      } finally {
+        setNotificationsLoading(false);
+      }
+    };
+
+    fetchTransactions();
+    fetchNotifications();
+  }, []);
+
+  const handleNotificationClick = (notification) => {
+    if (notification.stockRequestId) {
+      navigate(`/stockRequest-profile/${notification.stockRequestId}`);
+    }
+    if (onNotificationClick) {
+      const parts = notification.message.split(' - ');
+      const notificationData = {
+        message: parts[0],
+        date: parts[1],
+        type: notification.message.includes('Approved') ? 'Approval' :
+              notification.message.includes('Rejected') ? 'Rejection' : 
+              notification.message.includes('Completed') ? 'Completion' : 'Update'
+      };
+      onNotificationClick(notificationData);
+    }
   };
 
   const containerStyle = {
     marginTop: '1rem',
-    padding: '1.5rem',
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: '1rem',
     transition: 'all 0.3s ease'
   };
-
   const cardStyle = {
     backgroundColor: 'white',
     padding: '0.25rem',
@@ -29,7 +81,6 @@ const TransactionReport = ({ onNotificationClick }) => {
     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
     borderTop: '3px solid #2759A2'
   };
-
   const headingStyle = {
     fontWeight: '300',
     fontSize: '1.25rem',
@@ -37,121 +88,119 @@ const TransactionReport = ({ onNotificationClick }) => {
     paddingLeft: '0.75rem',
     color: '#444444'
   };
-
-  const tableWrapperStyle = {
-    position: 'relative'
-  };
-
-  const tableScrollStyle = {
-    overflowY: 'auto',
-    maxHeight: '210px'
-  };
-
-  const tableStyle = {
-    width: '100%',
-    borderCollapse: 'collapse'
-  };
-
+  const tableWrapperStyle = { position: 'relative' };
+  const tableScrollStyle = { overflowY: 'auto', maxHeight: '250px' };
+  const tableStyle = { width: '100%', borderCollapse: 'collapse' };
   const thStyle = {
     textAlign: 'left',
-    padding: '0.25rem 0.75rem',
-    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
+    padding: '0.20rem 0.70rem',
+    backgroundColor: '#ffffff',
+    borderBottom: '1px solid #ddd',
+    fontWeight: 700,
+    position: 'sticky',
+    top: 0,
+    zIndex: 2
   };
-
-  const tdStyle = {
-    padding: '0.25rem 0.75rem',
-    color: '#444444',
-    boxShadow: '0 1px 1px rgba(0, 0, 0, 0.03)'
+  
+  const tdStyle = { padding: '0.25rem 0.75rem', color: '#444444', boxShadow: '0 1px 1px rgba(0, 0, 0, 0.03)' };
+  const notificationListStyle = { 
+    fontSize: '0.875rem', 
+    overflowY: 'auto', 
+    maxHeight: '240px', 
+    color: '#3c8dbc', 
+    listStyleType: 'none', 
+    padding: 0, 
+    margin: 0 
   };
-
-  const notificationListStyle = {
-    fontSize: '0.875rem',
-    overflowY: 'auto',
-    maxHeight: '240px',
-    color: '#3c8dbc',
-    listStyleType: 'none',
-    padding: 0,
-    margin: 0
+  const listItemStyle = { 
+    boxShadow: '0 1px 1px rgba(0,0,0,0.05)', 
+    cursor: 'pointer', 
+    padding: '4px 0', 
+    textDecoration: 'none',
+    borderBottom: '1px solid #f0f0f0',
+    transition: 'all 0.2s ease'
   };
-
-  const listItemStyle = {
-    boxShadow: '0 1px 1px rgba(0,0,0,0.05)',
-    cursor: 'pointer',
-    padding: '4px 0',
-    textDecoration: 'none'
-  };
-
-  const listItemHoverStyle = {
-    textDecoration: 'underline'
+  const loadingStyle = {
+    padding: '0.5rem 0.75rem',
+    color: '#666',
+    fontStyle: 'italic'
   };
 
   return (
     <div style={containerStyle}>
+
       <div style={cardStyle}>
         <h2 style={headingStyle}>Transaction Report</h2>
-        <div style={tableWrapperStyle}>
-          <div style={tableScrollStyle}>
-            <table style={tableStyle}>
-              <thead>
-                <tr>
-                  <th style={thStyle}>Date</th>
-                  <th style={thStyle}>Type</th>
-                  <th style={thStyle}>Center</th>
-                  <th style={thStyle}>Parent Center</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  ['07 Jun 2025', 'indent', 'VASHI HO', 'VASHI WAREHOUSE'],
-                  ['31 May 2025', 'closing stock', 'VASHI HO', 'VASHI WAREHOUSE'],
-                  ['30 May 2025', 'indent', 'VASHI HO', 'VASHI WAREHOUSE'],
-                  ['07 Jun 2025', 'indent', 'VASHI HO', 'VASHI WAREHOUSE'],
-                  ['31 May 2025', 'closing stock', 'VASHI HO', 'VASHI WAREHOUSE'],
-                  ['30 May 2025', 'indent', 'VASHI HO', 'VASHI WAREHOUSE'],
-                  ['07 Jun 2025', 'indent', 'VASHI HO', 'VASHI WAREHOUSE'],
-                  ['31 May 2025', 'closing stock', 'VASHI HO', 'VASHI WAREHOUSE'],
-                  ['30 May 2025', 'indent', 'VASHI HO', 'VASHI WAREHOUSE'],
-                ].map(([date, type, center, parent], idx) => (
-                  <tr key={idx}>
-                    <td style={tdStyle}>{date}</td>
-                    <td style={tdStyle}>{type}</td>
-                    <td style={tdStyle}>{center}</td>
-                    <td style={tdStyle}>{parent}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+
+        {loading ? (
+          <p style={{ paddingLeft: '1rem' }}>Loading...</p>
+        ) : error ? (
+          <p style={{ paddingLeft: '1rem', color: 'red' }}>{error}</p>
+        ) : (
+          <>
+            <div style={tableWrapperStyle}>
+              <div style={tableScrollStyle}>
+                <table style={tableStyle}>
+                  <thead>
+                    <tr>
+                      <th style={thStyle}>Date</th>
+                      <th style={thStyle}>Type</th>
+                      <th style={thStyle}>Center</th>
+                      <th style={thStyle}>Parent Center</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transactions.length > 0 ? (
+                      transactions.map((t) => (
+                        <tr key={t._id}>
+                          <td style={tdStyle}>{t.Date}</td>
+                          <td style={tdStyle}>{t.Type}</td>
+                          <td style={tdStyle}>{t.Center}</td>
+                          <td style={tdStyle}></td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="7" style={{ ...tdStyle, textAlign: 'center' }}>
+                          No records found.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <div style={{ ...cardStyle, paddingLeft: '0.75rem', paddingRight: '0.75rem' }}>
         <h2 style={headingStyle}>Last Notification</h2>
         <ul style={notificationListStyle}>
-          {[
-            'Your indent Request No.VASHOVASHIHO/0625/4 had been Approved by VASHI WAREHOUSE - 23 Jun 2025',
-            'Your indent Request No.VASHI/006256 had been Approved by VASHI WAREHOUSE - 23 Jun 2025',
-            'Your indent No.VASHI/006258 had been Rejected by VASHI WAREHOUSE - 07 Jun 2025',
-            'Your indent Request No.VASHI/006255 had been Completed From VASHI WAREHOUSE - 07 Jun 2025',
-            'Your indent Request No.VASHOVASHIHO/0625/4 had been Approved by VASHI WAREHOUSE - 23 Jun 2025',
-            'Your indent Request No.VASHI/006256 had been Approved by VASHI WAREHOUSE - 23 Jun 2025',
-            'Your indent No.VASHI/006258 had been Rejected by VASHI WAREHOUSE - 07 Jun 2025',
-            'Your indent Request No.VASHI/006255 had been Completed From VASHI WAREHOUSE - 07 Jun 2025',
-            'Your indent Request No.VASHOVASHIHO/0625/4 had been Approved by VASHI WAREHOUSE - 23 Jun 2025',
-            'Your indent Request No.VASHI/006256 had been Approved by VASHI WAREHOUSE - 23 Jun 2025',
-            'Your indent No.VASHI/006258 had been Rejected by VASHI WAREHOUSE - 07 Jun 2025',
-            'Your indent Request No.VASHI/006255 had been Completed From VASHI WAREHOUSE - 07 Jun 2025',
-          ].map((msg, i) => (
-            <li
-              key={i}
-              style={listItemStyle}
-              onClick={() => handleNotificationClick(msg)}
-              onMouseOver={(e) => e.currentTarget.style.textDecoration = 'underline'}
-              onMouseOut={(e) => e.currentTarget.style.textDecoration = 'none'}
-            >
-              {msg}
-            </li>
-          ))}
+          {notificationsLoading ? (
+            <li style={loadingStyle}>Loading notifications...</li>
+          ) : notifications.length > 0 ? (
+            notifications.map((notification, index) => (
+              <li
+                key={notification.id || index}
+                style={listItemStyle}
+                onClick={() => handleNotificationClick(notification)}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f4f4f4';
+
+                }}
+                // onMouseOut={(e) => {
+                //   e.currentTarget.style.textDecoration = 'none';
+                //   e.currentTarget.style.backgroundColor = 'transparent';
+                //   e.currentTarget.style.paddingLeft = '0';
+                // }}
+              >
+                {notification.message}
+              </li>
+            ))
+          ) : (
+            <li style={loadingStyle}>No recent notifications</li>
+          )}
         </ul>
       </div>
     </div>
@@ -159,7 +208,11 @@ const TransactionReport = ({ onNotificationClick }) => {
 };
 
 TransactionReport.propTypes = {
-  onNotificationClick: PropTypes.func.isRequired,
+  onNotificationClick: PropTypes.func,
+};
+
+TransactionReport.defaultProps = {
+  onNotificationClick: () => {},
 };
 
 export default TransactionReport;

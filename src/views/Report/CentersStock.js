@@ -205,31 +205,31 @@ const CenterStock = () => {
     );
   }
 
-  const fetchAllDataForExport = async () => {
-    try {
-      setLoading(true);
-      const response = await axiosInstance.get('/availableStock/centerstock');
-      if (response.data.success) {
-        return response.data.data.stock;
-      } else {
-        throw new Error('API returned unsuccessful response');
-      }
-    } catch (err) {
-      console.error('Error fetching data for export:', err);
-      showError('Error fetching data for export');
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-  
   const generateDetailExport = async () => {
     try {
       setLoading(true);
-    
-      const allData = await fetchAllDataForExport();
+      const params = new URLSearchParams();
       
-      if (!allData || allData.length === 0) {
+      if (activeSearch.product) {
+        params.append('product', activeSearch.product);
+      }
+      if (activeSearch.center) {
+        params.append('center', activeSearch.center);
+      }
+      
+      const apiUrl = params.toString() 
+        ? `/availableStock/centerstock?${params.toString()}` 
+        : '/availableStock/centerstock';
+      
+      const response = await axiosInstance.get(apiUrl);
+      
+      if (!response.data.success) {
+        throw new Error('API returned unsuccessful response');
+      }
+  
+      const exportData = response.data.data.stock;
+      
+      if (!exportData || exportData.length === 0) {
         showError('No data available for export');
         return;
       }
@@ -242,7 +242,7 @@ const CenterStock = () => {
         'Damage',
       ];
   
-      const csvData = allData.flatMap(purchase => {
+      const csvData = exportData.flatMap(purchase => {
         if (purchase.products && purchase.products.length > 0) {
           return purchase.products.map(product => [
             purchase.centerName,
@@ -260,8 +260,7 @@ const CenterStock = () => {
             purchase.damagedQuantity || 0,
           ]];
         }
-      }
-    );
+      });
   
       const csvContent = [
         headers.join(','),
@@ -275,16 +274,16 @@ const CenterStock = () => {
   
       const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
+      const downloadUrl = URL.createObjectURL(blob);
       
-      link.setAttribute('href', url);
+      link.setAttribute('href', downloadUrl);
       link.setAttribute('download', `available_stock_${new Date().toISOString().split('T')[0]}.csv`);
       link.style.visibility = 'hidden';
       
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(downloadUrl);
     
     } catch (error) {
       console.error('Error generating export:', error);

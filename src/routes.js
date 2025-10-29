@@ -76,6 +76,10 @@ const UsageDetail = React.lazy(() => import('./views/Report/UsageDetail'))
 const UsageSummary = React.lazy(() => import('./views/Report/UsageSummary'))
 const StolenReport = React.lazy(() => import('./views/Report/StolenReport'))
 const ProductSerialTrack = React.lazy(() => import('./views/Report/ProductSerialTrack'))
+const UsageReplace = React.lazy(() => import('./views/Report/UsageReplace'))
+const OnuTrackReport = React.lazy(() => import('./views/Report/OnuTrackReport'))
+const IndentUsageSummary = React.lazy(() => import('./views/Report/IndentUsageSummary'))
+
 const routes = [
 
   { path: '/', exact: true, name: <Translation>{(t) => t('home')}</Translation> },
@@ -495,6 +499,24 @@ const routes = [
     name: <Translation>{(t) => t('Product Serial Track')}</Translation>,
     element: ProductSerialTrack,
     exact: true,
+  },
+  {
+    path:'/usage-replace',
+    name: <Translation>{(t) => t('Usage Replace')}</Translation>,
+    element: UsageReplace,
+    exact: true,
+  },
+  {
+    path:'/onu-report',
+    name:<Translation>{(t) => t('Onu Report')}</Translation>,
+    element: OnuTrackReport,
+    exact: true,
+  },
+  {
+    path:'/indentUsageSummary',
+    name:<Translation>{(t) => t('Indent Usage Summary Report')}</Translation>,
+    element: IndentUsageSummary,
+    exact: true
   }
 ]
 

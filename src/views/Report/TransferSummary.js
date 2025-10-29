@@ -21,16 +21,25 @@ import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import Pagination from 'src/utils/Pagination';
 import { showError } from 'src/utils/sweetAlerts';
+import { formatDisplayDate } from 'src/utils/FormatDateTime';
+import SearchIndentSummary from './SearchIndentSummary';
 
 const TransferSummary = () => {
   const [data, setData] = useState([]);
   const [centers, setCenters] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [searchTerm, setSearchTerm] = useState('');
   const [searchModalVisible, setSearchModalVisible] = useState(false);
-  const [activeSearch, setActiveSearch] = useState({ keyword: '', outlet: '' });
+  const [activeSearch, setActiveSearch] = useState({ 
+    center: '', 
+    product: '', 
+    startDate: '', 
+    endDate: '',
+    usageType: ''
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -38,15 +47,30 @@ const TransferSummary = () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      
-      if (searchParams.keyword) {
-        params.append('search', searchParams.keyword);
+    
+      if (searchParams.center) {
+        params.append('fromCenter', searchParams.center);
       }
-      if (searchParams.outlet) {
-        params.append('outlet', searchParams.outlet);
+      if (searchParams.product) {
+        params.append('product', searchParams.product);
       }
+      if (searchParams.usageType) {
+        params.append('status', searchParams.usageType);
+      }
+      if (searchParams.startDate && searchParams.endDate) {
+        const convertDateFormat = (dateStr) => {
+          const [day, month, year] = dateStr.split('-');
+          return `${year}-${month}-${day}`;
+        };
+        
+        params.append('startDate', convertDateFormat(searchParams.startDate));
+        params.append('endDate', convertDateFormat(searchParams.endDate));
+      }
+
       params.append('page', page);
-      const url = params.toString() ? `/reports/transfers/summary?${params.toString()}` : '/reports/transfer/summary';
+      const url = params.toString() ? `/reports/transfers/summary?${params.toString()}` : '/reports/transfers/summary';
+      
+      console.log('Fetching Transfer URL:', url);
       const response = await axiosInstance.get(url);
       
       if (response.data.success) {
@@ -58,7 +82,7 @@ const TransferSummary = () => {
       }
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching data:', err);
+      console.error('Error fetching transfer data:', err);
     } finally {
       setLoading(false);
     }
@@ -71,13 +95,25 @@ const TransferSummary = () => {
         setCenters(response.data.data);
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching centers:', error);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axiosInstance.get('/products');
+      if (response.data.success) {
+        setProducts(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
     }
   };
 
   useEffect(() => {
     fetchData();
     fetchCenters();
+    fetchProducts();
   }, []);
 
   const handlePageChange = (page) => {
@@ -85,35 +121,17 @@ const TransferSummary = () => {
     fetchData(activeSearch, page);
   };
 
-  const getFlattenedData = () => {
-    const flattened = [];
-    data.forEach(purchase => {
-      if (purchase.products && purchase.products.length > 0) {
-        purchase.products.forEach(product => {
-          flattened.push({
-            ...purchase,
-            productDetail: product,
-            uniqueKey: `${purchase._id}_${product._id}`
-          });
-        });
-      } else {
-        flattened.push({
-          ...purchase,
-          productDetail: null,
-          uniqueKey: `${purchase._id}_no_product`
-        });
-      }
-    });
-    return flattened;
-  };  
-
   const calculateTotals = () => {
     const totals = {
-      TotalReceivedQty: 0,
+      totalReceivedQty: 0,
+      totalRequestedQty: 0,
+      totalApprovedQty: 0,
     };
   
     data.forEach(item => {
-      totals.TotalReceivedQty += parseFloat(item.TotalReceivedQty || 0);
+      totals.totalReceivedQty += parseFloat(item.totalReceivedQty || 0);
+      totals.totalRequestedQty += parseFloat(item.totalRequestedQty || 0);
+      totals.totalApprovedQty += parseFloat(item.totalApprovedQty || 0);
     });
   
     return totals;
@@ -161,18 +179,35 @@ const TransferSummary = () => {
   };
 
   const handleSearch = (searchData) => {
-    setActiveSearch(searchData);
-    fetchData(searchData, 1);
+    const mergedSearchData = {
+      ...activeSearch,
+      ...searchData
+    };
+    setActiveSearch(mergedSearchData);
+    fetchData(mergedSearchData, 1);
   };
 
   const handleResetSearch = () => {
-    setActiveSearch({ keyword: '', outlet: '' });
+    setActiveSearch({ 
+      center: '', 
+      product: '', 
+      startDate: '', 
+      endDate: '',
+      usageType: '',
+    });
     setSearchTerm('');
     fetchData({}, 1);
   };
 
-  const filteredFlattenedData = getFlattenedData().filter(item => {
-    if (activeSearch.keyword || activeSearch.outlet) {
+  const isSearchActive = () => {
+    return activeSearch.center || 
+           activeSearch.product || 
+           activeSearch.startDate || 
+           activeSearch.endDate ||
+           activeSearch.usageType 
+  };
+  const filteredData = data.filter(item => {
+    if (isSearchActive()) {
       return true;
     }
     return Object.values(item).some(value => {
@@ -203,31 +238,46 @@ const TransferSummary = () => {
 
   const totals = calculateTotals();
 
-  const fetchAllDataForExport = async () => {
-    try {
-      setLoading(true);
-      const response = await axiosInstance.get('/reports/transfers/summary');
-      if (response.data.success) {
-        return response.data.data;
-      } else {
-        throw new Error('API returned unsuccessful response');
-      }
-    } catch (err) {
-      console.error('Error fetching data for export:', err);
-      showError('Error fetching data for export');
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  
   const generateDetailExport = async () => {
     try {
       setLoading(true);
-    
-      const allData = await fetchAllDataForExport();
       
-      if (!allData || allData.length === 0) {
+      // Use activeSearch filters instead of fetching all data
+      const params = new URLSearchParams();
+      
+      if (activeSearch.center) {
+        params.append('fromCenter', activeSearch.center);
+      }
+      if (activeSearch.product) {
+        params.append('product', activeSearch.product);
+      }
+      if (activeSearch.usageType) {
+        params.append('status', activeSearch.usageType);
+      }
+      if (activeSearch.startDate && activeSearch.endDate) {
+        const convertDateFormat = (dateStr) => {
+          const [day, month, year] = dateStr.split('-');
+          return `${year}-${month}-${day}`;
+        };
+        
+        params.append('startDate', convertDateFormat(activeSearch.startDate));
+        params.append('endDate', convertDateFormat(activeSearch.endDate));
+      }
+      
+      const apiUrl = params.toString() 
+        ? `/reports/transfers/summary?${params.toString()}` 
+        : '/reports/transfers/summary';
+      
+      const response = await axiosInstance.get(apiUrl);
+      
+      if (!response.data.success) {
+        throw new Error('API returned unsuccessful response');
+      }
+  
+      const exportData = response.data.data;
+      
+      if (!exportData || exportData.length === 0) {
         showError('No data available for export');
         return;
       }
@@ -239,23 +289,12 @@ const TransferSummary = () => {
         'Total Qty'
       ];
   
-      const csvData = allData.flatMap(purchase => {
-        if (purchase.products && purchase.products.length > 0) {
-          return purchase.products.map(product => [
-            purchase.ToCenter,
-            purchase.FromCenter || 'N/A',
-            purchase.Product || 0,
-            purchase.TotalReceivedQty || 'N/A',
-          ]);
-        } else {
-          return [[
-            purchase.ToCenter,
-            purchase.FromCenter || 'N/A',
-            purchase.Product || 0,
-            purchase.TotalReceivedQty || 'N/A',
-          ]];
-        }
-      });
+      const csvData = exportData.map(item => [
+        item.fromCenter || 'N/A',
+        item.toCenter || 'N/A',
+        item.product || 'N/A',
+        item.totalReceivedQty || 0
+      ]);
   
       const csvContent = [
         headers.join(','),
@@ -269,16 +308,16 @@ const TransferSummary = () => {
   
       const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
+      const downloadUrl = URL.createObjectURL(blob);
       
-      link.setAttribute('href', url);
-      link.setAttribute('download', `indent_summary_report_${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute('href', downloadUrl);
+      link.setAttribute('download', `transfer_summary_report_${new Date().toISOString().split('T')[0]}.csv`);
       link.style.visibility = 'hidden';
       
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(downloadUrl);
     
     } catch (error) {
       console.error('Error generating export:', error);
@@ -290,8 +329,14 @@ const TransferSummary = () => {
 
   return (
     <div>
-      <div className='title'>Transfer Summary Report </div>
-    
+      <div className='title'>Transfer Summary Report</div>
+      <SearchIndentSummary
+        visible={searchModalVisible}
+        onClose={() => setSearchModalVisible(false)}
+        onSearch={handleSearch}
+        centers={centers}
+        products={products}
+      />
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
@@ -302,7 +347,7 @@ const TransferSummary = () => {
             >
               <CIcon icon={cilSearch} className='icon' /> Search
             </CButton>
-            {(activeSearch.keyword || activeSearch.outlet) && (
+            {isSearchActive() && (
               <CButton 
                 size="sm" 
                 color="secondary" 
@@ -333,6 +378,13 @@ const TransferSummary = () => {
         </CCardHeader>
         
         <CCardBody>
+          <div className='summary-report'>
+            <h4 className='summary-title'>Showing Result</h4>
+            <ul className='summary-list'>
+              <li><strong>{formatDisplayDate(activeSearch.startDate, activeSearch.endDate)}</strong></li>
+            </ul>
+          </div>
+
           <div className="d-flex justify-content-between mb-3">
             <div>
             </div>
@@ -352,38 +404,34 @@ const TransferSummary = () => {
             <CTable striped bordered hover className='responsive-table'>
               <CTableHead>
                 <CTableRow>
-                  <CTableHeaderCell scope="col" onClick={() => handleSort('Center')} className="sortable-header">
-                    Center {getSortIcon('Center')}
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('fromCenter')} className="sortable-header">
+                    Center {getSortIcon('fromCenter')}
                   </CTableHeaderCell>
-                  <CTableHeaderCell scope="col" onClick={() => handleSort('ParentCenter')} className="sortable-header">
-                    Parent Center {getSortIcon('ParentCenter')}
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('toCenter')} className="sortable-header">
+                    Parent Center {getSortIcon('toCenter')}
                   </CTableHeaderCell>
-                  <CTableHeaderCell scope="col" onClick={() => handleSort('Product')} className="sortable-header">
-                    Product {getSortIcon('Product')}
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('product')} className="sortable-header">
+                    Product {getSortIcon('product')}
                   </CTableHeaderCell>
-                  <CTableHeaderCell scope="col" onClick={() => handleSort('TotalReceivedQty')} className="sortable-header">
-                    Total Qty {getSortIcon('TotalReceivedQty')}
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('totalReceivedQty')} className="sortable-header">
+                    Total Qty {getSortIcon('totalReceivedQty')}
                   </CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
               <CTableBody>
-                {filteredFlattenedData.length > 0 ? (
+                {filteredData.length > 0 ? (
                   <>
-                    {filteredFlattenedData.map((item) => (
-                      <CTableRow key={item.uniqueKey}>
-                        <CTableDataCell>{item.FromCenter || ''}</CTableDataCell>
-                        <CTableDataCell>{item.ToCenter}</CTableDataCell>
-                        <CTableDataCell>
-                          {item.Product || 'No Product'}
-                        </CTableDataCell>
-                        <CTableDataCell>
-                          {item.TotalReceivedQty || 0}
-                        </CTableDataCell>
+                    {filteredData.map((item, index) => (
+                      <CTableRow key={index}>
+                        <CTableDataCell>{item.fromCenter || ''}</CTableDataCell>
+                        <CTableDataCell>{item.toCenter || ''}</CTableDataCell>
+                        <CTableDataCell>{item.product || ' '}</CTableDataCell>
+                        <CTableDataCell>{item.totalReceivedQty || 0}</CTableDataCell>
                       </CTableRow>
                     ))}
                     <CTableRow className='total-row'>
                       <CTableDataCell colSpan="3">Total</CTableDataCell>
-                      <CTableDataCell>{totals.TotalReceivedQty.toFixed(2)}</CTableDataCell>
+                      <CTableDataCell>{totals.totalReceivedQty.toFixed(2)}</CTableDataCell>
                     </CTableRow>
                   </>
                 ) : (

@@ -26,7 +26,6 @@ import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import Pagination from 'src/utils/Pagination';
 import { showError } from 'src/utils/sweetAlerts';
-import SearchCenterStock from './SearchCenterStock';
 import { formatDate } from 'src/utils/FormatDateTime';
 import ProductSerialSearch from './ProductSerialSearch';
 
@@ -39,7 +38,11 @@ const ProductSerialTrack = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [searchTerm, setSearchTerm] = useState('');
   const [searchModalVisible, setSearchModalVisible] = useState(false);
-  const [activeSearch, setActiveSearch] = useState({  product: '', outlet: '' });
+  const [activeSearch, setActiveSearch] = useState({  
+    product: '', 
+    status: '', 
+    keyword: '' 
+  });
   const [dropdownOpen, setDropdownOpen] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -48,19 +51,26 @@ const ProductSerialTrack = () => {
   const [selectedSerial, setSelectedSerial] = useState(null);
   const [serialHistory, setSerialHistory] = useState([]);
   const [serialModalVisible, setSerialModalVisible] = useState(false);
+
   const fetchData = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
       
       if (searchParams.product) {
-        params.append('search', searchParams.product);
+        params.append('product', searchParams.product);
       }
-      if (searchParams.outlet) {
-        params.append('outlet', searchParams.outlet);
+      if (searchParams.status) {
+        params.append('status', searchParams.status);
       }
+      if (searchParams.keyword) {
+        params.append('search', searchParams.keyword);
+      }
+      
       params.append('page', page);
-      const url = params.toString() ? `/reports/serialreport?${params.toString()}` : '/reports/serialreport';
+      params.append('limit', 10);
+      
+      const url = `/reports/serialreport?${params.toString()}`;
       const response = await axiosInstance.get(url);
       
       if (response.data.success) {
@@ -88,6 +98,7 @@ const ProductSerialTrack = () => {
       console.error('Error fetching data:', error);
     }
   };
+
   const fetchProducts = async () => {
     try {
       const response = await axiosInstance.get('/products');
@@ -98,6 +109,7 @@ const ProductSerialTrack = () => {
       console.error('Error fetching data:', error);
     }
   };
+
   useEffect(() => {
     fetchData();
     fetchCenters();
@@ -156,16 +168,20 @@ const ProductSerialTrack = () => {
   };
 
   const handleResetSearch = () => {
-    setActiveSearch({product: '', outlet: '' });
+    setActiveSearch({ product: '', status: '', keyword: '' });
     setSearchTerm('');
-    fetchData({},1);
+    fetchData({}, 1);
   };
 
-  const filteredData = data.filter(data => {
-    if (activeSearch.product || activeSearch.outlet) {
+  const isSearchActive = () => {
+    return activeSearch.product || activeSearch.status || activeSearch.keyword;
+  };
+
+  const filteredData = data.filter(item => {
+    if (isSearchActive()) {
       return true;
     }
-    return Object.values(data).some(value => {
+    return Object.values(item).some(value => {
       if (typeof value === 'object' && value !== null) {
         return Object.values(value).some(nestedValue => 
           nestedValue && nestedValue.toString().toLowerCase().includes(searchTerm.toLowerCase())
@@ -221,31 +237,33 @@ const ProductSerialTrack = () => {
     );
   }
 
-  const fetchAllDataForExport = async () => {
-    try {
-      setLoading(true);
-      const response = await axiosInstance.get('/reports/serialreport');
-      if (response.data.success) {
-        return response.data.data;
-      } else {
-        throw new Error('API returned unsuccessful response');
-      }
-    } catch (err) {
-      console.error('Error fetching data for export:', err);
-      showError('Error fetching data for export');
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-  
   const generateDetailExport = async () => {
     try {
       setLoading(true);
-    
-      const allData = await fetchAllDataForExport();
       
-      if (!allData || allData.length === 0) {
+      // Use activeSearch filters instead of fetching all data
+      const params = new URLSearchParams();
+      
+      if (activeSearch.product) {
+        params.append('product', activeSearch.product);
+      }
+      if (activeSearch.status) {
+        params.append('status', activeSearch.status);
+      }
+      if (activeSearch.keyword) {
+        params.append('search', activeSearch.keyword);
+      }
+      
+      const apiUrl = `/reports/serialreport?${params.toString()}`;
+      const response = await axiosInstance.get(apiUrl);
+      
+      if (!response.data.success) {
+        throw new Error('API returned unsuccessful response');
+      }
+  
+      const exportData = response.data.data;
+      
+      if (!exportData || exportData.length === 0) {
         showError('No data available for export');
         return;
       }
@@ -255,29 +273,30 @@ const ProductSerialTrack = () => {
         'Purchase Center',
         'Center',
         'Product',
-        'Action At',
+        'Product Code',
+        'Product Price',
+        'Status',
+        'Current Location',
+        'Action Date',
+        'Vendor',
+        'Invoice No',
+        'Purchase Date'
       ];
   
-      const csvData = allData.flatMap(purchase => {
-        if (purchase.products && purchase.products.length > 0) {
-          return purchase.products.map(product => [
-            purchase.Serial,
-            purchase.PurchaseCenter || 'N/A',
-            purchase.Center || "",
-            purchase.Product || "",
-            formatDate(purchase.ActionDate),
-          ]);
-        } else {
-          return [[
-            purchase.Serial,
-            purchase.PurchaseCenter || 'N/A',
-            purchase.Center || "",
-            purchase.Product || "",
-            formatDate(purchase.ActionDate),
-          ]];
-        }
-      }
-    );
+      const csvData = exportData.map(item => [
+        item.Serial || '',
+        item.PurchaseCenter?.name || 'N/A',
+        item.Center?.name || '',
+        item.Product?.name || '',
+        item.ProductCode || '',
+        item.ProductPrice || '',
+        item.Status || '',
+        item.CurrentLocation?.name || '',
+        formatDate(item.ActionDate),
+        item.PurchaseInfo?.vendor?.name || '',
+        item.PurchaseInfo?.invoiceNo || '',
+        item.PurchaseInfo?.purchaseDate ? formatDate(item.PurchaseInfo.purchaseDate) : ''
+      ]);
   
       const csvContent = [
         headers.join(','),
@@ -291,16 +310,16 @@ const ProductSerialTrack = () => {
   
       const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
+      const downloadUrl = URL.createObjectURL(blob);
       
-      link.setAttribute('href', url);
+      link.setAttribute('href', downloadUrl);
       link.setAttribute('download', `product_serial_report_${new Date().toISOString().split('T')[0]}.csv`);
       link.style.visibility = 'hidden';
       
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(downloadUrl);
     
     } catch (error) {
       console.error('Error generating export:', error);
@@ -309,7 +328,6 @@ const ProductSerialTrack = () => {
       setLoading(false);
     }
   };
-
   return (
     <div>
       <div className='title'>Product Serial Report</div>
@@ -319,7 +337,7 @@ const ProductSerialTrack = () => {
         onClose={() => setSearchModalVisible(false)}
         onSearch={handleSearch}
         centers={centers}
-       products={products}
+        products={products}
       />
       
       <CCard className='table-container mt-4'>
@@ -332,7 +350,7 @@ const ProductSerialTrack = () => {
             >
               <CIcon icon={cilSearch} className='icon' /> Search
             </CButton>
-            {(activeSearch.product || activeSearch.outlet) && (
+            {isSearchActive() && (
               <CButton 
                 size="sm" 
                 color="secondary" 
@@ -343,21 +361,22 @@ const ProductSerialTrack = () => {
                 Reset Search
               </CButton>
             )}
-              <CButton 
+            <CButton 
               size="sm" 
               className="action-btn me-1"
               onClick={generateDetailExport}
+              disabled={loading}
             >
               <i className="fa fa-fw fa-file-excel"></i>
-               Export
+              {loading ? 'Exporting...' : 'Export'}
             </CButton>
           </div>
           
           <div>
-          <Pagination
-                 currentPage={currentPage}
-                 totalPages={totalPages}
-                 onPageChange={handlePageChange}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
             />
           </div>
         </CCardHeader>
@@ -365,6 +384,7 @@ const ProductSerialTrack = () => {
         <CCardBody>
           <div className="d-flex justify-content-between mb-3">
             <div>
+              <strong>Total Records: {filteredData.length}</strong>
             </div>
             <div className='d-flex'>
               <CFormLabel className='mt-1 m-1'>Search:</CFormLabel>
@@ -379,64 +399,66 @@ const ProductSerialTrack = () => {
           </div>
           
           <div className="responsive-table-wrapper">
-          <CTable striped bordered hover className='responsive-table'>
-            <CTableHead>
-              <CTableRow>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('outlet')} className="sortable-header">
-                 Serial {getSortIcon('outlet')}
-                </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('date')} className="sortable-header">
-                Purchase Center {getSortIcon('date')}
-                </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('invoiceNo')} className="sortable-header">
-                  Center {getSortIcon('invoiceNo')}
-                </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('vendor.businessName')} className="sortable-header">
-                  Product {getSortIcon('vendor.businessName')}
-                </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('damagedQuantity')} className="sortable-header">
-                 Action At {getSortIcon('damagedQuantity')}
-                </CTableHeaderCell>
-             </CTableRow>
-            </CTableHead>
-            <CTableBody>
-              {filteredData.length > 0 ? (
-                <>
-                  {filteredData.map((data) => (
-                    <CTableRow key={data._id}
-                    className={data.Status === 'consumed' ? 'selected-row' : ''}
-                    >
-                      <CTableDataCell>
-                      <button 
-                        className="btn btn-link p-0 text-decoration-none"
-                        style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
-                        onClick={() => handleSerialClick(data.Serial)}
-                      >
-                        {data.Serial || ''}
-                      </button>
-                      </CTableDataCell>
-                      <CTableDataCell>{data.PurchaseCenter?.name || ''}</CTableDataCell>
-                      <CTableDataCell>{data.Center?.name || ''}</CTableDataCell>
-                      <CTableDataCell>{data.Product.name || 'N/A'}</CTableDataCell>
-                      <CTableDataCell>{formatDate(data.ActionDate || 0)}</CTableDataCell>
-                    </CTableRow>
-                  ))}
-                </>
-              ) : (
+            <CTable striped bordered hover className='responsive-table'>
+              <CTableHead>
                 <CTableRow>
-                  <CTableDataCell colSpan="11" className="text-center">
-                    No data found
-                  </CTableDataCell>
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('Serial')} className="sortable-header">
+                    Serial {getSortIcon('Serial')}
+                  </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('PurchaseCenter.name')} className="sortable-header">
+                    Purchase Center {getSortIcon('PurchaseCenter.name')}
+                  </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('Center.name')} className="sortable-header">
+                    Center {getSortIcon('Center.name')}
+                  </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('Product.name')} className="sortable-header">
+                    Product {getSortIcon('Product.name')}
+                  </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('ActionDate')} className="sortable-header">
+                    Action At {getSortIcon('ActionDate')}
+                  </CTableHeaderCell>
                 </CTableRow>
-              )}
-            </CTableBody>
-          </CTable>
+              </CTableHead>
+              <CTableBody>
+                {filteredData.length > 0 ? (
+                  <>
+                    {filteredData.map((item) => (
+                      <CTableRow key={item._id}
+                        className={item.Status === 'consumed' ? 'use-product-row' : 
+                        item.Status === 'damaged' ? 'damage-product-row' : ''}
+                      >
+                        <CTableDataCell>
+                          <button 
+                            className="btn btn-link p-0 text-decoration-none"
+                            style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
+                            onClick={() => handleSerialClick(item.Serial)}
+                          >
+                            {item.Serial || ''}
+                          </button>
+                        </CTableDataCell>
+                        <CTableDataCell>{item.PurchaseCenter?.name || ''}</CTableDataCell>
+                        <CTableDataCell>{item.Center?.name || ''}</CTableDataCell>
+                        <CTableDataCell>{item.Product?.name || 'N/A'}</CTableDataCell>
+                        <CTableDataCell>{formatDate(item.ActionDate || 0)}</CTableDataCell>
+                      </CTableRow>
+                    ))}
+                  </>
+                ) : (
+                  <CTableRow>
+                    <CTableDataCell colSpan="6" className="text-center">
+                      No data found
+                    </CTableDataCell>
+                  </CTableRow>
+                )}
+              </CTableBody>
+            </CTable>
           </div>
-          <br></br>
-       <span className='use_product'></span>&nbsp;Use Product
-      <span className='damage_product'></span>&nbsp;Damage Product
+          <br />
+          <span className='use_product'></span>&nbsp;Use Product
+          <span className='damage_product'></span>&nbsp;Damage Product
         </CCardBody>
       </CCard>
+
       <CModal visible={serialModalVisible} onClose={() => setSerialModalVisible(false)} size="xl">
         <CModalHeader>
           <CModalTitle>Serial No.{selectedSerial} Track</CModalTitle>

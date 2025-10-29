@@ -12,14 +12,16 @@ import PropTypes from 'prop-types'
 import '../../css/form.css'
 import DatePicker from 'src/utils/DatePicker'
 
-const SearchIndentSummary = ({ visible, onClose, onSearch, centers, products }) => {
+const SearchUsageDetail = ({ visible, onClose, onSearch, centers, products, customers }) => {
   const [searchData, setSearchData] = useState({
     product: '',
     center: '',
     usageType: '',
+    customer: '',
+    date: '',
     startDate: '',
     endDate: '',
-    dateDisplay: '' // Add this to store the display value
+    connectionType:''
   })
 
   useEffect(() => {
@@ -28,9 +30,11 @@ const SearchIndentSummary = ({ visible, onClose, onSearch, centers, products }) 
         product: '', 
         center: '', 
         usageType: '', 
+        customer: '', 
+        date: '', 
         startDate: '', 
         endDate: '',
-        dateDisplay: '' 
+        connectionType:''
       })
     }
   }, [visible])
@@ -41,50 +45,49 @@ const SearchIndentSummary = ({ visible, onClose, onSearch, centers, products }) 
   }
 
   const handleSearch = () => {
-    // Send only the data needed for API call
-    const apiSearchData = {
-      product: searchData.product,
-      center: searchData.center,
-      usageType: searchData.usageType,
-      startDate: searchData.startDate,
-      endDate: searchData.endDate
-    }
-    onSearch(apiSearchData)
+    onSearch(searchData)
     onClose()
   }
 
   const handleReset = () => {
-    const resetData = { 
+    setSearchData({ 
       product: '', 
       center: '', 
       usageType: '', 
+      customer: '', 
+      date: '', 
       startDate: '', 
       endDate: '',
-      dateDisplay: '' 
-    }
-    setSearchData(resetData)
-    onSearch({ product: '', center: '', usageType: '', startDate: '', endDate: '' })
+      connectionType:''
+    })
+    onSearch({ product: '', center: '' })
   }
 
   const handleDateChange = (dateValue) => {
     if (dateValue && dateValue.includes(' to ')) {
       const [startDate, endDate] = dateValue.split(' to ');
+      const formatDateForAPI = (dateStr) => {
+        const [day, month, year] = dateStr.split('-');
+        return `${year}-${month}-${day}`;
+      };
       
       setSearchData(prev => ({ 
         ...prev, 
-        dateDisplay: dateValue, // Store display value for the input
-        startDate: startDate,   // Store in DD-MM-YYYY format for display
-        endDate: endDate        // Store in DD-MM-YYYY format for display
+        date: dateValue,
+        dateFilter: 'Custom',
+        startDate: formatDateForAPI(startDate),
+        endDate: formatDateForAPI(endDate)
       }));
     } else {
       setSearchData(prev => ({ 
         ...prev, 
-        dateDisplay: '',
+        date: dateValue,
+        dateFilter: '',
         startDate: '',
         endDate: ''
       }));
     }
-  }
+  };
 
   return (
     <CModal size="lg" visible={visible} onClose={onClose}>
@@ -115,7 +118,7 @@ const SearchIndentSummary = ({ visible, onClose, onSearch, centers, products }) 
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="usageType">
-              Usage Type
+              Type
             </label>
             <CFormSelect
               id="usageType"
@@ -136,18 +139,26 @@ const SearchIndentSummary = ({ visible, onClose, onSearch, centers, products }) 
             </CFormSelect>
           </div>
         </div>
-        
+
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label" htmlFor="date">
-              Date
+            <label className="form-label" htmlFor="customer">
+              User
             </label>
-            <DatePicker
-              value={searchData.dateDisplay} // Use the display value
-              onChange={handleDateChange}
-              placeholder="Select Date Range"
-              className="no-radius-input date-input"
-            />
+            <CFormSelect
+              id="customer"
+              name="customer"
+              value={searchData.customer}
+              onChange={handleChange}
+              className="form-input no-radius-input"
+            >
+              <option value="">-SELECT-</option>
+              {customers.map((customer) => (
+                <option key={customer._id} value={customer._id}>
+                  {customer.username}-{customer.mobile}
+                </option>
+              ))}
+            </CFormSelect>
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="product">
@@ -169,6 +180,38 @@ const SearchIndentSummary = ({ visible, onClose, onSearch, centers, products }) 
             </CFormSelect>
           </div>
         </div>
+        
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label" htmlFor="date">
+              Date
+            </label>
+            <DatePicker
+              value={searchData.date}
+              onChange={handleDateChange}
+              placeholder="Select Date Range"
+              className="no-radius-input date-input"
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="connectionType">
+              Connection Type
+            </label>
+            <CFormSelect
+              id="connectionType"
+              name="connectionType"
+              value={searchData.connectionType}
+              onChange={handleChange}
+              className="form-input no-radius-input"
+            >
+              <option value="">SELECT</option>
+              <option value="New">new</option>
+              <option value="Convert">convert</option>
+              <option value="Shifting">shifting</option>
+              <option value="Repair">Repair</option>
+            </CFormSelect>
+          </div>
+        </div>
 
       </CModalBody>
 
@@ -176,7 +219,7 @@ const SearchIndentSummary = ({ visible, onClose, onSearch, centers, products }) 
         <CButton 
           color="secondary" 
           className="me-2" 
-          onClick={onClose} // Changed from handleReset to onClose
+          onClick={handleReset}
         >
           Close
         </CButton>
@@ -191,12 +234,13 @@ const SearchIndentSummary = ({ visible, onClose, onSearch, centers, products }) 
   )
 }
 
-SearchIndentSummary.propTypes = {
+SearchUsageDetail.propTypes = {
   visible: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSearch: PropTypes.func.isRequired,
   centers: PropTypes.array.isRequired,
-  products: PropTypes.array.isRequired
+  products: PropTypes.array.isRequired,
+  customers: PropTypes.array.isRequired
 }
 
-export default SearchIndentSummary
+export default SearchUsageDetail

@@ -22,6 +22,7 @@ import axiosInstance from 'src/axiosInstance';
 import Pagination from 'src/utils/Pagination';
 import { showError } from 'src/utils/sweetAlerts';
 import SearchIndentSummary from './SearchIndentSummary';
+import { formatDisplayDate} from 'src/utils/FormatDateTime';
 
 const IndentSummary = () => {
   const [data, setData] = useState([]);
@@ -32,7 +33,15 @@ const IndentSummary = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [searchTerm, setSearchTerm] = useState('');
   const [searchModalVisible, setSearchModalVisible] = useState(false);
-  const [activeSearch, setActiveSearch] = useState({ keyword: '', outlet: '' });
+  const [activeSearch, setActiveSearch] = useState({ 
+    center: '', 
+    product: '', 
+    startDate: '', 
+    endDate: '',
+    usageType: '',
+    keyword: '', 
+    outlet: '' 
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -41,14 +50,36 @@ const IndentSummary = () => {
       setLoading(true);
       const params = new URLSearchParams();
       
+      if (searchParams.center) {
+        params.append('center', searchParams.center);
+      }
+      if (searchParams.product) {
+        params.append('product', searchParams.product);
+      }
+      if (searchParams.usageType) {
+        params.append('usageType', searchParams.usageType);
+      }
+      if (searchParams.startDate && searchParams.endDate) {
+        const convertDateFormat = (dateStr) => {
+          const [day, month, year] = dateStr.split('-');
+          return `${year}-${month}-${day}`;
+        };
+        
+        params.append('startDate', convertDateFormat(searchParams.startDate));
+        params.append('endDate', convertDateFormat(searchParams.endDate));
+      }
+      
       if (searchParams.keyword) {
         params.append('search', searchParams.keyword);
       }
       if (searchParams.outlet) {
         params.append('outlet', searchParams.outlet);
       }
+      
       params.append('page', page);
       const url = params.toString() ? `/reports/requests/summary?${params.toString()}` : '/reports/requests/summary';
+      
+      console.log('Fetching URL:', url);
       const response = await axiosInstance.get(url);
       
       if (response.data.success) {
@@ -87,6 +118,7 @@ const IndentSummary = () => {
       console.error('Error fetching data:', error);
     }
   };
+
   useEffect(() => {
     fetchData();
     fetchCenters();
@@ -98,35 +130,13 @@ const IndentSummary = () => {
     fetchData(activeSearch, page);
   };
 
-  const getFlattenedData = () => {
-    const flattened = [];
-    data.forEach(purchase => {
-      if (purchase.products && purchase.products.length > 0) {
-        purchase.products.forEach(product => {
-          flattened.push({
-            ...purchase,
-            productDetail: product,
-            uniqueKey: `${purchase._id}_${product._id}`
-          });
-        });
-      } else {
-        flattened.push({
-          ...purchase,
-          productDetail: null,
-          uniqueKey: `${purchase._id}_no_product`
-        });
-      }
-    });
-    return flattened;
-  };  
-
   const calculateTotals = () => {
     const totals = {
-      TotalQty: 0,
+      totalQty: 0,
     };
   
     data.forEach(item => {
-      totals.TotalQty += parseFloat(item.TotalQty || 0);
+      totals.totalQty += parseFloat(item.totalQty || 0);
     });
   
     return totals;
@@ -174,29 +184,37 @@ const IndentSummary = () => {
   };
 
   const handleSearch = (searchData) => {
-    setActiveSearch(searchData);
-    fetchData(searchData, 1);
+    const mergedSearchData = {
+      ...activeSearch,
+      ...searchData
+    };
+    setActiveSearch(mergedSearchData);
+    fetchData(mergedSearchData, 1);
   };
 
   const handleResetSearch = () => {
-    setActiveSearch({ keyword: '', outlet: '' });
+    setActiveSearch({ 
+      center: '', 
+      product: '', 
+      startDate: '', 
+      endDate: '',
+      usageType: '',
+      keyword: '', 
+      outlet: '' 
+    });
     setSearchTerm('');
     fetchData({}, 1);
   };
 
-  const filteredFlattenedData = getFlattenedData().filter(item => {
-    if (activeSearch.keyword || activeSearch.outlet) {
-      return true;
-    }
-    return Object.values(item).some(value => {
-      if (typeof value === 'object' && value !== null) {
-        return Object.values(value).some(nestedValue => 
-          nestedValue && nestedValue.toString().toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-      return value && value.toString().toLowerCase().includes(searchTerm.toLowerCase());
-    });
-  });
+  const isSearchActive = () => {
+    return activeSearch.center || 
+           activeSearch.product || 
+           activeSearch.startDate || 
+           activeSearch.endDate ||
+           activeSearch.usageType ||
+           activeSearch.keyword || 
+           activeSearch.outlet;
+  };
 
   if (loading) {
     return (
@@ -216,31 +234,50 @@ const IndentSummary = () => {
 
   const totals = calculateTotals();
 
-  const fetchAllDataForExport = async () => {
-    try {
-      setLoading(true);
-      const response = await axiosInstance.get('/reports/requests/summary');
-      if (response.data.success) {
-        return response.data.data;
-      } else {
-        throw new Error('API returned unsuccessful response');
-      }
-    } catch (err) {
-      console.error('Error fetching data for export:', err);
-      showError('Error fetching data for export');
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const generateDetailExport = async () => {
     try {
       setLoading(true);
-    
-      const allData = await fetchAllDataForExport();
+      const params = new URLSearchParams();
       
-      if (!allData || allData.length === 0) {
+      if (activeSearch.center) {
+        params.append('center', activeSearch.center);
+      }
+      if (activeSearch.product) {
+        params.append('product', activeSearch.product);
+      }
+      if (activeSearch.usageType) {
+        params.append('usageType', activeSearch.usageType);
+      }
+      if (activeSearch.startDate && activeSearch.endDate) {
+        const convertDateFormat = (dateStr) => {
+          const [day, month, year] = dateStr.split('-');
+          return `${year}-${month}-${day}`;
+        };
+        
+        params.append('startDate', convertDateFormat(activeSearch.startDate));
+        params.append('endDate', convertDateFormat(activeSearch.endDate));
+      }
+      
+      if (activeSearch.keyword) {
+        params.append('search', activeSearch.keyword);
+      }
+      if (activeSearch.outlet) {
+        params.append('outlet', activeSearch.outlet);
+      }
+      
+      const apiUrl = params.toString() 
+        ? `/reports/requests/summary?${params.toString()}` 
+        : '/reports/requests/summary';
+      
+      const response = await axiosInstance.get(apiUrl);
+      
+      if (!response.data.success) {
+        throw new Error('API returned unsuccessful response');
+      }
+  
+      const exportData = response.data.data;
+      
+      if (!exportData || exportData.length === 0) {
         showError('No data available for export');
         return;
       }
@@ -252,23 +289,12 @@ const IndentSummary = () => {
         'Total Qty'
       ];
   
-      const csvData = allData.flatMap(purchase => {
-        if (purchase.products && purchase.products.length > 0) {
-          return purchase.products.map(product => [
-            purchase.center,
-            purchase.ParentCenter || 'N/A',
-            purchase.Product || 0,
-            purchase.TotalQty || 'N/A',
-          ]);
-        } else {
-          return [[
-            purchase.center,
-            purchase.ParentCenter || 'N/A',
-            purchase.Product || 0,
-            purchase.TotalQty || 'N/A',
-          ]];
-        }
-      });
+      const csvData = exportData.map(item => [
+        item.center || 'N/A',
+        item.parentCenter || 'N/A',
+        item.product || 'N/A',
+        item.totalQty || 0,
+      ]);
   
       const csvContent = [
         headers.join(','),
@@ -282,16 +308,16 @@ const IndentSummary = () => {
   
       const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
+      const downloadUrl = URL.createObjectURL(blob);
       
-      link.setAttribute('href', url);
+      link.setAttribute('href', downloadUrl);
       link.setAttribute('download', `indent_summary_report_${new Date().toISOString().split('T')[0]}.csv`);
       link.style.visibility = 'hidden';
       
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(downloadUrl);
     
     } catch (error) {
       console.error('Error generating export:', error);
@@ -321,7 +347,7 @@ const IndentSummary = () => {
             >
               <CIcon icon={cilSearch} className='icon' /> Search
             </CButton>
-            {(activeSearch.keyword || activeSearch.outlet) && (
+            {isSearchActive() && (
               <CButton 
                 size="sm" 
                 color="secondary" 
@@ -350,8 +376,17 @@ const IndentSummary = () => {
             />
           </div>
         </CCardHeader>
-        
+      
+
         <CCardBody>
+       
+           <div className='summary-report'>
+              <h4 className='summary-title'>Showing Result</h4>
+              <ul className='summary-list'>
+              <li><strong>{formatDisplayDate(activeSearch.startDate, activeSearch.endDate)}</strong></li>
+              </ul>
+           </div>
+
           <div className="d-flex justify-content-between mb-3">
             <div>
             </div>
@@ -371,43 +406,39 @@ const IndentSummary = () => {
             <CTable striped bordered hover className='responsive-table'>
               <CTableHead>
                 <CTableRow>
-                  <CTableHeaderCell scope="col" onClick={() => handleSort('Center')} className="sortable-header">
-                    Center {getSortIcon('Center')}
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('center')} className="sortable-header">
+                    Center {getSortIcon('center')}
                   </CTableHeaderCell>
-                  <CTableHeaderCell scope="col" onClick={() => handleSort('ParentCenter')} className="sortable-header">
-                    Parent Center {getSortIcon('ParentCenter')}
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('parentCenter')} className="sortable-header">
+                    Parent Center {getSortIcon('parentCenter')}
                   </CTableHeaderCell>
-                  <CTableHeaderCell scope="col" onClick={() => handleSort('Product')} className="sortable-header">
-                    Product {getSortIcon('Product')}
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('product')} className="sortable-header">
+                    Product {getSortIcon('product')}
                   </CTableHeaderCell>
-                  <CTableHeaderCell scope="col" onClick={() => handleSort('TotalQty')} className="sortable-header">
-                    Total Qty {getSortIcon('TotalQty')}
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('totalQty')} className="sortable-header">
+                    Total Qty {getSortIcon('totalQty')}
                   </CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
               <CTableBody>
-                {filteredFlattenedData.length > 0 ? (
+                {data.length > 0 ? (
                   <>
-                    {filteredFlattenedData.map((item) => (
-                      <CTableRow key={item.uniqueKey}>
-                        <CTableDataCell>{item.Center || ''}</CTableDataCell>
-                        <CTableDataCell>{item.ParentCenter}</CTableDataCell>
-                        <CTableDataCell>
-                          {item.Product || 'No Product'}
-                        </CTableDataCell>
-                        <CTableDataCell>
-                          {item.TotalQty || 0}
-                        </CTableDataCell>
+                    {data.map((item, index) => (
+                      <CTableRow key={index}>
+                        <CTableDataCell>{item.center || ''}</CTableDataCell>
+                        <CTableDataCell>{item.parentCenter || 'N/A'}</CTableDataCell>
+                        <CTableDataCell>{item.product || 'No Product'}</CTableDataCell>
+                        <CTableDataCell>{item.totalQty || 0}</CTableDataCell>
                       </CTableRow>
                     ))}
                     <CTableRow className='total-row'>
                       <CTableDataCell colSpan="3">Total</CTableDataCell>
-                      <CTableDataCell>{totals.TotalQty.toFixed(2)}</CTableDataCell>
+                      <CTableDataCell>{totals.totalQty.toFixed(2)}</CTableDataCell>
                     </CTableRow>
                   </>
                 ) : (
                   <CTableRow>
-                    <CTableDataCell colSpan="8" className="text-center">
+                    <CTableDataCell colSpan="10" className="text-center">
                       No data found
                     </CTableDataCell>
                   </CTableRow>

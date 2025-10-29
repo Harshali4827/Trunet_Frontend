@@ -45,6 +45,7 @@ const StockTransferDetails = () => {
 
   const userCenterId = userCenter._id;
   const isToCenterUser = data?.toCenter?._id === userCenterId;
+
   const isFromCenterUser = data?.fromCenter?._id === userCenterId;
 
   const handleOpenSerialModal = (product) => {
@@ -350,7 +351,7 @@ const handleCompleteIndent = async () => {
   try {
     let payload = [];
 
-    if (isFromCenterUser) {
+    if (isToCenterUser) {
       payload = productReceipts.map(item => ({
         productId: item.productId,
         receivedQuantity: Number(item.receivedQuantity) || 0,
@@ -532,7 +533,7 @@ const handleInomplete = async () => {
 
     <div className="d-flex align-items-center">
 
-    {data.status === 'Shipped' && isFromCenterUser &&(
+    {data.status === 'Shipped' && isToCenterUser &&(
       <CButton className='btn-action btn-incomplete me-2' onClick={handleCompleteIndent}>
       Complete The Indent
       </CButton>
@@ -639,7 +640,7 @@ const handleInomplete = async () => {
         </CButton>
       )}
      
-      {data.status === 'Incompleted' && userRole !== 'admin' && isFromCenterUser &&(
+      {data.status === 'Incompleted' && userRole !== 'admin' && isToCenterUser &&(
         <>
           <CButton className="btn-action btn-incomplete me-2" onClick={handleInomplete}>
             Change Qty And Complete Request
@@ -647,7 +648,10 @@ const handleInomplete = async () => {
         </>
       )}
 
-      {data.status === 'Confirmed' && userRole !== 'admin' && isToCenterUser &&  (
+
+{ /* change */}
+
+      {data.status === 'Confirmed' && userRole !== 'admin' && isFromCenterUser &&  (
         <>
           <CButton className="btn-action btn-submitted me-2" onClick={handleChangeApprovedQty}>
             Change Approved Qty
@@ -667,8 +671,9 @@ const handleInomplete = async () => {
         </>
       )}
 
+             {/* change */}
 
-      {data.status === 'Shipped' && userRole !== 'admin' && isToCenterUser &&(
+      {data.status === 'Shipped' && userRole !== 'admin' && isFromCenterUser &&(
         <>
           <CButton className="btn-action btn-update me-2" onClick={handleOpenUpdateShipment}>
             Update Shipment
@@ -683,7 +688,7 @@ const handleInomplete = async () => {
       )}
 
 
-       {data.status === 'Shipped' && userRole !== 'admin' && isFromCenterUser &&(
+       {data.status === 'Shipped' && userRole !== 'admin' && isToCenterUser &&(
         <>
           <CButton className="btn-action btn-update"
            onClick={() => setIncompleteModal(true)}
@@ -693,7 +698,9 @@ const handleInomplete = async () => {
         </>
       )}
 
-      {data.status === 'Admin_Approved' && userRole !== 'admin' && hasPermission('Transfer', 'approval_transfer_center') && isToCenterUser &&(
+     {/* change */}
+
+      {data.status === 'Admin_Approved' && userRole !== 'admin' && hasPermission('Transfer', 'approval_transfer_center') && isFromCenterUser &&(
         <>
           <CButton className="btn-action btn-submitted me-2" onClick={handleApprove}>
             Submit &amp; Approve Request
@@ -746,9 +753,10 @@ const handleInomplete = async () => {
                       <CTableDataCell>{item.productInStock || 0}</CTableDataCell>
                       <CTableDataCell>{item.productRemark || ''}</CTableDataCell>
 
+                      {/* chnage */}
                       <CTableDataCell>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        { isToCenterUser ? (
+                        { isFromCenterUser ? (
                           <>
                         <CFormInput
                               type="text"
@@ -777,8 +785,10 @@ const handleInomplete = async () => {
 </CTableDataCell>
 
 
+                     {/* change */}
+
                       <CTableDataCell>
-                        { isToCenterUser ? (
+                        { isFromCenterUser ? (
                             <CFormInput
                             type="text"
                             value={approvedItem.approvedRemark || ''}
@@ -794,7 +804,7 @@ const handleInomplete = async () => {
         
 
 <CTableDataCell>
-  {userCenterType === 'Center' && isFromCenterUser && data.status === 'Shipped' ? (
+  {userCenterType === 'Center' && isToCenterUser && data.status === 'Shipped' ? (
     <CFormInput
       type="text"
       value={productReceipts.find(p => p.productId === item.product?._id)?.receivedQuantity || ''}
@@ -806,7 +816,7 @@ const handleInomplete = async () => {
 </CTableDataCell>
 
 <CTableDataCell>
-  {userCenterType === 'Center' && isFromCenterUser && data.status === 'Shipped' ? (
+  {userCenterType === 'Center' && isToCenterUser && data.status === 'Shipped' ? (
     <CFormInput
       type="text"
       value={productReceipts.find(p => p.productId === item.product?._id)?.receivedRemark || ''}

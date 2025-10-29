@@ -42,6 +42,7 @@ const CustomerProfile = () => {
 
   const [serialModalVisible, setSerialModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedDevice, setSelectedDevice] = useState(null);
   
   const [loadingTabs, setLoadingTabs] = useState({
     device: false,
@@ -265,9 +266,42 @@ const CustomerProfile = () => {
 
 
 
-  const handleDamageReturn = async (usageId) => {
+  // const handleDamageReturn = async (usageId) => {
+  //   try {
+  //     const html = `Are you sure you want to mark this device as Damage?<br><br>`;
+      
+  //     const result = await confirmAction(
+  //       'Are you sure to damage?',
+  //       html,
+  //       'warning',
+  //       'Yes,Damage it!'
+  //     );
+  
+  //     if (result.isConfirmed) {
+  //       const response = await axiosInstance.patch(
+  //         `/stockusage/damage/${usageId}/damage-return`,
+  //         {
+  //           remark: "Product marked as damaged - returned from customer"
+  //         }
+  //       );
+  
+  //       if (response.data.success) {
+  //         showSuccess('Device has been marked as Damage Return successfully');
+  //         fetchDeviceData();
+  //       } else {
+  //         throw new Error(response.data.message || 'Failed to mark as Damage Return');
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Error in damage return:', error);
+  //     showError(error);
+  //   }
+  // };
+
+
+  const handleDamageReturn = async (usageId, serialNumber) => {
     try {
-      const html = `Are you sure you want to mark this device as Damage?<br><br>`;
+      const html = `Are you sure you want to mark serial number <strong>${serialNumber}</strong> as Damage?<br><br>`;
       
       const result = await confirmAction(
         'Are you sure to damage?',
@@ -277,15 +311,17 @@ const CustomerProfile = () => {
       );
   
       if (result.isConfirmed) {
-        const response = await axiosInstance.patch(
-          `/stockusage/damage/${usageId}/damage-return`,
+        const response = await axiosInstance.post(
+          `/damage/damage-returns`,
           {
+            usageId: usageId,
+            serialNumber: serialNumber,
             remark: "Product marked as damaged - returned from customer"
           }
         );
   
         if (response.data.success) {
-          showSuccess('Device has been marked as Damage Return successfully');
+          showSuccess(`Serial number ${serialNumber} has been marked as Damage Return successfully`);
           fetchDeviceData();
         } else {
           throw new Error(response.data.message || 'Failed to mark as Damage Return');
@@ -296,7 +332,8 @@ const CustomerProfile = () => {
       showError(error);
     }
   };
-
+  
+  
 const renderDeviceTable = () => (
   <div>
   <div className="responsive-table-wrapper">
@@ -374,26 +411,36 @@ const renderDeviceTable = () => (
                             >
                               <i className="fa fa-reply fa-margin "></i> Return
                             </button>
+
+                  
                             <button 
-                              className="dropdown-item"
-                              onClick={() => {
-                                setSelectedProduct({
-                                  productId: item.productId,
-                                  productName: item.Product,
-                                  warehouseId: item.center?.id,
-                                });
-                                setSerialModalVisible(true);
-                              }}
-                            >
-                              <i className="fa fa-refresh"></i> Replace
-                            </button>
-                            <button 
+  className="dropdown-item"
+  onClick={() => {
+    setSelectedDevice({
+      productId: item.productId,
+      productName: item.Product,
+      usageId: item.usageId,
+      oldSerialNumber: item['Serial No.']
+    });
+    setSerialModalVisible(true);
+  }}
+>
+  <i className="fa fa-refresh"></i> Replace
+</button>
+
+                            {/* <button 
                               className="dropdown-item"
                               onClick={() => handleDamageReturn(item.usageId,
 )}
                             >
                               <i className="fa fa-recycle fa-margin "></i> Damage
-                            </button>
+                            </button> */}
+                           <button 
+  className="dropdown-item"
+  onClick={() => handleDamageReturn(item.usageId, item['Serial No.'])}
+>
+  <i className="fa fa-recycle fa-margin"></i> Damage
+</button>
                           </div>
                         )}
                       </div>
@@ -684,13 +731,17 @@ const renderDeviceTable = () => (
           </CTabContent>
         </CCardBody>
       </CCard>
-
-      <CustomerSerialNumber
+<CustomerSerialNumber
   visible={serialModalVisible}
-  onClose={() => setSerialModalVisible(false)}
-  productId={selectedProduct?.productId}
-  productName={selectedProduct?.productName}
-  warehouseId={selectedProduct?.warehouseId}
+  onClose={() => {
+    setSerialModalVisible(false);
+    setSelectedDevice(null);
+  }}
+  productId={selectedDevice?.productId}
+  productName={selectedDevice?.productName}
+  usageId={selectedDevice?.usageId}
+  oldSerialNumber={selectedDevice?.oldSerialNumber}
+  onReplaceSuccess={fetchDeviceData}
 />
 
     </CContainer>

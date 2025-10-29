@@ -1,22 +1,144 @@
 // import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 // import { faCartShopping } from '@fortawesome/free-solid-svg-icons';
 // import { Link } from 'react-router-dom';
-// import React from 'react';
-// const IndentCard = () => {
-//   return (
-//     <div className="pt-3 px-6 transition-all duration-300">
-//       <h2 className="text-2xl text-[#333333] font-light mb-3">Dashboard</h2>
+// import React, { useState, useEffect } from 'react';
+// import axiosInstance from 'src/axiosInstance';
 
-//       <div className="flex w-74 shadow overflow-hidden bg-white">
-//         {/* Left Section - Green background with icon */}
-//         <div className="bg-[#00A65A] p-7 flex items-center justify-center">
-//           <FontAwesomeIcon icon={faCartShopping} size="2x" className="text-white" />
+
+// const IndentCard = () => {
+//   const [centerCount, setCenterCount] = useState(0);
+//   const [loading, setLoading] = useState(true);
+
+//   const containerStyle = {
+//     transition: 'all 0.3s ease'
+//   };
+
+//   const headingStyle = {
+//     fontSize: '1.5rem',
+//     color: '#333333',
+//     fontWeight: '300',
+//     marginBottom: '0.75rem'
+//   };
+
+//   const cardsContainerStyle = {
+//     display: 'flex',
+//     gap: '1rem',
+//     flexWrap: 'wrap'
+//   };
+
+//   const cardStyle = {
+//     display: 'flex',
+//     width: '18.5rem',
+//     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+//     overflow: 'hidden',
+//     backgroundColor: 'white'
+//   };
+
+//   const leftSectionStyle = {
+//     backgroundColor: '#00A65A',
+//     padding: '1.75rem',
+//     display: 'flex',
+//     alignItems: 'center',
+//     justifyContent: 'center'
+//   };
+
+//   const centerLeft = {
+//     backgroundColor: '#00c0ef',
+//     padding: '1.75rem',
+//     display: 'flex',
+//     alignItems: 'center',
+//     justifyContent: 'center'
+//   };
+
+//   const iconStyle = {
+//     color: 'white',
+//     fontSize: '40px'
+//   };
+
+//   const rightSectionStyle = {
+//     backgroundColor: 'white',
+//     color: 'black',
+//     paddingLeft: '0.75rem',
+//     paddingTop: '0.25rem',
+//     display: 'flex',
+//     flexDirection: 'column',
+//     justifyContent: 'center'
+//   };
+
+//   const linkStyle = {
+//     fontSize: '0.875rem',
+//     color: '#3C8DBC',
+//     textDecoration: 'none'
+//   };
+
+//   const linkHoverStyle = {
+//     color: '#72AFDB'
+//   };
+
+//   const countTextStyle = {
+//     fontSize: '1.125rem',
+//     fontWeight: 'bold',
+//     color: '#333333'
+//   };
+//   useEffect(() => {
+//     const fetchCenterCount = async () => {
+//       try {
+//         const response = await axiosInstance.get('/centers');
+        
+//         if (response.data.success) {
+//           setCenterCount(response.data.pagination.totalItems);
+//         }
+//       } catch (error) {
+//         console.error('Error fetching center count:', error);
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     fetchCenterCount();
+//   }, []);
+
+//   return (
+//     <div style={containerStyle}>
+//       <h2 style={headingStyle}>Dashboard</h2>
+
+//       <div style={cardsContainerStyle}>
+//         <div style={cardStyle}>
+//           <div style={centerLeft}>
+//             <i className='fa fa-users' style={iconStyle}></i>
+//           </div>
+
+//           <div style={rightSectionStyle}>
+//             <Link
+//               to="/center-list"
+//               style={linkStyle}
+//               onMouseEnter={e => (e.target.style.color = linkHoverStyle.color)}
+//               onMouseLeave={e => (e.target.style.color = linkStyle.color)}
+//             >
+//               CENTERS
+//             </Link>
+//             <div style={countTextStyle}>
+//               {loading ? 'Loading...' : centerCount}
+//             </div>
+//           </div>
 //         </div>
 
-//         {/* Right Section - White background with text */}
-//         <div className="bg-white text-black pl-3  pt-1 flex flex-col">
-//           <div className="text-sm text-[#3C8DBC] hover:text-[#72AFDB]"><Link to='/order/index/indent'>TOTAL INDENT</Link></div>
-//           <div className="text-lg font-bold text-[#333333]">520/389</div>
+//         <div style={cardStyle}>
+//           <div style={leftSectionStyle}>
+//             <FontAwesomeIcon icon={faCartShopping} size="2x" style={iconStyle} />
+//           </div>
+
+//           <div style={rightSectionStyle}>
+//             <Link
+//               to="/order/index/indent"
+//               style={linkStyle}
+//               onMouseEnter={e => (e.target.style.color = linkHoverStyle.color)}
+//               onMouseLeave={e => (e.target.style.color = linkStyle.color)}
+//             >
+//               TOTAL INDENT
+//             </Link>
+//             <div style={countTextStyle}>520/389</div>
+//           </div>
 //         </div>
 //       </div>
 //     </div>
@@ -25,93 +147,105 @@
 
 // export default IndentCard;
 
+
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCartShopping } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axiosInstance from 'src/axiosInstance';
 
 const IndentCard = () => {
-  const containerStyle = {
-    paddingTop: '0.75rem',
-    paddingLeft: '1.5rem',
-    paddingRight: '1.5rem',
-    transition: 'all 0.3s ease'
-  };
+  const [centerCount, setCenterCount] = useState(0);
+  const [indentSummary, setIndentSummary] = useState({
+    totalRequests: 0,
+    completed: 0,
+    incomplete: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
-  const headingStyle = {
-    fontSize: '1.5rem',
-    color: '#333333',
-    fontWeight: '300',
-    marginBottom: '0.75rem'
-  };
+  const containerStyle = { transition: 'all 0.3s ease' };
+  const headingStyle = { fontSize: '1.5rem', color: '#333333', fontWeight: '300', marginBottom: '0.75rem' };
+  const cardsContainerStyle = { display: 'flex', gap: '1rem', flexWrap: 'wrap' };
+  const cardStyle = { display: 'flex', width: '18.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden', backgroundColor: 'white' };
+  const leftSectionStyle = { backgroundColor: '#00A65A', padding: '1.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' };
+  const centerLeft = { backgroundColor: '#00c0ef', padding: '1.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' };
+  const iconStyle = { color: 'white', fontSize: '40px' };
+  const rightSectionStyle = { backgroundColor: 'white', color: 'black', paddingLeft: '0.75rem', paddingTop: '0.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'center' };
+  const linkStyle = { fontSize: '0.875rem', color: '#3C8DBC', textDecoration: 'none' };
+  const linkHoverStyle = { color: '#72AFDB' };
+  const countTextStyle = { fontSize: '1.125rem', fontWeight: 'bold', color: '#333333' };
 
-  const cardStyle = {
-    display: 'flex',
-    width: '18.5rem', // ~74 * 0.25rem (1rem = 16px)
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-    overflow: 'hidden',
-    backgroundColor: 'white'
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const centerRes = await axiosInstance.get('/centers');
+        if (centerRes.data.success) {
+          setCenterCount(centerRes.data.pagination.totalItems);
+        }
 
-  const leftSectionStyle = {
-    backgroundColor: '#00A65A',
-    padding: '1.75rem',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  };
+        const indentRes = await axiosInstance.get('/stockrequest/indent-count');
+        if (indentRes.data.success) {
+          setIndentSummary({
+            totalRequests: indentRes.data.totalRequests || 0,
+            completed: indentRes.data.completed || 0,
+            incomplete: indentRes.data.incomplete || 0,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const iconStyle = {
-    color: 'white'
-  };
-
-  const rightSectionStyle = {
-    backgroundColor: 'white',
-    color: 'black',
-    paddingLeft: '0.75rem',
-    paddingTop: '0.25rem',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center'
-  };
-
-  const linkStyle = {
-    fontSize: '0.875rem',
-    color: '#3C8DBC',
-    textDecoration: 'none'
-  };
-
-  const linkHoverStyle = {
-    color: '#72AFDB'
-  };
-
-  const countTextStyle = {
-    fontSize: '1.125rem',
-    fontWeight: 'bold',
-    color: '#333333'
-  };
+    fetchData();
+  }, []);
 
   return (
     <div style={containerStyle}>
       <h2 style={headingStyle}>Dashboard</h2>
 
-      <div style={cardStyle}>
-        {/* Left Section - Green background with icon */}
-        <div style={leftSectionStyle}>
-          <FontAwesomeIcon icon={faCartShopping} size="2x" style={iconStyle} />
-        </div>
+      <div style={cardsContainerStyle}>
+        <div style={cardStyle}>
+          <div style={centerLeft}>
+            <i className='fa fa-users' style={iconStyle}></i>
+          </div>
 
-        {/* Right Section - White background with text */}
-        <div style={rightSectionStyle}>
-          <Link
-            to="/order/index/indent"
-            style={linkStyle}
-            onMouseEnter={e => (e.target.style.color = linkHoverStyle.color)}
-            onMouseLeave={e => (e.target.style.color = linkStyle.color)}
-          >
-            TOTAL INDENT
-          </Link>
-          <div style={countTextStyle}>520/389</div>
+          <div style={rightSectionStyle}>
+            <Link
+              to="/center-list"
+              style={linkStyle}
+              onMouseEnter={e => (e.target.style.color = linkHoverStyle.color)}
+              onMouseLeave={e => (e.target.style.color = linkStyle.color)}
+            >
+              CENTERS
+            </Link>
+            <div style={countTextStyle}>
+              {loading ? 'Loading...' : centerCount}
+            </div>
+          </div>
+        </div>
+        <div style={cardStyle}>
+          <div style={leftSectionStyle}>
+            <FontAwesomeIcon icon={faCartShopping} size="2x" style={iconStyle} />
+          </div>
+
+          <div style={rightSectionStyle}>
+            <Link
+              to="/order/index/indent"
+              style={linkStyle}
+              onMouseEnter={e => (e.target.style.color = linkHoverStyle.color)}
+              onMouseLeave={e => (e.target.style.color = linkStyle.color)}
+            >
+              TOTAL INDENT
+            </Link>
+            <div style={countTextStyle}>
+              {loading
+                ? 'Loading...'
+                : `${indentSummary.totalRequests}/${indentSummary.completed}`}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -119,4 +253,3 @@ const IndentCard = () => {
 };
 
 export default IndentCard;
-

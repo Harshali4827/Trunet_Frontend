@@ -12,16 +12,28 @@ import PropTypes from 'prop-types'
 import '../../css/form.css'
 import DatePicker from 'src/utils/DatePicker'
 
-const TransactionSearch = ({ visible, onClose, onSearch, centers,products,customers }) => {
+const TransactionSearch = ({ visible, onClose, onSearch, centers, products, customers }) => {
   const [searchData, setSearchData] = useState({
     product: '',
     center: '',
-    usageType:''
+    usageType: '',
+    customer: '',
+    date: '',
+    startDate: '',
+    endDate: ''
   })
 
   useEffect(() => {
     if (!visible) {
-      setSearchData({ product: '', center: '' })
+      setSearchData({ 
+        product: '', 
+        center: '', 
+        usageType: '', 
+        customer: '', 
+        date: '', 
+        startDate: '', 
+        endDate: '' 
+      })
     }
   }, [visible])
 
@@ -36,7 +48,15 @@ const TransactionSearch = ({ visible, onClose, onSearch, centers,products,custom
   }
 
   const handleReset = () => {
-    setSearchData({ product: '', center: '' })
+    setSearchData({ 
+      product: '', 
+      center: '', 
+      usageType: '', 
+      customer: '', 
+      date: '', 
+      startDate: '', 
+      endDate: '' 
+    })
     onSearch({ product: '', center: '' })
   }
 
@@ -50,6 +70,7 @@ const TransactionSearch = ({ visible, onClose, onSearch, centers,products,custom
       
       setSearchData(prev => ({ 
         ...prev, 
+        date: dateValue, // Store the display value
         dateFilter: 'Custom',
         startDate: formatDateForAPI(startDate),
         endDate: formatDateForAPI(endDate)
@@ -57,6 +78,7 @@ const TransactionSearch = ({ visible, onClose, onSearch, centers,products,custom
     } else {
       setSearchData(prev => ({ 
         ...prev, 
+        date: dateValue, // Store the display value
         dateFilter: '',
         startDate: '',
         endDate: ''
@@ -102,23 +124,22 @@ const TransactionSearch = ({ visible, onClose, onSearch, centers,products,custom
               onChange={handleChange}
               className="form-input no-radius-input"
             >
-                <option value="">-SELECT-</option>
-                <option value="Indent">Indent</option>
-                <option value="Usage">Usage</option>
-                <option value="User Usage">User Usage</option>
-                <option value="Building Usage">Building Usage</option>
-                <option value="Control Room Usage">Control Room Usage</option>
-                <option value="Sales">Sales</option>
-                <option value="Purchase">Purchase</option>
-                <option value="Purchase">Purchase</option>
-                <option value="Adjustment">Adjustment</option>
+              <option value="">-SELECT-</option>
+              <option value="Customer">Customer</option>
+              <option value="Building">Building</option>
+              <option value="Building to Building">Building to Building</option>
+              <option value="Control Room">Control Room</option>
+              <option value="Damage">Damage</option>
+              <option value="Stolen from Center">Stolen from Center</option>
+              <option value="Stolen from Field">Stolen from Field</option>
+              <option value="Other">Other</option>
             </CFormSelect>
           </div>
         </div>
 
         <div className="form-row">
-        <div className="form-group">
-            <label className="form-label" htmlFor="product">
+          <div className="form-group">
+            <label className="form-label" htmlFor="customer">
               User
             </label>
             <CFormSelect
@@ -136,7 +157,7 @@ const TransactionSearch = ({ visible, onClose, onSearch, centers,products,custom
               ))}
             </CFormSelect>
           </div>
-        <div className="form-group">
+          <div className="form-group">
             <label className="form-label" htmlFor="product">
               Product
             </label>
@@ -147,7 +168,7 @@ const TransactionSearch = ({ visible, onClose, onSearch, centers,products,custom
               onChange={handleChange}
               className="form-input no-radius-input"
             >
-              <option value="">SELECT CENTER</option>
+              <option value="">SELECT PRODUCT</option>
               {products.map((product) => (
                 <option key={product._id} value={product._id}>
                   {product.productTitle}
@@ -156,20 +177,21 @@ const TransactionSearch = ({ visible, onClose, onSearch, centers,products,custom
             </CFormSelect>
           </div>
         </div>
+        
         <div className="form-row">
           <div className="form-group">
             <label className="form-label" htmlFor="date">
               Date
             </label>
             <DatePicker
-              value={searchData.date}
+              value={searchData.date} // Pass the display value
               onChange={handleDateChange}
-              placeholder="Date"
+              placeholder="Select Date Range"
               className="no-radius-input date-input"
             />
           </div>
           <div className="form-group"></div>
-          </div>
+        </div>
 
       </CModalBody>
 
@@ -197,8 +219,8 @@ TransactionSearch.propTypes = {
   onClose: PropTypes.func.isRequired,
   onSearch: PropTypes.func.isRequired,
   centers: PropTypes.array.isRequired,
-  products:PropTypes.array.isRequired,
-  customers:PropTypes.array.isRequired
+  products: PropTypes.array.isRequired,
+  customers: PropTypes.array.isRequired
 }
 
 export default TransactionSearch

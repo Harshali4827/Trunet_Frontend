@@ -39,14 +39,6 @@
     border-collapse: collapse;
   }
 
-  /* .responsive-table thead
-  {
-    position: sticky;
-    top: 0;
-    background-color: #fff;
-    z-index: 10;
-    background: #fff;
-  } */
   .table-button{
       background-color: #007bff;
       border-radius: 2px;
@@ -224,6 +216,12 @@
 }
 .selected-row td {
   background-color: #dff0d8 !important;
+}
+.use-product-row td{
+  background-color: #dff0d8 !important;
+}
+.damage-product-row td{
+   background-color: #f2dede !important;
 }
 .damage-row td{
   background-color: #d9edf7;

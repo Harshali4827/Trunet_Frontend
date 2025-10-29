@@ -21,15 +21,16 @@
 //   CTabPane
 // } from '@coreui/react';
 // import CIcon from '@coreui/icons-react';
-// import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilSettings, cilPencil, cilTrash, cilZoomOut } from '@coreui/icons';
+// import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilSettings,cilZoomOut } from '@coreui/icons';
 // import { Link, useNavigate } from 'react-router-dom';
 // import { CFormLabel } from '@coreui/react-pro';
 // import axiosInstance from 'src/axiosInstance';
-// import { confirmDelete, showError, showSuccess } from 'src/utils/sweetAlerts';
+// import { showError, showSuccess, confirmAction } from 'src/utils/sweetAlerts';
 // import SearchStockUsage from './SearchStockUsage';
 // import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
 // import Pagination from 'src/utils/Pagination';
 // import usePermission from 'src/utils/usePermission';
+// import Swal from 'sweetalert2';
 
 // const StockUsage = () => {
 //   const [customers, setCustomers] = useState([]);
@@ -52,49 +53,54 @@
 //   const fetchData = async (searchParams = {}, tab = activeTab, page = 1) => {
 //     try {
 //       setLoading(true);
-//       const params = new URLSearchParams();
-//       if (searchParams.keyword) {
-//         params.append('search', searchParams.keyword);
-//       }
-//       if (searchParams.center) {
-//         params.append('center', searchParams.center);
-//       }
-//       if(searchParams.usageType){
-//         params.append('usageType', searchParams.usageType);
-//       }
+      
 //       if (tab === 'pending') {
-//         params.append('usageType', 'Damage');
-//       } else if (tab === 'all') {
-//         if (!searchParams.usageType) {
-//           const otherUsageTypes = [
-//             'Customer', 
-//             'Building', 
-//             'Building to Building', 
-//             'Control Room', 
-//             'Stolen from Center', 
-//             'Stolen from Field', 
-//             'Other'
-//           ];
-//           otherUsageTypes.forEach(type => {
-//             params.append('usageType', type);
-//           });
+//         const params = new URLSearchParams();
+//         params.append('page', page);
+//         if (searchParams.keyword) {
+//           params.append('search', searchParams.keyword);
+//         }
+//         if (searchParams.center) {
+//           params.append('center', searchParams.center);
+//         }
+        
+//         const url = params.toString() ? `/damage?${params.toString()}` : '/damage';
+//         console.log('Fetching Damage Return URL:', url);
+        
+//         const response = await axiosInstance.get(url);
+        
+//         if (response.data.success) {
+//           setCustomers(response.data.data);
+//           setCurrentPage(response.data.pagination.currentPage);
+//           setTotalPages(response.data.pagination.totalPages);
 //         } else {
+//           throw new Error('API returned unsuccessful response');
+//         }
+//       } else {
+//         const params = new URLSearchParams();
+//         if (searchParams.keyword) {
+//           params.append('search', searchParams.keyword);
+//         }
+//         if (searchParams.center) {
+//           params.append('center', searchParams.center);
+//         }
+//         if (searchParams.usageType) {
 //           params.append('usageType', searchParams.usageType);
 //         }
-//       }      
 
-//       params.append('page', page);
-//       const url = params.toString() ? `/stockusage?${params.toString()}` : '/stockusage';
-//       console.log('Fetching URL:', url);
-      
-//       const response = await axiosInstance.get(url);
-      
-//       if (response.data.success) {
-//         setCustomers(response.data.data);
-//         setCurrentPage(response.data.pagination.currentPage);
-//         setTotalPages(response.data.pagination.totalPages);
-//       } else {
-//         throw new Error('API returned unsuccessful response');
+//         params.append('page', page);
+//         const url = params.toString() ? `/stockusage?${params.toString()}` : '/stockusage';
+//         console.log('Fetching All Data URL:', url);
+        
+//         const response = await axiosInstance.get(url);
+        
+//         if (response.data.success) {
+//           setCustomers(response.data.data);
+//           setCurrentPage(response.data.pagination.currentPage);
+//           setTotalPages(response.data.pagination.totalPages);
+//         } else {
+//           throw new Error('API returned unsuccessful response');
+//         }
 //       }
 //     } catch (err) {
 //       setError(err.message);
@@ -103,7 +109,6 @@
 //       setLoading(false);
 //     }
 //   };
-
 
 //   const fetchAllDataForExport = async () => {
 //     try {
@@ -141,7 +146,7 @@
 
 //   const handlePageChange = (page) => {
 //     if (page < 1 || page > totalPages) return;
-//     fetchData(activeSearch,activeTab, page);
+//     fetchData(activeSearch, activeTab, page);
 //   };
 
 //   useEffect(() => {
@@ -224,23 +229,6 @@
 //     });
 //   });
 
-//   const handleDeleteCustomer = async (itemId) => {
-//     const result = await confirmDelete();
-//     if (result.isConfirmed) {
-//       try {
-//         await axiosInstance.delete(`/customers/${itemId}`);
-//         setCustomers((prev) => prev.filter((c) => c._id !== itemId));
-//         showSuccess('Customer deleted successfully!');
-//       } catch (error) {
-//         console.error('Error deleting customer:', error);
-//       }
-//     }
-//   };
-  
-//   const handleEditCustomer = (itemId) => {
-//     navigate(`/edit-customer/${itemId}`)
-//   };
-
 //   const toggleDropdown = (id) => {
 //     setDropdownOpen(prev => ({
 //       ...prev,
@@ -287,7 +275,6 @@
 //     );
 //   }
 
-
 //   const generateDetailExport = async () => {
 //     try {
 //       setLoading(true);
@@ -322,11 +309,14 @@
 //           case 'Building to Building':
 //             detail = `From: ${request.fromBuilding?.buildingName || 'N/A'} → To: ${request.toBuilding?.buildingName || 'N/A'}`;
 //             break;
-//           case 'Control Room':
-//             detail = `Control Room: ${request.controlRoom?.name || 'N/A'}`;
+//             case 'Control Room':
+//             detail = `Control Room: ${request.fromControlRoom?.buildingName || 'N/A'}`; 
 //             break;
 //           case 'Damage':
 //             detail = 'Pending Damage Return';
+//             break;
+//           case 'Damage Return':
+//             detail = `Returned from: ${request.originalUsageType || 'N/A'}`;
 //             break;
 //           case 'Stolen from Field':
 //             detail = `Stolen From: ${request.stolenFrom || 'N/A'}`;
@@ -394,6 +384,84 @@
 //     }
 //   };
 
+
+//   const handleAcceptDamageReturn = async (itemId) => {
+//     const result = await confirmAction(
+//       'Accept Damage Return',
+//       'Are you sure you want to accept this damage return? This action cannot be undone.',
+//       'question',
+//       'Yes, Accept!'
+//     );
+  
+//     if (result.isConfirmed) {
+//       try {
+//         const { value: remark } = await Swal.fire({
+//           title: 'Approval Remark',
+//           input: 'text',
+//           inputLabel: 'Enter approval remark (optional)',
+//           inputPlaceholder: 'Enter your remark here...',
+//           showCancelButton: true,
+//           confirmButtonText: 'Submit',
+//           cancelButtonText: 'Cancel'
+//         });
+  
+//         if (remark !== undefined) {
+//           const response = await axiosInstance.patch(`/damage/${itemId}/approve`, {
+//             approvalRemark: remark || 'Damage request approved'
+//           });
+          
+//           if (response.data.success) {
+//             showSuccess('Damage return accepted successfully!');
+//             fetchData(activeSearch, activeTab, currentPage);
+//           } else {
+//             throw new Error(response.data.message || 'Failed to accept damage return');
+//           }
+//         }
+//       } catch (error) {
+//         console.error('Error accepting damage return:', error);
+//         showError(error.response?.data?.message || error.message || 'Failed to accept damage return');
+//       }
+//     }
+//   };
+  
+//   const handleRejectDamageReturn = async (itemId) => {
+//     const result = await confirmAction(
+//       'Reject Damage Return',
+//       'Are you sure you want to reject this damage return? This action cannot be undone.',
+//       'warning',
+//       'Yes, Reject!'
+//     );
+  
+//     if (result.isConfirmed) {
+//       try {
+//         const { value: remark } = await Swal.fire({
+//           title: 'Rejection Remark',
+//           input: 'text',
+//           inputLabel: 'Enter rejection remark (optional)',
+//           inputPlaceholder: 'Enter your remark here...',
+//           showCancelButton: true,
+//           confirmButtonText: 'Submit',
+//           cancelButtonText: 'Cancel'
+//         });
+  
+//         if (remark !== undefined) {
+//           const response = await axiosInstance.patch(`/damage/${itemId}/reject`, {
+//             rejectionRemark: remark || 'Damage request rejected'
+//           });
+          
+//           if (response.data.success) {
+//             showSuccess('Damage return rejected successfully!');
+//             fetchData(activeSearch, activeTab, currentPage);
+//           } else {
+//             throw new Error(response.data.message || 'Failed to reject damage return');
+//           }
+//         }
+//       } catch (error) {
+//         console.error('Error rejecting damage return:', error);
+//         showError(error.response?.data?.message || error.message || 'Failed to reject damage return');
+//       }
+//     }
+//   };
 //   const renderTable = () => (
 //     <div className="responsive-table-wrapper">
 //       <CTable striped bordered hover className='responsive-table'>
@@ -425,7 +493,9 @@
 //         <CTableBody>
 //           {filteredCustomers.length > 0 ? (
 //             filteredCustomers.map((customer) => (
-//               <CTableRow key={customer._id} className={customer.usageType === 'Damage' ? 'damage-row' : ''}>
+//               <CTableRow key={customer._id} className={
+//                 customer.type === 'Damage Return' ? 'damage-row' : ''
+//               }>
 //                 <CTableDataCell>
 //                   <button 
 //                     className="btn btn-link p-0 text-decoration-none"
@@ -435,7 +505,9 @@
 //                     {formatDate(customer.date)}
 //                   </button>
 //                 </CTableDataCell>
-//                 <CTableDataCell>{customer.usageType}</CTableDataCell>
+//                 <CTableDataCell>
+//                 {activeTab === 'pending' ? 'Damage Return' : customer.usageType}
+//                 </CTableDataCell>
 //                 <CTableDataCell>{customer.center?.centerName || ''}</CTableDataCell>
 //                 <CTableDataCell>{customer.remark || ''}</CTableDataCell>
 //                 <CTableDataCell>
@@ -455,6 +527,8 @@
 //                     `Control Room: ${customer.controlRoom?.name || 'N/A'}`
 //                   ) : customer.usageType === 'Damage' ? (
 //                     'Pending Damage Return'
+//                   ) : customer.usageType === 'Damage Return' ? (
+//                     `Pending Damage Return`
 //                   ) : customer.usageType === 'Stolen from Field' ? (
 //                     `Stolen From: ${customer.stolenFrom || 'N/A'}`
 //                   ) : customer.usageType === 'Other' ? (
@@ -465,42 +539,42 @@
 //                 </CTableDataCell>
 //                 <CTableDataCell>{formatDateTime(customer.createdAt)}</CTableDataCell>
 //                 <CTableDataCell>
-//                 {activeTab === 'pending' &&(
-//                   <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
-//                     <CButton 
-//                       size="sm"
-//                       className='option-button btn-sm'
-//                       onClick={() => toggleDropdown(customer._id)}
-//                     >
-//                       <CIcon icon={cilSettings} />
-//                       Options
-//                     </CButton>
+//                   {activeTab === 'pending' && hasPermission('Usage', 'accept_damage_return') && (
+//                     <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
+//                       <CButton 
+//                         size="sm"
+//                         className='option-button btn-sm'
+//                         onClick={() => toggleDropdown(customer._id)}
+//                       >
+//                         <CIcon icon={cilSettings} />
+//                         Options
+//                       </CButton>
 
-//                     {dropdownOpen[customer._id] && hasPermission('Usage', 'accept_damage_return') &&(
-//                       <div className="dropdown-menu show">
-//                         <button 
-//                           className="dropdown-item"
-//                           onClick={() => handleEditCustomer(customer._id)}
-//                         >
-//                         Accept Damage Return
-//                         </button>
-//                         <button 
-//                           className="dropdown-item"
-//                           onClick={() => handleDeleteCustomer(customer._id)}
-//                         >
-//                         Reject Damage Return 
-//                         </button>
-//                       </div>
-//                     )}
-//                   </div>
-//                     )}
+//                       {dropdownOpen[customer._id] && (
+//                         <div className="dropdown-menu show">
+//                           <button 
+//                             className="dropdown-item"
+//                             onClick={() => handleAcceptDamageReturn(customer._id)}
+//                           >
+//                             <i className="fa fa-exchange fa-margin"></i> Accept Damage Return
+//                           </button>
+//                           <button 
+//                             className="dropdown-item"
+//                             onClick={() => handleRejectDamageReturn(customer._id)}
+//                           >
+//                             <i className="fa fa-exchange fa-margin"></i> Reject Damage Return 
+//                           </button>
+//                         </div>
+//                       )}
+//                     </div>
+//                   )}
 //                 </CTableDataCell>
 //               </CTableRow>
 //             ))
 //           ) : (
 //             <CTableRow>
 //               <CTableDataCell colSpan="7" className="text-center">
-//                 No {activeTab === 'pending' ? 'pending' : ''} stock usage records found
+//                 No {activeTab === 'pending' ? 'damage return' : ''} stock usage records found
 //               </CTableDataCell>
 //             </CTableRow>
 //           )}
@@ -593,23 +667,13 @@
 //                   color:'black'
 //                 }}
 //               >
-//                 Pending
+//                Pending
 //               </CNavLink>
 //             </CNavItem>
 //           </CNav>
 
 //           <div className="d-flex justify-content-between mb-3">
 //             <div>
-//               {activeSearch.keyword && (
-//                 <span className="badge bg-primary me-2">
-//                   Keyword: {activeSearch.keyword}
-//                 </span>
-//               )}
-//               {activeSearch.center && (
-//                 <span className="badge bg-info">
-//                   Center: {centers.find(c => c._id === activeSearch.center)?.centerName || activeSearch.center}
-//                 </span>
-//               )}
 //             </div>
 //             <div className='d-flex'>
 //               <CFormLabel className='mt-1 m-1'>Search:</CFormLabel>
@@ -643,6 +707,9 @@
 
 
 
+
+
+
 import '../../css/table.css';
 import '../../css/form.css';
 import React, { useState, useRef, useEffect } from 'react';
@@ -666,7 +733,7 @@ import {
   CTabPane
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilSettings, cilPencil, cilTrash, cilZoomOut } from '@coreui/icons';
+import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilSettings, cilZoomOut } from '@coreui/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
@@ -685,7 +752,7 @@ const StockUsage = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [searchTerm, setSearchTerm] = useState('');
   const [searchModalVisible, setSearchModalVisible] = useState(false);
-  const [activeSearch, setActiveSearch] = useState({ keyword: '', center: '' });
+  const [activeSearch, setActiveSearch] = useState({ keyword: '', center: '', usageType: '' });
   const [dropdownOpen, setDropdownOpen] = useState({});
   const [activeTab, setActiveTab] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -700,7 +767,6 @@ const StockUsage = () => {
       setLoading(true);
       
       if (tab === 'pending') {
-        // Fetch damage return records for pending tab
         const params = new URLSearchParams();
         params.append('page', page);
         if (searchParams.keyword) {
@@ -710,7 +776,7 @@ const StockUsage = () => {
           params.append('center', searchParams.center);
         }
         
-        const url = params.toString() ? `/stockusage/damage-return?${params.toString()}` : '/stockusage/damage-return';
+        const url = params.toString() ? `/damage?${params.toString()}` : '/damage';
         console.log('Fetching Damage Return URL:', url);
         
         const response = await axiosInstance.get(url);
@@ -723,7 +789,6 @@ const StockUsage = () => {
           throw new Error('API returned unsuccessful response');
         }
       } else {
-        // Fetch all stock usage records for all tab - NO DEFAULT FILTER
         const params = new URLSearchParams();
         if (searchParams.keyword) {
           params.append('search', searchParams.keyword);
@@ -733,6 +798,12 @@ const StockUsage = () => {
         }
         if (searchParams.usageType) {
           params.append('usageType', searchParams.usageType);
+        }
+        if (searchParams.startDate) {
+          params.append('startDate', searchParams.startDate);
+        }
+        if (searchParams.endDate) {
+          params.append('endDate', searchParams.endDate);
         }
 
         params.append('page', page);
@@ -757,14 +828,44 @@ const StockUsage = () => {
     }
   };
 
-  const fetchAllDataForExport = async () => {
+  const fetchDataForExport = async () => {
     try {
       setLoading(true);
-      const response = await axiosInstance.get('/stockusage');
-      if (response.data.success) {
-        return response.data.data;
+      
+      if (activeTab === 'pending') {
+        const params = new URLSearchParams();
+        if (activeSearch.keyword) {
+          params.append('search', activeSearch.keyword);
+        }
+        if (activeSearch.center) {
+          params.append('center', activeSearch.center);
+        }
+
+        const url = params.toString() ? `/damage?${params.toString()}` : '/damage';
+        
+        const response = await axiosInstance.get(url);
+        return response.data.success ? response.data.data : [];
       } else {
-        throw new Error('API returned unsuccessful response');
+        const params = new URLSearchParams();
+        if (activeSearch.keyword) {
+          params.append('search', activeSearch.keyword);
+        }
+        if (activeSearch.center) {
+          params.append('center', activeSearch.center);
+        }
+        if (activeSearch.usageType) {
+          params.append('usageType', activeSearch.usageType);
+        }
+        if (activeSearch.startDate) {
+          params.append('startDate', activeSearch.startDate);
+        }
+        if (activeSearch.endDate) {
+          params.append('endDate', activeSearch.endDate);
+        }
+        const url = params.toString() ? `/stockusage?${params.toString()}` : '/stockusage';
+        
+        const response = await axiosInstance.get(url);
+        return response.data.success ? response.data.data : [];
       }
     } catch (err) {
       console.error('Error fetching data for export:', err);
@@ -847,14 +948,14 @@ const StockUsage = () => {
   };
 
   const handleResetSearch = () => {
-    setActiveSearch({ keyword: '', center: '', usageType:'' });
+    setActiveSearch({ keyword: '', center: '', usageType: '', startDate: '', endDate: '' });
     setSearchTerm('');
     fetchData({}, activeTab, 1);
   };
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setActiveSearch({ keyword: '', center: '', usageType:'' });
+    setActiveSearch({ keyword: '', center: '', usageType: '', startDate: '', endDate: '' });
     setSearchTerm('');
   };
   
@@ -862,58 +963,8 @@ const StockUsage = () => {
     navigate(`/edit-stockUsage/${itemId}`);
   };
 
-
-  // const handleAcceptDamageReturn = async (itemId) => {
-  //   const result = await confirmAction(
-  //     'Accept Damage Return',
-  //     'Are you sure you want to accept this damage return? This action cannot be undone.',
-  //     'question',
-  //     'Yes, Accept!'
-  //   );
-
-  //   if (result.isConfirmed) {
-  //     try {
-  //       const response = await axiosInstance.patch(`/stockusage/${itemId}/approve`);
-  //       if (response.data.success) {
-  //         showSuccess('Damage return accepted successfully!')
-  //         fetchData(activeSearch, activeTab, currentPage);
-  //       } else {
-  //         throw new Error(response.data.message || 'Failed to accept damage return');
-  //       }
-  //     } catch (error) {
-  //       console.error('Error accepting damage return:', error);
-  //       showError(error.response?.data?.message || error.message || 'Failed to accept damage return');
-  //     }
-  //   }
-  // };
-
-  // const handleRejectDamageReturn = async (itemId) => {
-  //   const result = await confirmAction(
-  //     'Reject Damage Return',
-  //     'Are you sure you want to reject this damage return? This action cannot be undone.',
-  //     'warning',
-  //     'Yes, Reject!'
-  //   );
-
-  //   if (result.isConfirmed) {
-  //     try {
-  //       const response = await axiosInstance.patch(`/stockusage/${itemId}/reject`);
-  //       if (response.data.success) {
-  //         showSuccess('Damage return rejected successfully!');
-  //         // Refresh the data
-  //         fetchData(activeSearch, activeTab, currentPage);
-  //       } else {
-  //         throw new Error(response.data.message || 'Failed to reject damage return');
-  //       }
-  //     } catch (error) {
-  //       console.error('Error rejecting damage return:', error);
-  //       showError(error.response?.data?.message || error.message || 'Failed to reject damage return');
-  //     }
-  //   }
-  // };
-
   const filteredCustomers = customers.filter(customer => {
-    if (activeSearch.keyword || activeSearch.center || activeSearch.usageType) {
+    if (activeSearch.keyword || activeSearch.center || activeSearch.usageType || activeSearch.startDate || activeSearch.endDate) {
       return true;
     }
     return Object.values(customer).some(value => {
@@ -976,7 +1027,7 @@ const StockUsage = () => {
     try {
       setLoading(true);
     
-      const allData = await fetchAllDataForExport();
+      const allData = await fetchDataForExport();
       
       if (!allData || allData.length === 0) {
         showError('No data available for export');
@@ -1007,7 +1058,7 @@ const StockUsage = () => {
             detail = `From: ${request.fromBuilding?.buildingName || 'N/A'} → To: ${request.toBuilding?.buildingName || 'N/A'}`;
             break;
           case 'Control Room':
-            detail = `Control Room: ${request.controlRoom?.name || 'N/A'}`;
+            detail = `Control Room: ${request.fromControlRoom?.buildingName || 'N/A'}`; 
             break;
           case 'Damage':
             detail = 'Pending Damage Return';
@@ -1027,10 +1078,11 @@ const StockUsage = () => {
           default:
             detail = 'N/A';
         }
+
         if (request.items && request.items.length > 0) {
           return request.items.map(item => [
             formatDate(request.date),
-            request.usageType,
+            activeTab === 'pending' ? 'Damage Return' : request.usageType,
             request.center?.centerName || 'N/A',
             request.remark || '',
             detail,
@@ -1040,7 +1092,7 @@ const StockUsage = () => {
         } else {
           return [[
             formatDate(request.date),
-            request.usageType,
+            activeTab === 'pending' ? 'Damage Return' : request.usageType,
             request.center?.centerName || 'N/A',
             request.remark || '',
             detail,
@@ -1065,14 +1117,28 @@ const StockUsage = () => {
       const url = URL.createObjectURL(blob);
       
       link.setAttribute('href', url);
-      link.setAttribute('download', `Usage_report_${new Date().toISOString().split('T')[0]}.csv`);
+      let filename = `stock_usage_${activeTab}_${new Date().toISOString().split('T')[0]}`;
+      if (activeSearch.keyword) filename += `_search_${activeSearch.keyword}`;
+      if (activeSearch.center) {
+        const centerName = centers.find(c => c._id === activeSearch.center)?.centerName || 'center';
+        filename += `_${centerName}`;
+      }
+      if (activeSearch.usageType) {
+        filename += `_type_${activeSearch.usageType}`;
+      }
+      if (activeSearch.startDate || activeSearch.endDate) {
+        filename += `_date_${activeSearch.startDate || 'start'}_to_${activeSearch.endDate || 'end'}`;
+      }
+      filename += '.csv';
+      
+      link.setAttribute('download', filename);
       link.style.visibility = 'hidden';
       
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      
+    
     } catch (error) {
       console.error('Error generating export:', error);
       showError('Error generating export file');
@@ -1080,7 +1146,6 @@ const StockUsage = () => {
       setLoading(false);
     }
   };
-
 
   const handleAcceptDamageReturn = async (itemId) => {
     const result = await confirmAction(
@@ -1103,7 +1168,7 @@ const StockUsage = () => {
         });
   
         if (remark !== undefined) {
-          const response = await axiosInstance.patch(`/stockusage/${itemId}/approve`, {
+          const response = await axiosInstance.patch(`/damage/${itemId}/approve`, {
             approvalRemark: remark || 'Damage request approved'
           });
           
@@ -1142,7 +1207,7 @@ const StockUsage = () => {
         });
   
         if (remark !== undefined) {
-          const response = await axiosInstance.patch(`/stockusage/${itemId}/reject`, {
+          const response = await axiosInstance.patch(`/damage/${itemId}/reject`, {
             rejectionRemark: remark || 'Damage request rejected'
           });
           
@@ -1159,6 +1224,7 @@ const StockUsage = () => {
       }
     }
   };
+
   const renderTable = () => (
     <div className="responsive-table-wrapper">
       <CTable striped bordered hover className='responsive-table'>
@@ -1191,7 +1257,7 @@ const StockUsage = () => {
           {filteredCustomers.length > 0 ? (
             filteredCustomers.map((customer) => (
               <CTableRow key={customer._id} className={
-                customer.usageType === 'Damage Return' ? 'damage-row' : ''
+                customer.type === 'Damage Return' ? 'damage-row' : ''
               }>
                 <CTableDataCell>
                   <button 
@@ -1203,7 +1269,7 @@ const StockUsage = () => {
                   </button>
                 </CTableDataCell>
                 <CTableDataCell>
-                  {customer.usageType}
+                {activeTab === 'pending' ? 'Damage Return' : customer.usageType}
                 </CTableDataCell>
                 <CTableDataCell>{customer.center?.centerName || ''}</CTableDataCell>
                 <CTableDataCell>{customer.remark || ''}</CTableDataCell>
@@ -1279,6 +1345,7 @@ const StockUsage = () => {
       </CTable>
     </div>
   );
+  const hasActiveFilters = activeSearch.keyword || activeSearch.center || activeSearch.usageType || activeSearch.startDate || activeSearch.endDate;
 
   return (
     <div>
@@ -1308,7 +1375,7 @@ const StockUsage = () => {
             >
               <CIcon icon={cilSearch} className='icon' /> Search
             </CButton>
-            {(activeSearch.keyword || activeSearch.center || activeSearch.usageType) && (
+            {hasActiveFilters && (
               <CButton 
                 size="sm" 
                 color="secondary" 
@@ -1322,6 +1389,7 @@ const StockUsage = () => {
               size="sm" 
               className="action-btn me-1"
               onClick={generateDetailExport}
+              disabled={loading}
             >
               <i className="fa fa-fw fa-file-excel"></i>
                Detail Export
@@ -1380,8 +1448,7 @@ const StockUsage = () => {
                 className="d-inline-block square-search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                disabled={!!(activeSearch.keyword || activeSearch.center)} 
-                placeholder={activeSearch.keyword || activeSearch.center ? "Disabled during advanced search" : " "}
+                disabled={hasActiveFilters}
               />
             </div>
           </div>

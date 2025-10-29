@@ -21,6 +21,8 @@ const AddReportSubmission = () => {
   const [centers, setCenters] = useState([]);
   const [otherCenter, setOtherCenter] = useState(false);
   const [centerId, setCenterId] = useState('');
+  const userCenter = JSON.parse(localStorage.getItem('userCenter')) || {};
+const userCenterType = (userCenter.centerType || 'Outlet').toLowerCase();
 
   useEffect(() => {
     const fetchCenters = async () => {
@@ -33,13 +35,6 @@ const AddReportSubmission = () => {
     };
     fetchCenters();
   }, []);
-
-  // useEffect(() => {
-  //   if (id) {
-  //     fetchExistingSubmission(id);
-  //   }
-  //   fetchProducts();
-  // }, [id]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -227,6 +222,8 @@ const AddReportSubmission = () => {
                 {errors.date && <span className="error-text">{errors.date}</span>}
               </div>
 
+
+              {userCenterType == 'outlet'&&(
               <div className="form-group" style={{ marginTop: "30px" }}>
                 <label>
                   <input
@@ -237,7 +234,7 @@ const AddReportSubmission = () => {
                   Stock closing for other center
                 </label>
               </div>
-
+             )}
               {otherCenter && (
                 <div className="form-group">
                   <label 
@@ -281,6 +278,11 @@ const AddReportSubmission = () => {
                 />
                 {errors.remark && <span className="error-text">{errors.remark}</span>}
               </div>
+              {userCenterType == 'center'&&(
+              <div className="form-group">
+            
+              </div>
+             )}
             </div>
             
             <div className="mt-4">

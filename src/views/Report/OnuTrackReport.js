@@ -1,124 +1,574 @@
-import React, { useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFileExcel, faPrint, faSearch,} from "@fortawesome/free-solid-svg-icons";
-import '../../components/Styling.css'; 
+import '../../css/table.css';
+import '../../css/form.css';
+import '../../css/profile.css'
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  CTable,
+  CTableHead,
+  CTableRow,
+  CTableHeaderCell,
+  CTableBody,
+  CTableDataCell,
+  CCard,
+  CCardBody,
+  CCardHeader,
+  CButton,
+  CFormInput,
+  CSpinner,
+  CModalHeader,
+  CModalTitle,
+  CModal,
+  CModalBody
+} from '@coreui/react';
+import CIcon from '@coreui/icons-react';
+import { cilArrowTop, cilArrowBottom, cilSearch, cilZoomOut } from '@coreui/icons';
+import { CFormLabel } from '@coreui/react-pro';
+import axiosInstance from 'src/axiosInstance';
+import Pagination from 'src/utils/Pagination';
+import { showError } from 'src/utils/sweetAlerts';
+import { formatDate } from 'src/utils/FormatDateTime';
+import ONUSearch from './ONUSearch';
 
-function OnuTrackReport()
-{
-    const initialData = [
-  { activationDate: '2025-07-20',customer: 'John Doe',product: 'Router Z500',serialNo: 'SN12345678',
-   connectionType: 'Fiber',partnerName: 'Partner A',area: 'North Zone',onuAmount: 2000
-  },
+const OnuTrackReport = () => {
+  const [data, setData] = useState([]);
+  const [centers, setCenters] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [partners, setPartners] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchModalVisible, setSearchModalVisible] = useState(false);
+  const [activeSearch, setActiveSearch] = useState({ 
+    product: '', 
+    status: '', 
+    keyword: '', 
+    partner: ''
+  });
+  const [dropdownOpen, setDropdownOpen] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const dropdownRefs = useRef({});
+  
+  const [selectedSerial, setSelectedSerial] = useState(null);
+  const [serialHistory, setSerialHistory] = useState([]);
+  const [serialModalVisible, setSerialModalVisible] = useState(false);
 
-  { activationDate: '2025-07-21',customer: 'Jane Smith',product: 'Router X300',serialNo: 'SN87654321',
-   connectionType: 'DSL',partnerName: 'Partner B',area: 'East Zone',onuAmount: 1500
-  },
-];
-         const [data, setData] = useState(initialData);
-         const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
-       
-         const handleSort = (key, direction) => {
-           const sortedData = [...data].sort((a, b) => {
-             if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
-             if (a[key] > b[key]) return direction === 'asc' ? 1 : -1;
-             return 0;
-           });
-           setData(sortedData);
-           setSortConfig({ key, direction });
-         };
-       
-         const renderSortControls = (key) => {
-           const isAsc = sortConfig.key === key && sortConfig.direction === 'asc';
-           const isDesc = sortConfig.key === key && sortConfig.direction === 'desc';
-           return (
-             <span style={{ marginLeft: '6px' }}>
-               <span
-                 onClick={() => handleSort(key, 'asc')}
-                 style={{ fontWeight: isAsc ? 'bold' : 'normal', cursor: 'pointer' }}
-               >
-                 ↑
-               </span>
-               <span
-                 onClick={() => handleSort(key, 'desc')}
-                 style={{ fontWeight: isDesc ? 'bold' : 'normal', marginLeft: '4px', cursor: 'pointer' }}
-               >
-                 ↓
-               </span>
-             </span>
-           );
-         };
-       
-         const thStyle = {
-           backgroundColor: '#f4f4f4',
-           border: '1px solid #ccc',
-           padding: '8px',
-           textAlign: 'left'
-         };
-       
-         const tdStyle = {
-           border: '1px solid #ccc',
-           padding: '8px'
-         };
+  const fetchData = async (searchParams = {}, page = 1) => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      
+      if (searchParams.product) {
+        params.append('product', searchParams.product);
+      }
+      if (searchParams.status) {
+        params.append('status', searchParams.status);
+      }
+      if (searchParams.keyword) {
+        params.append('search', searchParams.keyword);
+      }
+      if (searchParams.partner) {
+        params.append('partner', searchParams.partner);
+      }
 
-    return(
-        <>
-         {/* <h1 className='headingF'>Onu Track Report</h1>  */}
-                <div className='top_border' >
-                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'10px',marginTop:'10px',
-                 }}>
-                     <form style={{ display: 'flex', flexWrap: 'wrap', width: '100%' }}>
-                        <div style={{ display:'flex',flexWrap:'wrap',gap:'10px',marginLeft:'10px'}}>
-                                        <button className='buttonsASE'>
-                                         <FontAwesomeIcon icon={faSearch} className='iconsASE' /> Search
-                                       </button>
-                                        <button className='buttonsASE'>
-                                         <FontAwesomeIcon icon={faFileExcel}  className='iconsASE' />Export
-                                       </button>
-                                       <button  className='buttonsASE'>
-                                         <FontAwesomeIcon icon={faPrint} className='iconsASE'/>Print
-                                       </button>
-                                     </div>
-       
-                       <hr style={{ margin: '15px 0 10px', opacity: '0.1', flexBasis: '100%' }} />
-       
-                       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px', marginRight: '20px' }}>
-                           <label>Search:</label>
-                           <input type="text" placeholder="" className='searchBTN' />
-                       </div>
-                       </form>
-                       </div>
-                       <div style={{ overflowX: 'auto',  margin:'10px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>               
-  <tr>
-    <th style={thStyle}>Activation Date {renderSortControls('activationDate')}</th>
-    <th style={thStyle}>Customer {renderSortControls('customer')}</th>
-    <th style={thStyle}>Product {renderSortControls('product')}</th>
-    <th style={thStyle}>Serial No. {renderSortControls('serialNo')}</th>
-    <th style={thStyle}>Connection Type {renderSortControls('connectionType')}</th>
-    <th style={thStyle}>Partner Name {renderSortControls('partnerName')}</th>
-    <th style={thStyle}>Area {renderSortControls('area')}</th>
-    <th style={thStyle}>ONU Amount {renderSortControls('onuAmount')}</th>
-  </tr>
-</thead>
-<tbody>
-  {data.map((item, index) => (
-    <tr key={index}>
-      <td style={tdStyle}>{item.activationDate}</td>
-      <td style={tdStyle}>{item.customer}</td>
-      <td style={tdStyle}>{item.product}</td>
-      <td style={tdStyle}>{item.serialNo}</td>
-      <td style={tdStyle}>{item.connectionType}</td>
-      <td style={tdStyle}>{item.partnerName}</td>
-      <td style={tdStyle}>{item.area}</td>
-      <td style={tdStyle}>{item.onuAmount}</td>
-    </tr>
-                  ))}
-                </tbody>
-              </table>
+      
+      params.append('page', page);
+      params.append('limit', 10);
+      
+      const url = `/reports/onu-report?${params.toString()}`;
+      const response = await axiosInstance.get(url);
+      
+      if (response.data.success) {
+        setData(response.data.data);
+        setCurrentPage(response.data.pagination.currentPage);
+        setTotalPages(response.data.pagination.totalPages);
+      } else {
+        throw new Error('API returned unsuccessful response');
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCenters = async () => {
+    try {
+      const response = await axiosInstance.get('/centers');
+      if (response.data.success) {
+        setCenters(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const response = await axiosInstance.get('/products');
+      if (response.data.success) {
+        setProducts(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  const fetchPartners = async () => {
+    try {
+      const response = await axiosInstance.get('/partners');
+      if (response.data.success) {
+        setPartners(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    fetchCenters();
+    fetchProducts();
+    fetchPartners();
+  }, []);
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    fetchData(activeSearch, page);
+  };
+
+  const handleSort = (key) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+
+    const sortedData = [...data].sort((a, b) => {
+      let aValue = a;
+      let bValue = b;
+      
+      if (key.includes('.')) {
+        const keys = key.split('.');
+        aValue = keys.reduce((obj, k) => obj && obj[k], a);
+        bValue = keys.reduce((obj, k) => obj && obj[k], b);
+      } else {
+        aValue = a[key];
+        bValue = b[key];
+      }
+      
+      if (aValue < bValue) {
+        return direction === 'ascending' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return direction === 'ascending' ? 1 : -1;
+      }
+      return 0;
+    });
+
+    setData(sortedData);
+  };
+
+  const getSortIcon = (key) => {
+    if (sortConfig.key !== key) {
+      return null;
+    }
+    return sortConfig.direction === 'ascending'
+      ? <CIcon icon={cilArrowTop} className="ms-1" />
+      : <CIcon icon={cilArrowBottom} className="ms-1" />;
+  };
+
+  const handleSearch = (searchData) => {
+    setActiveSearch(searchData);
+    fetchData(searchData, 1);
+  };
+
+  const handleResetSearch = () => {
+    setActiveSearch({ 
+      product: '', 
+      status: '', 
+      keyword: '', 
+      partner: ''
+    });
+    setSearchTerm('');
+    fetchData({}, 1);
+  };
+
+  const isSearchActive = () => {
+    return activeSearch.product || 
+           activeSearch.status || 
+           activeSearch.keyword || 
+           activeSearch.partner ||
+           activeSearch.usageType ||
+           activeSearch.customer;
+  };
+
+  const filteredData = data.filter(record => {
+    if (isSearchActive()) {
+      return true;
+    }
+    
+    const searchLower = searchTerm.toLowerCase();
+    return Object.values(record).some(value => {
+      if (typeof value === 'object' && value !== null) {
+        return Object.values(value).some(nestedValue => 
+          nestedValue && nestedValue.toString().toLowerCase().includes(searchLower)
+        );
+      }
+      return value && value.toString().toLowerCase().includes(searchLower);
+    });
+  });
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const newDropdownState = {};
+      let shouldUpdate = false;
+      
+      Object.keys(dropdownRefs.current).forEach(key => {
+        if (dropdownRefs.current[key] && !dropdownRefs.current[key].contains(event.target)) {
+          newDropdownState[key] = false;
+          shouldUpdate = true;
+        }
+      });
+      
+      if (shouldUpdate) {
+        setDropdownOpen(prev => ({ ...prev, ...newDropdownState }));
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleSerialClick = (serial, productId) => {
+    const history = data.flatMap(record => 
+      record.items
+        .filter(item => item.serialNumbers && item.serialNumbers.some(sn => sn.serialNumber === serial))
+        .map(item => ({
+          date: record.date,
+          transaction: 'Customer Usage',
+          type: record.connectionType,
+          useIn: record.usageType,
+          product: item.product?.productTitle,
+          centerFrom: record.center?.centerName,
+          customer: record.customer?.name
+        }))
+    );
+    setSelectedSerial(serial);
+    setSerialHistory(history);
+    setSerialModalVisible(true);
+  };
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
+        <CSpinner color="primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="alert alert-danger" role="alert">
+        Error loading data: {error}
+      </div>
+    );
+  }
+
+  const generateDetailExport = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      
+      if (activeSearch.product) {
+        params.append('product', activeSearch.product);
+      }
+      if (activeSearch.status) {
+        params.append('status', activeSearch.status);
+      }
+      if (activeSearch.keyword) {
+        params.append('search', activeSearch.keyword);
+      }
+      if (activeSearch.partner) {
+        params.append('partner', activeSearch.partner);
+      }
+      
+      const apiUrl = `/reports/onu-report?${params.toString()}`;
+      const response = await axiosInstance.get(apiUrl);
+      
+      if (!response.data.success) {
+        throw new Error('API returned unsuccessful response');
+      }
+  
+      const exportData = response.data.data;
+      
+      if (!exportData || exportData.length === 0) {
+        showError('No data available for export');
+        return;
+      }
+  
+      const headers = [
+        'Activation Date',
+        'Customer',
+        'Serial Number',
+        'Connection Type',
+        'Partner Name',
+        'Area',
+        'ONU Amount',
+      ];
+  
+      const csvData = exportData.flatMap(record => 
+        record.items.flatMap(item => 
+          (item.serialNumbers || []).map(serial => [
+            formatDate(record.date),
+            record.customer?.username || '',
+            serial.serialNumber || serial,
+            record.connectionType || '',
+            record.center?.partner?.partnerName || '',
+            record.center?.area?.areaName || '',
+            record.onuCharges || 0,
+          ])
+        )
+      );
+  
+      const csvContent = [
+        headers.join(','),
+        ...csvData.map(row => 
+          row.map(field => {
+            const stringField = String(field || '');
+            return `"${stringField.replace(/"/g, '""')}"`;
+          }).join(',')
+        )
+      ].join('\n');
+  
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const downloadUrl = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', downloadUrl);
+      link.setAttribute('download', `Product Serial Report ${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+    
+    } catch (error) {
+      console.error('Error generating export:', error);
+      showError('Error generating export file');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className='title'>ONU Track Report</div>
+    
+      <ONUSearch
+        visible={searchModalVisible}
+        onClose={() => setSearchModalVisible(false)}
+        onSearch={handleSearch}
+        centers={centers}
+        products={products}
+        partners={partners}
+      />
+      
+      <CCard className='table-container mt-4'>
+        <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
+          <div>
+            <CButton 
+              size="sm" 
+              className="action-btn me-1"
+              onClick={() => setSearchModalVisible(true)}
+            >
+              <CIcon icon={cilSearch} className='icon' /> Search
+            </CButton>
+            {isSearchActive() && (
+              <CButton 
+                size="sm" 
+                color="secondary" 
+                className="action-btn me-1"
+                onClick={handleResetSearch}
+              >
+                <CIcon icon={cilZoomOut} className='icon' />
+                Reset Search
+              </CButton>
+            )}
+            <CButton 
+              size="sm" 
+              className="action-btn me-1"
+              onClick={generateDetailExport}
+              disabled={loading}
+            >
+              <i className="fa fa-fw fa-file-excel"></i>
+              {loading ? 'Exporting...' : 'Export'}
+            </CButton>
+          </div>
+          
+          <div>
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        </CCardHeader>
+        
+        <CCardBody>
+          <div className="d-flex justify-content-between mb-3">
+            <div>
+              <strong>Total Records: {filteredData.length}</strong>
             </div>
-                       </div>
-        </>
-    )
-}
+            <div className='d-flex'>
+              <CFormLabel className='mt-1 m-1'>Search:</CFormLabel>
+              <CFormInput
+                type="text"
+                style={{maxWidth: '350px', height: '30px', borderRadius: '0'}}
+                className="d-inline-block square-search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+          
+          <div className="responsive-table-wrapper">
+            <CTable striped bordered hover className='responsive-table'>
+              <CTableHead>
+                <CTableRow>
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('date')} className="sortable-header">
+                    Activation Date {getSortIcon('date')}
+                  </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('customer.username')} className="sortable-header">
+                    Customer {getSortIcon('customer.username')}
+                  </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('items.product.productTitle')} className="sortable-header">
+                    Product {getSortIcon('items.product.productTitle')}
+                  </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" className="sortable-header">
+                    Serial Number
+                  </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" className="sortable-header">
+                    Status
+                  </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('connectionType')} className="sortable-header">
+                    Connection Type {getSortIcon('connectionType')}
+                  </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('center.partner.partnerName')} className="sortable-header">
+                    Partner Name {getSortIcon('center.partner.partnerName')}
+                  </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('center.area.areaName')} className="sortable-header">
+                    Area {getSortIcon('center.area.areaName')}
+                  </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('onuCharges')} className="sortable-header">
+                    ONU Amount {getSortIcon('onuCharges')}
+                  </CTableHeaderCell>
+                </CTableRow>
+              </CTableHead>
+              <CTableBody>
+                {filteredData.length > 0 ? (
+                  <>
+                    {filteredData.flatMap(record =>
+                      record.items.flatMap(item =>
+                        (item.serialNumbers || []).map((serial, index) => (
+                          <CTableRow key={`${record._id}-${item._id}-${serial.serialNumber || serial}-${index}`} 
+                            className={serial.status === 'consumed' ? 'use-product-row' : 
+                            serial.status === 'damaged' ? 'damage-product-row' : ''}
+                          >
+                            <CTableDataCell>
+                              {formatDate(record.date)}
+                            </CTableDataCell>
+                            <CTableDataCell>
+                              {record.customer?.username || ''}
+                            </CTableDataCell>
+                            <CTableDataCell>
+                              {item.product?.productTitle || ''}
+                            </CTableDataCell>
+                            <CTableDataCell>
+                              <button 
+                                className="btn btn-link p-0 text-decoration-none"
+                                style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
+                                onClick={() => handleSerialClick(serial.serialNumber || serial, item.product?.productId)}
+                              >
+                                {serial.serialNumber || serial}
+                              </button>
+                            </CTableDataCell>
+                            <CTableDataCell>{serial.status || 'unknown'}</CTableDataCell>
+                            <CTableDataCell>{record.connectionType || ''}</CTableDataCell>
+                            <CTableDataCell>{record.center?.partner?.partnerName || ''}</CTableDataCell>
+                            <CTableDataCell>{record.center?.area?.areaName || ''}</CTableDataCell>
+                            <CTableDataCell>{item.onuCharges || 0}</CTableDataCell>
+                          </CTableRow>
+                        ))
+                      )
+                    )}
+                  </>
+                ) : (
+                  <CTableRow>
+                    <CTableDataCell colSpan="9" className="text-center">
+                      No data found
+                    </CTableDataCell>
+                  </CTableRow>
+                )}
+              </CTableBody>
+            </CTable>
+          </div>
+          <br />
+          <span className='use_product'></span>&nbsp;Use Product
+          <span className='damage_product'></span>&nbsp;Damage Product
+        </CCardBody>
+      </CCard>
+
+      <CModal visible={serialModalVisible} onClose={() => setSerialModalVisible(false)} size="xl">
+        <CModalHeader>
+          <CModalTitle>Serial No. {selectedSerial} Track History</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          <div className="responsive-table-wrapper">
+            <CTable striped bordered hover className='responsive-table'>
+              <CTableHead>
+                <CTableRow>
+                  <CTableHeaderCell>Date</CTableHeaderCell>
+                  <CTableHeaderCell>Transaction</CTableHeaderCell>
+                  <CTableHeaderCell>Type</CTableHeaderCell>
+                  <CTableHeaderCell>Use In</CTableHeaderCell>
+                  <CTableHeaderCell>Product</CTableHeaderCell>
+                  <CTableHeaderCell>Center</CTableHeaderCell>
+                  <CTableHeaderCell>Customer</CTableHeaderCell>
+                </CTableRow>
+              </CTableHead>
+              <CTableBody>
+                {serialHistory.length > 0 ? (
+                  serialHistory.map((row, idx) => (
+                    <CTableRow key={idx}>
+                      <CTableDataCell>{formatDate(row.date)}</CTableDataCell>
+                      <CTableDataCell>{row.transaction}</CTableDataCell>
+                      <CTableDataCell>{row.type}</CTableDataCell>
+                      <CTableDataCell>{row.useIn}</CTableDataCell>
+                      <CTableDataCell>{row.product}</CTableDataCell>
+                      <CTableDataCell>{row.centerFrom}</CTableDataCell>
+                      <CTableDataCell>{row.customer}</CTableDataCell>
+                    </CTableRow>
+                  ))
+                ) : (
+                  <CTableRow>
+                    <CTableDataCell colSpan="7" className="text-center">
+                      No history found for this serial number
+                    </CTableDataCell>
+                  </CTableRow>
+                )}
+              </CTableBody>
+            </CTable>
+          </div>
+        </CModalBody>
+      </CModal>
+    </div>
+  );
+};
+
 export default OnuTrackReport;

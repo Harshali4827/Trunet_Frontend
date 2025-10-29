@@ -393,10 +393,12 @@ const getNav = (permissions = []) => {
     reportItems.push({ component: CNavItem, name: 'Usage Detail', to: '/usage-detail' })
     reportItems.push({ component: CNavItem, name: 'Usage Replace', to: '/usage-replace' })
     reportItems.push({ component: CNavItem, name: 'Stolen Report', to: '/stolen-report' })
-    reportItems.push({ component: CNavItem, name: 'Indent/Usage Summary', to: '/base/indentUsageSummary' })
-    reportItems.push({ component: CNavItem, name: 'Purchase Analysis', to: '/base/purchaseAnalysis' })
+    reportItems.push({ component: CNavItem, name: 'Indent/Usage Summary', to: '/indentUsageSummary' })
+
+    // reportItems.push({ component: CNavItem, name: 'Purchase Analysis', to: '/base/purchaseAnalysis' })
+
     reportItems.push({ component: CNavItem, name: 'Product Serial Track', to: '/product-serial-track' })
-    reportItems.push({ component: CNavItem, name: 'ONU Track Report', to: '/base/onuTrack' })
+    reportItems.push({ component: CNavItem, name: 'ONU Track Report', to: '/onu-report' })
   }
 
   if (reportItems.length > 0) {
