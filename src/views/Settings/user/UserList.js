@@ -173,7 +173,7 @@ const UserList = () => {
     const result = await confirmDelete();
     if (result.isConfirmed) {
       try {
-        await axiosInstance.delete(`/auth/${itemId}`);
+        await axiosInstance.delete(`/auth/user/${itemId}`);
         setData((prev) => prev.filter((c) => c._id !== itemId));
         showSuccess('Data deleted successfully!');
       } catch (error) {

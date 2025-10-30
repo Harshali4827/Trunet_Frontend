@@ -207,7 +207,7 @@
 //     });
 //   });
 
-//   const handleDeleteCustomer = async (customerId) => {
+//   const handleDeleteData = async (customerId) => {
 //     const result = await confirmDelete();
 //     if (result.isConfirmed) {
 //       try {
@@ -464,7 +464,7 @@
 //                           )}
 
 //                           {hasAnyPermission('Indent', ['delete_indent_own_center','delete_indent_all_center']) && (
-//                            <button className="dropdown-item" onClick={() => handleDeleteCustomer(item._id)}>
+//                            <button className="dropdown-item" onClick={() =>handleDeleteData(item._id)}>
 //                                 <CIcon icon={cilTrash} className="me-2" /> Delete
 //                            </button>
 //                            )}
@@ -876,15 +876,15 @@ const StockRequest = () => {
     });
   });
 
-  const handleDeleteCustomer = async (customerId) => {
+  const handleDeleteData = async (customerId) => {
     const result = await confirmDelete();
     if (result.isConfirmed) {
       try {
-        await axiosInstance.delete(`/customers/${customerId}`);
+        await axiosInstance.delete(`/stockrequest/${customerId}`);
         setCustomers((prev) => prev.filter((c) => c._id !== customerId));
-        showSuccess('Customer deleted successfully!');
+        showSuccess('Indent Request deleted successfully!');
       } catch (error) {
-        console.error('Error deleting customer:', error);
+        console.error('Error deleting indent:', error);
       }
     }
   };
@@ -1151,7 +1151,7 @@ const StockRequest = () => {
                           )}
 
                           {hasAnyPermission('Indent', ['delete_indent_own_center','delete_indent_all_center']) && (
-                           <button className="dropdown-item" onClick={() => handleDeleteCustomer(item._id)}>
+                           <button className="dropdown-item" onClick={() =>handleDeleteData(item._id)}>
                                 <CIcon icon={cilTrash} className="me-2" /> Delete
                            </button>
                            )}

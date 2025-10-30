@@ -1,6 +1,6 @@
 // import '../../css/table.css';
 // import '../../css/form.css';
-// import React, { useState, useEffect } from 'react';
+// import React, { useState, useEffect, useRef } from 'react';
 // import {
 //   CTable,
 //   CTableHead,
@@ -18,7 +18,7 @@
 //   CSpinner
 // } from '@coreui/react';
 // import CIcon from '@coreui/icons-react';
-// import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilZoomOut } from '@coreui/icons';
+// import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilZoomOut, cilSettings } from '@coreui/icons';
 // import { Link, useNavigate } from 'react-router-dom';
 // import { CFormLabel } from '@coreui/react-pro';
 // import axiosInstance from 'src/axiosInstance';
@@ -33,8 +33,13 @@
 //   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
 //   const [searchTerm, setSearchTerm] = useState('');
 //   const [searchModalVisible, setSearchModalVisible] = useState(false);
-//   const [activeSearch, setActiveSearch] = useState({ keyword: '', center: '' });
- 
+//   const [dropdownOpen, setDropdownOpen] = useState({});
+//   const [activeSearch, setActiveSearch] = useState({ 
+//     center: '',
+//     date: ''
+//   });
+//   const [exportLoading, setExportLoading] = useState(false);
+//   const dropdownRefs = useRef({});
 //   const navigate = useNavigate();
 
 //   const fetchData = async (searchParams = {}) => {
@@ -42,11 +47,20 @@
 //       setLoading(true);
 //       const params = new URLSearchParams();
       
-//       if (searchParams.keyword) {
-//         params.append('search', searchParams.keyword);
-//       }
 //       if (searchParams.center) {
 //         params.append('center', searchParams.center);
+//       }
+
+//       if (searchParams.date && searchParams.date.includes(' to ')) {
+//         const [startDateStr, endDateStr] = searchParams.date.split(' to ');
+        
+//         const convertDateFormat = (dateStr) => {
+//           const [day, month, year] = dateStr.split('-');
+//           return `${year}-${month}-${day}`;
+//         };
+        
+//         params.append('startDate', convertDateFormat(startDateStr));
+//         params.append('endDate', convertDateFormat(endDateStr));
 //       }
 
 //       const url = params.toString() ? `/reportsubmission?${params.toString()}` : '/reportsubmission';
@@ -129,7 +143,10 @@
 //   };
 
 //   const handleResetSearch = () => {
-//     setActiveSearch({ keyword: '', center: '' });
+//     setActiveSearch({ 
+//       center: '',
+//       date: ''
+//     });
 //     setSearchTerm('');
 //     fetchData();
 //   };
@@ -138,8 +155,96 @@
 //     navigate(`/edit-reportSubmission/${itemId}`);
 //   };
 
+//   const generateCSVExport = async () => {
+//     try {
+//       setExportLoading(true);
+      
+//       const params = new URLSearchParams();
+      
+//       if (activeSearch.center) {
+//         params.append('center', activeSearch.center);
+//       }
+      
+//       if (activeSearch.date && activeSearch.date.includes(' to ')) {
+//         const [startDateStr, endDateStr] = activeSearch.date.split(' to ');
+        
+//         const convertDateFormat = (dateStr) => {
+//           const [day, month, year] = dateStr.split('-');
+//           return `${year}-${month}-${day}`;
+//         };
+        
+//         params.append('startDate', convertDateFormat(startDateStr));
+//         params.append('endDate', convertDateFormat(endDateStr));
+//       }
+
+//       const apiUrl = params.toString() 
+//         ? `/reportsubmission?${params.toString()}` 
+//         : '/reportsubmission';
+      
+//       const response = await axiosInstance.get(apiUrl);
+      
+//       if (!response.data.success) {
+//         throw new Error('API returned unsuccessful response');
+//       }
+  
+//       const exportData = response.data.data || [];
+      
+//       if (exportData.length === 0) {
+//         alert('No data available for export with current filters');
+//         return;
+//       }
+//       const headers = [
+//         'Date',
+//         'Center',
+//         'Remark',
+//         'Created At',
+//         'Created By'
+//       ];
+//       const csvData = exportData.map(item => [
+//         formatDate(item.date || ''),
+//         item.center?.centerName || '',
+//         item.remark || '',
+//         formatDateTime(item.createdAt || ''),
+//         item.createdBy?.email || '',
+//       ]);
+//       const csvContent = [
+//         headers.join(','),
+//         ...csvData.map(row => 
+//           row.map(field => {
+//             const stringField = String(field || '');
+//             return `"${stringField.replace(/"/g, '""')}"`;
+//           }).join(',')
+//         )
+//       ].join('\n');
+//       const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+//       const link = document.createElement('a');
+//       const downloadUrl = URL.createObjectURL(blob);
+      
+//       link.setAttribute('href', downloadUrl);
+//       let fileName = 'Closing-stock-log';
+//       if (activeSearch.center || activeSearch.date) {
+//         fileName += '_filtered';
+//       }
+//       fileName += `_${new Date().toISOString().split('T')[0]}.csv`;
+      
+//       link.setAttribute('download', fileName);
+//       link.style.visibility = 'hidden';
+      
+//       document.body.appendChild(link);
+//       link.click();
+//       document.body.removeChild(link);
+//       URL.revokeObjectURL(downloadUrl);
+      
+//     } catch (error) {
+//       console.error('Error generating CSV export:', error);
+//       alert('Error generating export file. Please try again.');
+//     } finally {
+//       setExportLoading(false);
+//     }
+//   };
+
 //   const filteredData = data.filter(customer => {
-//     if (activeSearch.keyword || activeSearch.center) {
+//     if (activeSearch.center || activeSearch.date) {
 //       return true;
 //     }
 //     return Object.values(customer).some(value => {
@@ -168,6 +273,12 @@
 //     );
 //   }
 
+//   const toggleDropdown = (id) => {
+//     setDropdownOpen(prev => ({
+//       ...prev,
+//       [id]: !prev[id]
+//     }));
+//   };
 //   return (
 //     <div>
 //       <div className='title'>Closing Stock Logs </div>
@@ -177,6 +288,7 @@
 //         onClose={() => setSearchModalVisible(false)}
 //         onSearch={handleSearch}
 //         centers={centers}
+//         initialSearchData={activeSearch}
 //       /> 
       
 //       <CCard className='table-container mt-4'>
@@ -190,9 +302,17 @@
 //             <CButton 
 //               size="sm" 
 //               className="action-btn me-1"
+//               onClick={generateCSVExport}
+//               disabled={exportLoading}
 //             >
-//               <i className="fa fa-fw fa-file-excel"></i>
-//                Export
+//               {exportLoading ? (
+//                 <CSpinner size="sm" />
+//               ) : (
+//                 <>
+//                   <i className="fa fa-fw fa-file-excel"></i>
+//                   Export
+//                 </>
+//               )}
 //             </CButton>
 //             <CButton 
 //               size="sm" 
@@ -201,7 +321,7 @@
 //             >
 //               <CIcon icon={cilSearch} className='icon' /> Search
 //             </CButton>
-//             {(activeSearch.keyword || activeSearch.center) && (
+//             {(activeSearch.center || activeSearch.date) && (
 //               <CButton 
 //                 size="sm" 
 //                 color="secondary" 
@@ -213,7 +333,6 @@
 //               </CButton>
 //             )}
 //           </div>
-          
 //           <div>
 //             <CPagination size="sm" aria-label="Page navigation">
 //               <CPaginationItem>First</CPaginationItem>
@@ -263,6 +382,9 @@
 //                 <CTableHeaderCell scope="col" onClick={() => handleSort('remark')} className="sortable-header">
 //                   Approve Remark {getSortIcon('remark')}
 //                 </CTableHeaderCell>
+//                 <CTableHeaderCell>
+//                   Options
+//                 </CTableHeaderCell>
 //               </CTableRow>
 //             </CTableHead>
 //             <CTableBody>
@@ -283,6 +405,32 @@
 //                     <CTableDataCell>{formatDateTime(customer.createdAt || 'N/A')}</CTableDataCell>
 //                     <CTableDataCell>{customer.createdBy.email || 'N/A'}</CTableDataCell>
 //                     <CTableDataCell>{customer.remark || ''}</CTableDataCell>
+//                     <CTableDataCell>
+//                     <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
+//                         <CButton 
+//                           size="sm"
+//                           className='option-button btn-sm'
+//                           onClick={() => toggleDropdown(customer._id)}
+//                         >
+//                           <CIcon icon={cilSettings} />
+//                           Options
+//                         </CButton>
+//                         {dropdownOpen[customer._id] && (
+//                           <div className="dropdown-menu show">
+//                             <button 
+//                               className="dropdown-item"
+//                             >
+//                             <i className="fa fa-exchange fa-margin"></i> Approve
+//                             </button>
+//                             <button 
+//                             className="dropdown-item"
+//                             >
+//                             <i className="fa fa-exchange fa-margin"></i> Duplicate Entry
+//                           </button>
+//                           </div>
+//                         )}
+//                       </div>
+//                     </CTableDataCell>
 //                   </CTableRow>
 //                 ))
 //               ) : (
@@ -304,11 +452,9 @@
 // export default ReportSubmissionList;
 
 
-
-
 import '../../css/table.css';
 import '../../css/form.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   CTable,
   CTableHead,
@@ -326,12 +472,13 @@ import {
   CSpinner
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilZoomOut } from '@coreui/icons';
+import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilZoomOut, cilSettings } from '@coreui/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
 import ReportSearchmodel from './ReportSearchModel';
+import Swal from 'sweetalert2';
 
 const ReportSubmissionList = () => {
   const [data, setData] = useState([]);
@@ -341,13 +488,34 @@ const ReportSubmissionList = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [searchTerm, setSearchTerm] = useState('');
   const [searchModalVisible, setSearchModalVisible] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState({});
   const [activeSearch, setActiveSearch] = useState({ 
     center: '',
     date: ''
   });
   const [exportLoading, setExportLoading] = useState(false);
- 
+  const dropdownRefs = useRef({});
   const navigate = useNavigate();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      Object.keys(dropdownRefs.current).forEach(key => {
+        const ref = dropdownRefs.current[key];
+        if (ref && !ref.contains(event.target)) {
+          setDropdownOpen(prev => ({
+            ...prev,
+            [key]: false
+          }));
+        }
+      });
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const fetchData = async (searchParams = {}) => {
     try {
@@ -357,8 +525,7 @@ const ReportSubmissionList = () => {
       if (searchParams.center) {
         params.append('center', searchParams.center);
       }
-      
-      // Handle date range filter
+
       if (searchParams.date && searchParams.date.includes(' to ')) {
         const [startDateStr, endDateStr] = searchParams.date.split(' to ');
         
@@ -461,6 +628,104 @@ const ReportSubmissionList = () => {
   
   const handleClick = (itemId) => {
     navigate(`/edit-reportSubmission/${itemId}`);
+  };
+
+  const handleApprove = async (item) => {
+    setDropdownOpen(prev => ({ ...prev, [item._id]: false }));
+
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You want to approve this stock closing entry?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6d7d9c',
+      confirmButtonText: 'Yes, approve it!',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const response = await axiosInstance.patch(
+          `/reportsubmission/${item._id}/status`,
+          { status: 'Approved' }
+        );
+
+        if (response.data.success) {
+          setData(prevData => 
+            prevData.map(customer => 
+              customer._id === item._id 
+                ? { ...customer, status: 'Approved' }
+                : customer
+            )
+          );
+
+          Swal.fire(
+            'Approved!',
+            'Stock closing has been approved successfully.',
+            'success'
+          );
+        } else {
+          throw new Error(response.data.message || 'Failed to approve');
+        }
+      } catch (error) {
+        console.error('Error approving stock closing:', error);
+        Swal.fire(
+          'Error!',
+          error.response?.data?.message || 'Failed to approve stock closing.',
+          'error'
+        );
+      }
+    }
+  };
+
+  const handleDuplicate = async (item) => {
+    setDropdownOpen(prev => ({ ...prev, [item._id]: false }));
+
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You want to mark this stock closing entry as duplicate?",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6d7d9c',
+      confirmButtonText: 'Yes, mark as duplicate!',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const response = await axiosInstance.patch(
+          `/reportsubmission/${item._id}/status`,
+          { status: 'Duplicate' }
+        );
+
+        if (response.data.success) {
+          setData(prevData => 
+            prevData.map(customer => 
+              customer._id === item._id 
+                ? { ...customer, status: 'Duplicate' }
+                : customer
+            )
+          );
+
+          Swal.fire(
+            'Marked as Duplicate!',
+            'Stock closing has been marked as duplicate.',
+            'success'
+          );
+        } else {
+          throw new Error(response.data.message || 'Failed to mark as duplicate');
+        }
+      } catch (error) {
+        console.error('Error marking stock closing as duplicate:', error);
+        Swal.fire(
+          'Error!',
+          error.response?.data?.message || 'Failed to mark as duplicate.',
+          'error'
+        );
+      }
+    }
   };
 
   const generateCSVExport = async () => {
@@ -581,6 +846,13 @@ const ReportSubmissionList = () => {
     );
   }
 
+  const toggleDropdown = (id) => {
+    setDropdownOpen(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
   return (
     <div>
       <div className='title'>Closing Stock Logs </div>
@@ -684,6 +956,9 @@ const ReportSubmissionList = () => {
                 <CTableHeaderCell scope="col" onClick={() => handleSort('remark')} className="sortable-header">
                   Approve Remark {getSortIcon('remark')}
                 </CTableHeaderCell>
+                <CTableHeaderCell>
+                  Options
+                </CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
@@ -704,6 +979,34 @@ const ReportSubmissionList = () => {
                     <CTableDataCell>{formatDateTime(customer.createdAt || 'N/A')}</CTableDataCell>
                     <CTableDataCell>{customer.createdBy.email || 'N/A'}</CTableDataCell>
                     <CTableDataCell>{customer.remark || ''}</CTableDataCell>
+                    <CTableDataCell>
+                    <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
+                        <CButton 
+                          size="sm"
+                          className='option-button btn-sm'
+                          onClick={() => toggleDropdown(customer._id)}
+                        >
+                          <CIcon icon={cilSettings} />
+                          Options
+                        </CButton>
+                        {dropdownOpen[customer._id] && (
+                          <div className="dropdown-menu show">
+                            <button 
+                              className="dropdown-item"
+                              onClick={() => handleApprove(customer)}
+                            >
+                            <i className="fa fa-exchange fa-margin"></i> Approve
+                            </button>
+                            <button 
+                            className="dropdown-item"
+                            onClick={() => handleDuplicate(customer)}
+                            >
+                            <i className="fa fa-exchange fa-margin"></i> Duplicate Entry
+                          </button>
+                          </div>
+                        )}
+                      </div>
+                    </CTableDataCell>
                   </CTableRow>
                 ))
               ) : (

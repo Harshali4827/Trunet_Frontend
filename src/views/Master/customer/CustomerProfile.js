@@ -264,41 +264,6 @@ const CustomerProfile = () => {
     };
   }, []);
 
-
-
-  // const handleDamageReturn = async (usageId) => {
-  //   try {
-  //     const html = `Are you sure you want to mark this device as Damage?<br><br>`;
-      
-  //     const result = await confirmAction(
-  //       'Are you sure to damage?',
-  //       html,
-  //       'warning',
-  //       'Yes,Damage it!'
-  //     );
-  
-  //     if (result.isConfirmed) {
-  //       const response = await axiosInstance.patch(
-  //         `/stockusage/damage/${usageId}/damage-return`,
-  //         {
-  //           remark: "Product marked as damaged - returned from customer"
-  //         }
-  //       );
-  
-  //       if (response.data.success) {
-  //         showSuccess('Device has been marked as Damage Return successfully');
-  //         fetchDeviceData();
-  //       } else {
-  //         throw new Error(response.data.message || 'Failed to mark as Damage Return');
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error('Error in damage return:', error);
-  //     showError(error);
-  //   }
-  // };
-
-
   const handleDamageReturn = async (usageId, serialNumber) => {
     try {
       const html = `Are you sure you want to mark serial number <strong>${serialNumber}</strong> as Damage?<br><br>`;
@@ -333,6 +298,39 @@ const CustomerProfile = () => {
     }
   };
   
+  const handleReturn = async (usageId, productId, serialNumber) => {
+    try {
+      const html = `Are you sure you want to return serial number <strong>${serialNumber}</strong>?<br><br>`;
+      
+      const result = await confirmAction(
+        'Confirm Return',
+        html,
+        'question',
+        'Yes, Return it!'
+      );
+  
+      if (result.isConfirmed) {
+        const response = await axiosInstance.post(
+          `/stockusage/return/product`,
+          {
+            usageId: usageId,
+            productId: productId,
+            serialNumber: serialNumber
+          }
+        );
+  
+        if (response.data.success) {
+          showSuccess(`Serial number ${serialNumber} has been returned successfully`);
+          fetchDeviceData();
+        } else {
+          throw new Error(response.data.message || 'Failed to return device');
+        }
+      }
+    } catch (error) {
+      console.error('Error in return:', error);
+      showError(error);
+    }
+  };
   
 const renderDeviceTable = () => (
   <div>
@@ -406,11 +404,16 @@ const renderDeviceTable = () => (
                         {dropdownOpen[item._id] && (
                           <div className="dropdown-menu show">
 
-                            <button 
-                              className="dropdown-item"
-                            >
-                              <i className="fa fa-reply fa-margin "></i> Return
-                            </button>
+                         <button 
+                          className="dropdown-item"
+                          onClick={() => handleReturn(
+                            item.usageId,
+                            item.productId,
+                            item['Serial No.']
+                          )}
+                        >
+                          <i className="fa fa-reply fa-margin"></i> Return
+                        </button>
 
                   
                             <button 
@@ -428,13 +431,7 @@ const renderDeviceTable = () => (
   <i className="fa fa-refresh"></i> Replace
 </button>
 
-                            {/* <button 
-                              className="dropdown-item"
-                              onClick={() => handleDamageReturn(item.usageId,
-)}
-                            >
-                              <i className="fa fa-recycle fa-margin "></i> Damage
-                            </button> */}
+                          
                            <button 
   className="dropdown-item"
   onClick={() => handleDamageReturn(item.usageId, item['Serial No.'])}

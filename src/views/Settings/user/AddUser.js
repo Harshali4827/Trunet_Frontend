@@ -91,7 +91,7 @@ const AddUser = () => {
 
     try {
       if (id) {
-        await axiosInstance.put(`/auth/register/${id}`, formData);
+        await axiosInstance.put(`/auth/user/${id}`, formData);
         setAlert({ type: 'success', message: 'Data updated successfully!' })
       } else {
         await axiosInstance.post('/auth/register', formData);
