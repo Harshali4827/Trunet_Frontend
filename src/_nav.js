@@ -275,6 +275,7 @@ export const hasPermission = (permissions, module, requiredPermissions = []) => 
 
 const userCenter = JSON.parse(localStorage.getItem('userCenter')) || {};
 const userCenterType = (userCenter.centerType || 'Outlet').toLowerCase();
+console.log(userCenterType);
 
 const getNav = (permissions = []) => {
   const _nav = []

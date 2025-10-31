@@ -553,6 +553,7 @@ import Pagination from 'src/utils/Pagination';
 import { showError, showSuccess } from 'src/utils/sweetAlerts';
 import { formatDateTime } from 'src/utils/FormatDateTime';
 import usePermission from 'src/utils/usePermission';
+import generateStockPurchasePDF from 'src/utils/generateStockPurchasePDF';
 
 const StockPurchase = () => {
   const [customers, setCustomers] = useState([]);
@@ -571,6 +572,7 @@ const StockPurchase = () => {
   const [dropdownOpen, setDropdownOpen] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [pdfLoading,setPdfLoading] = useState({});
 
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
@@ -637,6 +639,7 @@ const StockPurchase = () => {
   const calculateTotals = () => {
     const totals = {
       amount: 0,
+      productAmount: 0,
       cgst: 0,
       sgst: 0,
       igst: 0,
@@ -645,6 +648,7 @@ const StockPurchase = () => {
 
     filteredCustomers.forEach(customer => {
       totals.amount += parseFloat(customer.transportAmount || 0);
+      totals.productAmount += parseFloat(customer.productAmount || 0);
       totals.cgst += parseFloat(customer.cgst || 0);
       totals.sgst += parseFloat(customer.sgst || 0);
       totals.igst += parseFloat(customer.igst || 0);
@@ -899,6 +903,21 @@ const StockPurchase = () => {
     }
   };
 
+
+  const handleGeneratePDF = async (purchaseData) => {
+    try {
+      setPdfLoading(prev => ({ ...prev, [purchaseData._id]: true }));
+     
+      await generateStockPurchasePDF(purchaseData);
+     
+      showSuccess('PDF generated successfully!');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      showError('Error generating PDF file');
+    } finally {
+      setPdfLoading(prev => ({ ...prev, [purchaseData._id]: false }));
+    }
+  };
   const handleClick = (itemId) => {
     navigate(`/edit-stockPurchase/${itemId}`);
   };
@@ -1017,6 +1036,9 @@ const StockPurchase = () => {
                   <CTableHeaderCell scope="col" onClick={() => handleSort('remark')} className="sortable-header">
                     Remark {getSortIcon('remark')}
                   </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" className="text-center">
+                    Action
+                  </CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
               <CTableBody>
@@ -1045,16 +1067,32 @@ const StockPurchase = () => {
                         <CTableDataCell>{customer.igst}</CTableDataCell>
                         <CTableDataCell>{customer.totalAmount}</CTableDataCell>
                         <CTableDataCell>{customer.remark}</CTableDataCell>
+                        <CTableDataCell className="text-center">
+                          <CButton
+                            size="sm"
+                            className='option-button btn-sm'
+                            onClick={() => handleGeneratePDF(customer)}
+                            disabled={pdfLoading[customer._id]}
+                          >
+                            {pdfLoading[customer._id] ? (
+                              <CSpinner size="sm" />
+                            ) : (
+                              'Raise PO'
+                            )}
+                          </CButton>
+                        </CTableDataCell>
                       </CTableRow>
                     ))}
                     <CTableRow className='total-row '>
-                      <CTableDataCell colSpan="4">Total</CTableDataCell>
+                      <CTableDataCell colSpan="3">Total</CTableDataCell>
                       <CTableDataCell></CTableDataCell>
                       <CTableDataCell>{totals.amount.toFixed(2)}</CTableDataCell>
+                      <CTableDataCell>{totals.productAmount.toFixed(2)}</CTableDataCell>
                       <CTableDataCell>{totals.cgst.toFixed(2)}</CTableDataCell>
                       <CTableDataCell>{totals.sgst.toFixed(2)}</CTableDataCell>
                       <CTableDataCell>{totals.igst.toFixed(2)}</CTableDataCell>
                       <CTableDataCell>{totals.total.toFixed(2)}</CTableDataCell>
+                      <CTableDataCell></CTableDataCell>
                       <CTableDataCell></CTableDataCell>
                     </CTableRow>
                   </>

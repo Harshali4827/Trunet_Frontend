@@ -235,6 +235,7 @@ const userCenterType = (userCenter.centerType || 'Outlet').toLowerCase();
                 </label>
               </div>
              )}
+
               {otherCenter && (
                 <div className="form-group">
                   <label 

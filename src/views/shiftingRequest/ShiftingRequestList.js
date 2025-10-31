@@ -503,7 +503,7 @@ const ShiftinRequestList = () => {
                                     <button
                                       className="dropdown-item"
                                       onClick={() => handleStatusChange(building._id, 'Reject')}
-                                    >
+                                     >
                                       Reject
                                     </button>
                                   </>
