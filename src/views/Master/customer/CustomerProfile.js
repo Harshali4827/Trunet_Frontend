@@ -390,8 +390,9 @@ const renderDeviceTable = () => (
               <CTableDataCell>{item['Package Duration'] || 'N/A'}</CTableDataCell>
               <CTableDataCell>{item['ONU Charges'] || 'N/A'}</CTableDataCell>
               <CTableDataCell>{item['Installation Charges'] || 'N/A'}</CTableDataCell>
-              <CTableDataCell>{item.Remark || 'N/A'}</CTableDataCell>
+              <CTableDataCell>{item['Reason'] || 'N/A'}</CTableDataCell>
                <CTableDataCell>
+               {item.Type !== 'Return' && (
                       <div className="dropdown-container" ref={el => dropdownRefs.current[item._id] = el}>
                         <CButton 
                           size="sm"
@@ -441,6 +442,7 @@ const renderDeviceTable = () => (
                           </div>
                         )}
                       </div>
+               )}
                     </CTableDataCell>
             </CTableRow>
           ))

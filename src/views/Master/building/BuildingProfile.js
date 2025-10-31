@@ -395,6 +395,7 @@ const BuildingProfile = () => {
                   <CTableDataCell>{item.Type || 'N/A'}</CTableDataCell>
                   <CTableDataCell>{item.Date || 'N/A'}</CTableDataCell>
                   <CTableDataCell>
+                  {item.recordType !== 'return' && (
                     <div className="dropdown-container" ref={el => dropdownRefs.current[item._id] = el}>
                       <CButton 
                         size="sm"
@@ -440,6 +441,7 @@ const BuildingProfile = () => {
                         </div>
                       )}
                     </div>
+                  )}
                   </CTableDataCell>
                 </CTableRow>
               ))

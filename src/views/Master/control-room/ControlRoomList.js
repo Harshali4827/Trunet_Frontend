@@ -312,7 +312,7 @@ const ControlRoomList = () => {
                       </button>
                     </CTableDataCell>
                     <CTableDataCell>{building.address1}</CTableDataCell>
-                    <CTableDataCell>{building.center?.centerName || 'N/A'}</CTableDataCell>
+                    <CTableDataCell>{building.center?.centerName || ''}</CTableDataCell>
                     <CTableDataCell>
                     {hasAnyPermission('Settings', ['manage_control_room_own_center','manage_control_room_all_center']) && (
                       <div className="dropdown-container" ref={el => dropdownRefs.current[building._id] = el}>

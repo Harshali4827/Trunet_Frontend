@@ -306,7 +306,8 @@ const userCenterType = (userCenter.centerType || 'Outlet').toLowerCase();
                   <CSpinner color="primary" />
                 </div>
               ) : (
-                <CTable bordered striped responsive>
+                <div className="responsive-table-wrapper">
+                <CTable bordered striped className='responsive-table'>
                   <CTableHead>
                     <CTableRow>
                       <CTableHeaderCell>#</CTableHeaderCell>
@@ -367,6 +368,7 @@ const userCenterType = (userCenter.centerType || 'Outlet').toLowerCase();
                     )}
                   </CTableBody>
                 </CTable>
+                </div>
               )}
             </div>
             

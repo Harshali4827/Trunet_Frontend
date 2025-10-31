@@ -309,12 +309,12 @@ const ProductList = () => {
               {filteredCustomers.length > 0 ? (
                 filteredCustomers.map((product) => (
                   <CTableRow key={product._id}>
-                    <CTableDataCell>{product.productTitle}</CTableDataCell>
-                    <CTableDataCell>{product.productCategory.productCategory || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{product.productCode || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{product.productPrice}</CTableDataCell>
-                    <CTableDataCell>{product.description}</CTableDataCell>
-                    <CTableDataCell>{product.status}</CTableDataCell>
+                    <CTableDataCell>{product.productTitle || ''}</CTableDataCell>
+                    <CTableDataCell>{product.productCategory?.productCategory || ''}</CTableDataCell>
+                    <CTableDataCell>{product.productCode || ''}</CTableDataCell>
+                    <CTableDataCell>{product.productPrice || ''}</CTableDataCell>
+                    <CTableDataCell>{product.description || ''}</CTableDataCell>
+                    <CTableDataCell>{product.status || ''}</CTableDataCell>
                     <CTableDataCell></CTableDataCell>
                     <CTableDataCell>
                       <div className="dropdown-container" ref={el => dropdownRefs.current[product._id] = el}>

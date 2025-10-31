@@ -325,6 +325,40 @@ const ControlRoomProfile = () => {
     }
   };
 
+  const handleReturn = async (usageId, productId, serialNumber) => {
+    try {
+      const html = `Are you sure you want to return serial number <strong>${serialNumber}</strong>?<br><br>`;
+      
+      const result = await confirmAction(
+        'Confirm Return',
+        html,
+        'question',
+        'Yes, Return it!'
+      );
+
+      if (result.isConfirmed) {
+        const response = await axiosInstance.post(
+          `/stockusage/return/product`,
+          {
+            usageId: usageId,
+            productId: productId,
+            serialNumber: serialNumber
+          }
+        );
+
+        if (response.data.success) {
+          showSuccess(`Serial number ${serialNumber} has been returned successfully`);
+          fetchDeviceData();
+        } else {
+          throw new Error(response.data.message || 'Failed to return device');
+        }
+      }
+    } catch (error) {
+      console.error('Error in return:', error);
+      showError(error);
+    }
+  };
+
   const renderDeviceTable = () => (
     <div>
       <div className="responsive-table-wrapper">
@@ -361,7 +395,9 @@ const ControlRoomProfile = () => {
                   <CTableDataCell>{item.Type || 'N/A'}</CTableDataCell>
                   <CTableDataCell>{item.Date || 'N/A'}</CTableDataCell>
                   <CTableDataCell>
+                  {item.recordType !== 'return' && (
                     <div className="dropdown-container" ref={el => dropdownRefs.current[item._id] = el}>
+
                       <CButton 
                         size="sm"
                         className='option-button btn-sm'
@@ -372,10 +408,15 @@ const ControlRoomProfile = () => {
                       </CButton>
                       {dropdownOpen[item._id] && (
                         <div className="dropdown-menu show">
-                          <button 
+                        <button 
                             className="dropdown-item"
+                            onClick={() => handleReturn(
+                              item.usageId,
+                              item.productId,
+                              item['Serial No.']
+                            )}
                           >
-                            <i className="fa fa-reply fa-margin "></i> Return
+                            <i className="fa fa-reply fa-margin"></i> Return
                           </button>
 
                           <button 
@@ -402,6 +443,7 @@ const ControlRoomProfile = () => {
                         </div>
                       )}
                     </div>
+                    )}
                   </CTableDataCell>
                 </CTableRow>
               ))

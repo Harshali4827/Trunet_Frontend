@@ -13,8 +13,6 @@ import {
   CCardHeader,
   CButton,
   CFormInput,
-  CPaginationItem,
-  CPagination,
   CSpinner
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';

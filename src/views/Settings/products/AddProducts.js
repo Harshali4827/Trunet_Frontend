@@ -113,21 +113,36 @@ const AddProducts = () => {
       }
        setTimeout(() => navigate('/product-list'), 1500)
     }  catch (error) {
-      console.error('Error saving data:', error)
+      console.error('Error saving data:', error);
+      if (error.response && error.response.data?.errors) {
+        const backendErrors = error.response.data.errors;
+        let fieldErrors = {};
+        
+        backendErrors.forEach((err) => {
+          if (err.path) {
+            fieldErrors[err.path] = err.msg;
+          }
+        });
     
-      let message = 'Failed to save data. Please try again!'
-    
-      if (error.response) {
-        message = error.response.data?.message || error.response.data?.error || message
-      } else if (error.request) {
-        message = 'No response from server. Please check your connection.'
-      } else {
-        message = error.message
+        setErrors(fieldErrors);
+        setAlert({ type: 'danger', message: error.response.data.message || "Validation failed" });
+        return;
       }
     
-      setAlert({ type: 'danger', message })
-    }    
-  };
+      let message = 'Failed to save data. Please try again!';
+    
+      if (error.response) {
+        message = error.response.data?.message || error.response.data?.error || message;
+      } else if (error.request) {
+        message = 'No response from server. Please check your connection.';
+      } else {
+        message = error.message;
+      }
+    
+      setAlert({ type: 'danger', message });
+    }
+  }
+  
   const handleReset = () => {
     setFormData({
       productCategory: '',

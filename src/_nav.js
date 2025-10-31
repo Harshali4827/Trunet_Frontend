@@ -418,7 +418,7 @@ const getNav = (permissions = []) => {
     settingsItems.push({ component: CNavItem, name: 'Center', to: '/center-list' })
     settingsItems.push({ component: CNavItem, name: 'Products', to: '/product-list' })
     settingsItems.push({ component: CNavItem, name: 'Product Categories', to: '/product-category' })
-    settingsItems.push({ component: CNavItem, name: 'Tax', to: '/base/tax' })
+    settingsItems.push({ component: CNavItem, name: 'Tax', to: '/tax' })
     settingsItems.push({ component: CNavItem, name: 'Vendor', to: '/vendor-list' })
     settingsItems.push({ component: CNavItem, name: 'Package Duration', to: '/package-duration-list' })
     settingsItems.push({ component: CNavItem, name: 'Partner', to: '/partner-list' })

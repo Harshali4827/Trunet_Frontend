@@ -80,6 +80,8 @@ const UsageReplace = React.lazy(() => import('./views/Report/UsageReplace'))
 const OnuTrackReport = React.lazy(() => import('./views/Report/OnuTrackReport'))
 const IndentUsageSummary = React.lazy(() => import('./views/Report/IndentUsageSummary'))
 
+const TaxList = React.lazy(() => import('./views/Settings/tax/TaxList'))
+
 const routes = [
 
   { path: '/', exact: true, name: <Translation>{(t) => t('home')}</Translation> },
@@ -273,6 +275,12 @@ const routes = [
     exact:true, 
     name:<Translation>{(t) => t('User List')}</Translation>,
     element: UserList,
+  },
+  { 
+    path:'/tax', 
+    exact:true, 
+    name:<Translation>{(t) => t('Tax List')}</Translation>,
+    element: TaxList,
   },
   { 
     path:'/package-duration-list', 

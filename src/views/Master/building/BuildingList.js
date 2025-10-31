@@ -316,7 +316,7 @@ const BuildingList = () => {
                       </button>
                       </CTableDataCell>
                     <CTableDataCell>{building.address1}</CTableDataCell>
-                    <CTableDataCell>{building.center?.centerName || 'N/A'}</CTableDataCell>
+                    <CTableDataCell>{building.center?.centerName || ''}</CTableDataCell>
                     <CTableDataCell>
                     {hasAnyPermission('Settings', ['manage_building_all_center','manage_building_own_center']) && (
                       <div className="dropdown-container" ref={el => dropdownRefs.current[building._id] = el}>

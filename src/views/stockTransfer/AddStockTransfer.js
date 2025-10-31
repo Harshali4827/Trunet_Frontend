@@ -390,7 +390,8 @@ const AddStockTransfer = () => {
                   <CSpinner color="primary" />
                 </div>
               ) : (
-                <CTable bordered striped responsive>
+                <div className="responsive-table-wrapper">
+                <CTable bordered striped className='responsive-table'>
                   <CTableHead>
                     <CTableRow>
                       <CTableHeaderCell>Select</CTableHeaderCell>
@@ -466,6 +467,7 @@ const AddStockTransfer = () => {
                     )}
                   </CTableBody>
                 </CTable>
+                </div>
               )}
             </div>
 

@@ -255,7 +255,7 @@ const CenterList = () => {
                   <CTableRow key={customer._id}>
                     <CTableDataCell>{customer.centerName}</CTableDataCell>
                     <CTableDataCell>{customer.centerCode}</CTableDataCell>
-                    <CTableDataCell>{customer.centerType || 'N/A'}</CTableDataCell>
+                    <CTableDataCell>{customer.centerType || ''}</CTableDataCell>
                     <CTableDataCell>{customer.email}</CTableDataCell>
                     <CTableDataCell>{customer.mobile}</CTableDataCell>
                     <CTableDataCell>{customer.addressLine1}</CTableDataCell>
