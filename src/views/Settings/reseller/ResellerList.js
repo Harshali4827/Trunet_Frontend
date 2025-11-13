@@ -13,56 +13,64 @@ import {
   CCardHeader,
   CButton,
   CFormInput,
-  CPaginationItem,
-  CPagination,
-  CSpinner,
+  CSpinner
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import {
-  cilArrowTop,
-  cilArrowBottom,
-  cilPlus,
-  cilSettings,
-  cilPencil,
-  cilTrash
-} from '@coreui/icons';
+import { cilArrowTop, cilArrowBottom, cilPlus, cilSettings, cilPencil, cilTrash} from '@coreui/icons';
+import { Link, useNavigate } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
-import { useNavigate } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
-import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
-import AddArea from './AddArea';
+import { confirmDelete, showError, showSuccess } from 'src/utils/sweetAlerts';
+import Pagination from 'src/utils/Pagination';
 
-const AreaList = () => {
-  const [areas, setAreas] = useState([]);
+const ResellerList = () => {
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeSearch, setActiveSearch] = useState({ keyword: '', center: '' });
   const [dropdownOpen, setDropdownOpen] = useState({});
-  const [showModal, setShowModal] = useState(false);
-  const [editingArea,setEditingArea] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const dropdownRefs = useRef({});
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchAreas = async () => {
+ const navigate = useNavigate();
+
+    const fetchData= async (searchParams = {}, page=1) => {
       try {
         setLoading(true);
-        const response = await axiosInstance.get('/areas');
+        const params = new URLSearchParams();
+        if (searchParams.keyword) {
+          params.append('search', searchParams.keyword);
+        }
+        params.append('page', page);
+        const url = params.toString() ? `/resellers?${params.toString()}` : '/resellers';
+        const response = await axiosInstance.get(url);
+        
         if (response.data.success) {
-          setAreas(response.data.data);
+          setCustomers(response.data.data);
+          setCurrentPage(response.data.pagination.currentPage);
+          setTotalPages(response.data.pagination.totalPages);
         } else {
           throw new Error('API returned unsuccessful response');
         }
       } catch (err) {
         setError(err.message);
-        console.error('Error fetching areas:', err);
+        console.error('Error fetching data:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchAreas();
+
+  useEffect(() => {
+    fetchData();
   }, []);
+
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    fetchData(activeSearch, page);
+  };
 
   const handleSort = (key) => {
     let direction = 'ascending';
@@ -71,10 +79,10 @@ const AreaList = () => {
     }
     setSortConfig({ key, direction });
 
-    const sortedData = [...areas].sort((a, b) => {
+    const sortedCustomers = [...customers].sort((a, b) => {
       let aValue = a;
       let bValue = b;
-
+      
       if (key.includes('.')) {
         const keys = key.split('.');
         aValue = keys.reduce((obj, k) => obj && obj[k], a);
@@ -83,26 +91,32 @@ const AreaList = () => {
         aValue = a[key];
         bValue = b[key];
       }
-
-      if (aValue < bValue) return direction === 'ascending' ? -1 : 1;
-      if (aValue > bValue) return direction === 'ascending' ? 1 : -1;
+      
+      if (aValue < bValue) {
+        return direction === 'ascending' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return direction === 'ascending' ? 1 : -1;
+      }
       return 0;
     });
 
-    setAreas(sortedData);
+    setCustomers(sortedCustomers);
   };
 
   const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return null;
+    if (sortConfig.key !== key) {
+      return null;
+    }
     return sortConfig.direction === 'ascending'
       ? <CIcon icon={cilArrowTop} className="ms-1" />
       : <CIcon icon={cilArrowBottom} className="ms-1" />;
   };
 
-  const filteredData = areas.filter(partner =>
-    Object.values(partner).some(value => {
+  const filteredCustomers = customers.filter(customer =>
+    Object.values(customer).some(value => {
       if (typeof value === 'object' && value !== null) {
-        return Object.values(value).some(nestedValue =>
+        return Object.values(value).some(nestedValue => 
           nestedValue && nestedValue.toString().toLowerCase().includes(searchTerm.toLowerCase())
         );
       }
@@ -110,42 +124,24 @@ const AreaList = () => {
     })
   );
 
-  const handleDeletePartner = async (partnerId) => {
+  const handleDeleteVendor = async (vendorId) => {
     const result = await confirmDelete();
     if (result.isConfirmed) {
       try {
-        await axiosInstance.delete(`/areas/${partnerId}`);
-        setAreas((prev) => prev.filter((c) => c._id !== partnerId));
-        showSuccess('Center deleted successfully!');
+        await axiosInstance.delete(`/resellers/${vendorId}`);
+        setCustomers((prev) => prev.filter((c) => c._id !== vendorId));
+  
+        showSuccess('Data deleted successfully!');
       } catch (error) {
-        console.error('Error deleting center:', error);
+        console.error('Error deleting data:', error);
+        showError(error);
       }
     }
   };
- 
-  const handleAreaAdded = async (newArea, isEdit) => {
-    if (isEdit) {
-      setAreas((prev) =>
-        prev.map((p) => (p._id === newArea._id ? newArea : p))
-      )
-    } else {
-      try {
-        const response = await axiosInstance.get('/areas')
-        if (response.data.success) {
-          setAreas(response.data.data)
-        }
-      } catch (err) {
-        console.error('Error refreshing areas:', err)
-        setAreas((prev) => [...prev, newArea])
-      }
-    }
-  }
   
-
-  const handleEditPartner = (partner) => {
-   setEditingArea(partner)
-    setShowModal(true)
-  }
+  const handleEditVendor = (vendorId) => {
+     navigate(`/update-reseller/${vendorId}`)
+  };
 
   const toggleDropdown = (id) => {
     setDropdownOpen(prev => ({
@@ -158,21 +154,23 @@ const AreaList = () => {
     const handleClickOutside = (event) => {
       const newDropdownState = {};
       let shouldUpdate = false;
-
+      
       Object.keys(dropdownRefs.current).forEach(key => {
         if (dropdownRefs.current[key] && !dropdownRefs.current[key].contains(event.target)) {
           newDropdownState[key] = false;
           shouldUpdate = true;
         }
       });
-
+      
       if (shouldUpdate) {
         setDropdownOpen(prev => ({ ...prev, ...newDropdownState }));
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   if (loading) {
@@ -186,33 +184,32 @@ const AreaList = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading partner: {error}
+        Error loading vendor: {error}
       </div>
     );
   }
 
   return (
     <div>
-      <div className='title'>Area List</div>
+      <div className='title'>Reseller List </div>
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
-            <CButton size="sm" className="action-btn me-1" onClick={() => setShowModal(true)}>
-              <CIcon icon={cilPlus} className='icon' /> Add
-            </CButton>
+            <Link to='/add-reseller'>
+              <CButton size="sm" className="action-btn me-1">
+                <CIcon icon={cilPlus} className='icon'/> Add
+              </CButton>
+            </Link>
           </div>
-
           <div>
-            <CPagination size="sm" aria-label="Page navigation">
-              <CPaginationItem>First</CPaginationItem>
-              <CPaginationItem>&lt;</CPaginationItem>
-              <CPaginationItem>1</CPaginationItem>
-              <CPaginationItem>&gt;</CPaginationItem>
-              <CPaginationItem>Last</CPaginationItem>
-            </CPagination>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
           </div>
         </CCardHeader>
-
+        
         <CCardBody>
           <div className="d-flex justify-content-between mb-3">
             <div></div>
@@ -220,7 +217,7 @@ const AreaList = () => {
               <CFormLabel className='mt-1 m-1'>Search:</CFormLabel>
               <CFormInput
                 type="text"
-                style={{ maxWidth: '350px', height: '30px', borderRadius: '0' }}
+                style={{maxWidth: '350px', height: '30px', borderRadius: '0'}}
                 className="d-inline-block square-search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -231,41 +228,61 @@ const AreaList = () => {
           <CTable striped bordered hover responsive className='responsive-table'>
             <CTableHead>
               <CTableRow>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('businessName')} className="sortable-header">
-                  Reseller Name {getSortIcon('businessName')}
+                <CTableHeaderCell scope="col" onClick={() => handleSort('centerName')} className="sortable-header">
+                  Business Name {getSortIcon('centerName')}
                 </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('areaName')} className="sortable-header">
-                 Area Name {getSortIcon('areaName')}
+                <CTableHeaderCell scope="col" onClick={() => handleSort('centerCode')} className="sortable-header">
+                Contact {getSortIcon('centerCode')}
                 </CTableHeaderCell>
-                <CTableHeaderCell scope="col">Action</CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerType')} className="sortable-header">
+                  Name {getSortIcon('center.centerType')}
+                </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('mobile')} className="sortable-header">
+                  Mobile {getSortIcon('mobile')}
+                </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('email')} className="sortable-header">
+                  Email {getSortIcon('email')}
+                </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('city')} className="sortable-header">
+                  City {getSortIcon('city')}
+                </CTableHeaderCell>
+                
+    
+                <CTableHeaderCell scope="col">
+                  Action
+                </CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
-              {filteredData.length > 0 ? (
-                filteredData.map((area) => (
-                  <CTableRow key={area._id}>
-                    <CTableDataCell>{area.partner?.partnerName}</CTableDataCell>
-                    <CTableDataCell>{area.areaName}</CTableDataCell>
+              {filteredCustomers.length > 0 ? (
+                filteredCustomers.map((vendor) => (
+                  <CTableRow key={vendor._id}>
+                    <CTableDataCell>{vendor.businessName}</CTableDataCell>
+                    <CTableDataCell>{vendor.contactNumber}</CTableDataCell>
+                    <CTableDataCell>{vendor.name || 'N/A'}</CTableDataCell>
+                    <CTableDataCell>{vendor.mobile}</CTableDataCell>
+                    <CTableDataCell>{vendor.email}</CTableDataCell>
+                    <CTableDataCell>{vendor.city}</CTableDataCell>
                     <CTableDataCell>
-                      <div className="dropdown-container" ref={el => dropdownRefs.current[area._id] = el}>
-                        <CButton
+                      <div className="dropdown-container" ref={el => dropdownRefs.current[vendor._id] = el}>
+                        <CButton 
                           size="sm"
                           className='option-button btn-sm'
-                          onClick={() => toggleDropdown(area._id)}
+                          onClick={() => toggleDropdown(vendor._id)}
                         >
                           <CIcon icon={cilSettings} /> Options
                         </CButton>
-                        {dropdownOpen[area._id] && (
+                        {dropdownOpen[vendor._id] && (
                           <div className="dropdown-menu show">
-                            <button
+                            <button 
                               className="dropdown-item"
-                              onClick={() => handleEditPartner(area)}
+                              onClick={() => handleEditVendor(vendor._id)}
                             >
                               <CIcon icon={cilPencil} className="me-2" /> Edit
                             </button>
-                            <button
+                            <button 
                               className="dropdown-item"
-                              onClick={() => handleDeletePartner(area._id)}
+                              onClick={() => handleDeleteVendor(vendor._id)}
                             >
                               <CIcon icon={cilTrash} className="me-2" /> Delete
                             </button>
@@ -278,7 +295,7 @@ const AreaList = () => {
               ) : (
                 <CTableRow>
                   <CTableDataCell colSpan="9" className="text-center">
-                    No area found
+                    No vendor found
                   </CTableDataCell>
                 </CTableRow>
               )}
@@ -287,18 +304,8 @@ const AreaList = () => {
           </div>
         </CCardBody>
       </CCard>
-<AddArea
-  visible={showModal}
-  onClose={() => {
-    setShowModal(false)
-   setEditingArea(null)
-  }}
-  onAreaAdded={handleAreaAdded}
-  area={editingArea}
-/>
-
     </div>
   );
 };
 
-export default AreaList;
+export default ResellerList;

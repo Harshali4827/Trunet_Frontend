@@ -5,24 +5,17 @@ import '../../css/form.css';
 import '../../css/table.css';
 import CIcon from '@coreui/icons-react';
 import { cilPlus, cilSearch } from '@coreui/icons';
-import VendorModal from './VendorModel';
 import { CFormInput, CSpinner, CTable, CTableBody, CTableDataCell, CTableHead, CTableHeaderCell, CTableRow, CAlert, CButton } from '@coreui/react';
-import SerialNumberModal from './SerialNumberModel';
+import VendorModal from '../stockPurchase/VendorModel';
 
-const AddStockPurchase = () => {
+const AddRaisePO = () => {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    type: '',
     date: new Date().toISOString().split('T')[0],
-    invoiceNo: '',
+    voucherNo: '',
     vendor: '',
-    vendor_id: '',
-    transportAmount: '',
-    remark: '',
-    cgst: '',
-    sgst: '',
-    igst: ''
+    vendor_id: ''
   });
   const [vendors, setVendors] = useState([]);
   const [products, setProducts] = useState([]);
@@ -33,10 +26,9 @@ const AddStockPurchase = () => {
   const [showVendorDropdown, setShowVendorDropdown] = useState(false);
   const [errors, setErrors] = useState({});
   const [showVendorModal, setShowVendorModal] = useState(false);
-  const [showSerialModal, setShowSerialModal] = useState(false);
-  const [selectedProductForSerial, setSelectedProductForSerial] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
   const [alert, setAlert] = useState({
     visible: false,
     type: 'success',
@@ -44,7 +36,7 @@ const AddStockPurchase = () => {
   });
   
   const { id } = useParams();
-  
+
   useEffect(() => {
     const fetchVendors = async () => {
       try {
@@ -99,14 +91,9 @@ const AddStockPurchase = () => {
           setFormData({
             type: data.type,
             date: data.date.split('T')[0],
-            invoiceNo: data.invoiceNo,
+            voucherNo: data.voucherNo,
             vendor: data.vendor.businessName,
-            vendor_id: data.vendor._id || data.vendor.id,
-            transportAmount: data.transportAmount,
-            remark: data.remark,
-            cgst: data.cgst,
-            sgst: data.sgst,
-            igst: data.igst,
+            vendor_id: data.vendor._id || data.vendor.id
           });
   
           setSearchTerm(data.vendor.businessName);
@@ -116,11 +103,7 @@ const AddStockPurchase = () => {
               quantity: prod.purchasedQuantity,
               price: prod.price,
               productRemark: prod.productRemark || '',
-              productInStock: prod.product.stock?.currentStock || 0,
-              trackSerialNumber: prod.product.trackSerialNumber,
-              serialNumbers: (prod.serialNumbers || []).map(sn => 
-                typeof sn === 'string' ? sn : sn.serialNumber
-              ),
+              productInStock: prod.product.stock?.currentStock || 0
             };
           });
           setSelectedRows(selected);
@@ -151,9 +134,8 @@ const AddStockPurchase = () => {
             quantity: '', 
             productRemark: '',
             price: productPrice || 0,
-            productInStock: productStock || 0,
-            trackSerialNumber: trackSerialNumber,
-            serialNumbers: []
+            productInStock: productStock || 0
+
           },
     }));
   };
@@ -216,34 +198,11 @@ const AddStockPurchase = () => {
     showAlert('success', 'Vendor added successfully!');
   };
 
-  const handleOpenSerialModal = (product) => {
-    setSelectedProductForSerial(product);
-    setShowSerialModal(true);
-  };
-
-  const handleSerialNumbersSave = (productId, serialNumbers) => {
-    const serialsArray = serialNumbers.split('\n')
-      .map(sn => sn.trim())
-      .filter(sn => sn.length > 0);
-    
-    setSelectedRows((prev) => ({
-      ...prev,
-      [productId]: {
-        ...prev[productId],
-        serialNumbers: serialsArray
-      },
-    }));
-    setShowSerialModal(false);
-    setSelectedProductForSerial(null);
-    showAlert('success', 'Serial numbers saved successfully!');
-  };
-
   const validateForm = () => {
     let newErrors = {};
 
-    if (!formData.type) newErrors.type = 'Type is required';
     if (!formData.date) newErrors.date = 'Date is required';
-    if (!formData.invoiceNo) newErrors.invoiceNo = 'Invoice No is required';
+    if (!formData.voucherNo) newErrors.voucherNo = 'Invoice No is required';
     if (!formData.vendor_id) newErrors.vendor = 'Vendor is required';
   
     const selectedProducts = Object.keys(selectedRows).filter(id => selectedRows[id]);
@@ -254,11 +213,6 @@ const AddStockPurchase = () => {
         const row = selectedRows[productId];
         if (!row.quantity || row.quantity <= 0) {
           newErrors[`quantity_${productId}`] = 'Quantity is required and must be greater than 0';
-        }
-        if (row.trackSerialNumber === "Yes" && row.serialNumbers) {
-          if (row.serialNumbers.length !== parseInt(row.quantity)) {
-            newErrors[`serial_${productId}`] = `Number of serial numbers (${row.serialNumbers.length}) must match quantity (${row.quantity})`;
-          }
         }
       });
     }
@@ -277,23 +231,14 @@ const AddStockPurchase = () => {
           purchasedQuantity: parseInt(row.quantity) || 0
         };
         
-        if (row.trackSerialNumber === "Yes" && row.serialNumbers && row.serialNumbers.length > 0) {
-          productData.serialNumbers = row.serialNumbers;
-        }
-        
         return productData;
       });
     
     return {
       type: formData.type,
       date: new Date(formData.date).toISOString(),
-      invoiceNo: formData.invoiceNo,
+      voucherNo: formData.voucherNo,
       vendor: formData.vendor_id,
-      transportAmount: parseFloat(formData.transportAmount) || 0,
-      remark: formData.remark,
-      cgst: parseFloat(formData.cgst) || 0,
-      sgst: parseFloat(formData.sgst) || 0,
-      igst: parseFloat(formData.igst) || 0,
       products: productsData
     };
   };
@@ -307,14 +252,9 @@ const AddStockPurchase = () => {
     setFormData({
       type: '',
       date: new Date().toISOString().split('T')[0],
-      invoiceNo: '',
+      voucherNo: '',
       vendor: '',
-      vendor_id: '',
-      transportAmount: '',
-      remark: '',
-      cgst: '',
-      sgst: '',
-      igst: ''
+      vendor_id: ''
     });
     setSelectedRows({});
     setSearchTerm('');
@@ -340,15 +280,15 @@ const AddStockPurchase = () => {
       let response;
   
       if (id) {
-        response = await axiosInstance.put(`/stockpurchase/${id}`, submitData);
+        response = await axiosInstance.put(`/raisePO/${id}`, submitData);
       } else {
-        response = await axiosInstance.post('/stockpurchase', submitData);
+        response = await axiosInstance.post('/raisePO', submitData);
       }
   
       if (response.data.success) {
-        showAlert('success', `Stock purchase ${id ? 'updated' : 'created'} successfully!`);
+        showAlert('success', `PO ${id ? 'updated' : 'created'} successfully!`);
         setTimeout(() => {
-          navigate('/stock-purchase');
+          navigate('/raise-po');
         }, 1500);
       } else {
         showAlert('danger', response.data.message || 'Failed to save stock purchase');
@@ -362,9 +302,8 @@ const AddStockPurchase = () => {
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
         
-        // Handle specific backend validation errors
         if (errorMessage.includes('validation failed')) {
-          if (errorMessage.includes('invoiceNo')) {
+          if (errorMessage.includes('voucherNo')) {
             errorMessage = 'Invoice number is required or already exists';
           } else if (errorMessage.includes('vendor')) {
             errorMessage = 'Please select a valid vendor';
@@ -373,7 +312,6 @@ const AddStockPurchase = () => {
           }
         }
         
-        // Handle duplicate invoice numbers
         if (errorMessage.includes('duplicate') || errorMessage.includes('already exists')) {
           errorMessage = 'Invoice number already exists. Please use a different invoice number.';
         }
@@ -392,7 +330,7 @@ const AddStockPurchase = () => {
   );
 
   const handleBack = () => {
-    navigate('/stock-purchase');
+    navigate('/raise-po');
   };
 
   return (
@@ -405,7 +343,8 @@ const AddStockPurchase = () => {
         >
           <i className="fa fa-fw fa-arrow-left"></i>Back
         </CButton>
-        {id ? 'Edit' : 'Add'} Stock Purchase
+        {/* {id ? 'Edit' : 'Add'}  */}
+        Raise PO
       </div>
       
       <div className="form-card">
@@ -430,29 +369,6 @@ const AddStockPurchase = () => {
           <form onSubmit={handleSubmit}>
             <div className="form-row">
               <div className="form-group">
-                <label 
-                  className={`form-label 
-                    ${errors.type ? 'error-label' : formData.type ? 'valid-label' : ''}`}
-                  htmlFor="type"
-                >
-                  Type <span className="required">*</span>
-                </label>
-                <select
-                  id="type"
-                  name="type"
-                  className={`form-input 
-                    ${errors.type ? 'error-input' : formData.type ? 'valid-input' : ''}`}
-                  value={formData.type}
-                  onChange={handleChange}
-                >
-                  <option value="">Select Type</option>
-                  <option value="new">New</option>
-                  <option value="refurbish">Refurbish</option>
-                </select>
-                {errors.type && <span className="error">{errors.type}</span>}
-              </div>
-
-              <div className="form-group">
                 <label  
                   className={`form-label 
                     ${errors.date ? 'error-label' : formData.date ? 'valid-label' : ''}`}
@@ -475,22 +391,22 @@ const AddStockPurchase = () => {
               <div className="form-group">
                 <label  
                   className={`form-label 
-                    ${errors.invoiceNo ? 'error-label' : formData.invoiceNo ? 'valid-label' : ''}`}
-                  htmlFor="invoiceNo"
+                    ${errors.voucherNo ? 'error-label' : formData.voucherNo ? 'valid-label' : ''}`}
+                  htmlFor="voucherNo"
                 >
-                  Invoice No <span className="required">*</span>
+                  Voucher No <span className="required">*</span>
                 </label>
                 <input
                   type="text"
-                  id="invoiceNo"
-                  name="invoiceNo"
-                  placeholder="Invoice No."
+                  id="voucherNo"
+                  name="voucherNo"
+                  placeholder="Voucher No."
                   className={`form-input 
-                    ${errors.invoiceNo ? 'error-input' : formData.invoiceNo ? 'valid-input' : ''}`}
-                  value={formData.invoiceNo}
+                    ${errors.voucherNo ? 'error-input' : formData.voucherNo ? 'valid-input' : ''}`}
+                  value={formData.voucherNo}
                   onChange={handleChange}
                 />
-                {errors.invoiceNo && <span className="error">{errors.invoiceNo}</span>}
+                {errors.voucherNo && <span className="error">{errors.voucherNo}</span>}
               </div>
 
               <div className="form-group select-dropdown-container">
@@ -543,100 +459,6 @@ const AddStockPurchase = () => {
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label" htmlFor="transportAmount">
-                  Transport Amount
-                </label>
-                <input
-                  type="number"
-                  id="transportAmount"
-                  name="transportAmount"
-                  className="form-input"
-                  value={formData.transportAmount}
-                  onChange={handleChange}
-                  placeholder='Transport Amount'
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label">
-                  Remark
-                </label>
-                <textarea
-                  name="remark"
-                  className="form-textarea"
-                  value={formData.remark}
-                  onChange={handleChange}
-                  placeholder="Remark"
-                  rows="3"
-                />
-              </div>
-
-              <div className="form-group"></div>
-              <div className="form-group"></div>
-            </div>
-            
-            <h5>Invoice Taxes</h5>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label" htmlFor="cgst">
-                  CGST
-                </label>
-                <input
-                  type="number"
-                  id="cgst"
-                  name="cgst"
-                  className="form-input"
-                  value={formData.cgst}
-                  onChange={handleChange}
-                  placeholder="CGST"
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="sgst">
-                  SGST
-                </label>
-                <input
-                  type="number"
-                  id="sgst"
-                  name="sgst"
-                  className="form-input"
-                  value={formData.sgst}
-                  onChange={handleChange}
-                  placeholder="SGST"
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="igst">
-                  IGST
-                </label>
-                <input
-                  type="number"
-                  id="igst"
-                  name="igst"
-                  className="form-input"
-                  value={formData.igst}
-                  onChange={handleChange}
-                  placeholder="IGST"
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-              <div className="form-group"></div>
-              <div className="form-group"></div>
-              <div className="form-group"></div>
-            </div>
-
             <div className="mt-4">
               <div className="d-flex justify-content-between mb-2">
                 <h5>Products</h5>
@@ -648,7 +470,6 @@ const AddStockPurchase = () => {
                     value={productSearchTerm}
                     onChange={(e) => setProductSearchTerm(e.target.value)}
                     style={{ maxWidth: '250px' }}
-                    placeholder="Search products..."
                   />
                 </div>
               </div>
@@ -723,23 +544,11 @@ const AddStockPurchase = () => {
                                 className={`form-input ${errors[`quantity_${p._id}`] ? 'error' : ''}`}
                                 style={{ width: '100px', height: '32px' }}
                                 min="1"
-                                // max={p.stock?.totalAvailable || 0}
+                                
                               />
                               ) : (
                               ''
                             )}
-                            {errors[`quantity_${p._id}`] && (
-                              <div className="error-text small">Quantity required</div>
-                            )}
-                             {selectedRows[p._id] && p.trackSerialNumber === "Yes" ? (
-        <span 
-          style={{ fontSize: '18px', cursor: 'pointer', marginLeft: '8px', color:'#337ab7' }}
-          onClick={() => handleOpenSerialModal(p)}
-          title="Add Serial Numbers"
-        >☰</span>
-      ) : (
-        ''
-      )}
                           </CTableDataCell>
                         </CTableRow>
                       ))
@@ -769,18 +578,8 @@ const AddStockPurchase = () => {
         onClose={() => setShowVendorModal(false)}
         onVendorAdded={handleVendorAdded} 
       />
-      <SerialNumberModal
-        visible={showSerialModal}
-        onClose={() => {
-          setShowSerialModal(false);
-          setSelectedProductForSerial(null);
-        }}
-        product={selectedProductForSerial}
-        selectedRow={selectedProductForSerial ? selectedRows[selectedProductForSerial._id] : null}
-        onSave={handleSerialNumbersSave}
-      />
     </div>
   );
 };
 
-export default AddStockPurchase;
+export default AddRaisePO;

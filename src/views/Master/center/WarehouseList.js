@@ -13,56 +13,57 @@ import {
   CCardHeader,
   CButton,
   CFormInput,
-  CPaginationItem,
-  CPagination,
-  CSpinner,
+  CSpinner
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import {
-  cilArrowTop,
-  cilArrowBottom,
-  cilPlus,
-  cilSettings,
-  cilPencil,
-  cilTrash
-} from '@coreui/icons';
+import { cilArrowTop, cilArrowBottom,cilPlus, cilSettings, cilPencil, cilTrash } from '@coreui/icons';
+import { Link, useNavigate } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
-import { useNavigate } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
-import AddPartner from './AddPartner';
+import Pagination from 'src/utils/Pagination';
+import usePermission from 'src/utils/usePermission';
 
-const PartnerList = () => {
-  const [partners, setPartners] = useState([]);
+const WarehouseList = () => {
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [searchTerm, setSearchTerm] = useState('');
   const [dropdownOpen, setDropdownOpen] = useState({});
-  const [showModal, setShowModal] = useState(false);
-  const [editingPartner, setEditingPartner] = useState(null)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const dropdownRefs = useRef({});
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchPartners = async () => {
+  const { hasAnyPermission } = usePermission(); 
+ const navigate = useNavigate();
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axiosInstance.get('/partners');
+        const response = await axiosInstance.get('/centers?centerType=Outlet');
+        
         if (response.data.success) {
-          setPartners(response.data.data);
+          setCustomers(response.data.data);
+          setCurrentPage(response.data.pagination.currentPage);
+          setTotalPages(response.data.pagination.totalPages);
         } else {
           throw new Error('API returned unsuccessful response');
         }
       } catch (err) {
         setError(err.message);
-        console.error('Error fetching partners:', err);
+        console.error('Error fetching centers:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchPartners();
-  }, []);
+
+    useEffect(() => {
+      fetchData(1);
+    }, []);
+
+ const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages) return;
+    fetchData(page);
+  };
 
   const handleSort = (key) => {
     let direction = 'ascending';
@@ -71,10 +72,10 @@ const PartnerList = () => {
     }
     setSortConfig({ key, direction });
 
-    const sortedCustomers = [...partners].sort((a, b) => {
+    const sortedCustomers = [...customers].sort((a, b) => {
       let aValue = a;
       let bValue = b;
-
+      
       if (key.includes('.')) {
         const keys = key.split('.');
         aValue = keys.reduce((obj, k) => obj && obj[k], a);
@@ -83,26 +84,32 @@ const PartnerList = () => {
         aValue = a[key];
         bValue = b[key];
       }
-
-      if (aValue < bValue) return direction === 'ascending' ? -1 : 1;
-      if (aValue > bValue) return direction === 'ascending' ? 1 : -1;
+      
+      if (aValue < bValue) {
+        return direction === 'ascending' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return direction === 'ascending' ? 1 : -1;
+      }
       return 0;
     });
 
-    setPartners(sortedCustomers);
+    setCustomers(sortedCustomers);
   };
 
   const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return null;
+    if (sortConfig.key !== key) {
+      return null;
+    }
     return sortConfig.direction === 'ascending'
       ? <CIcon icon={cilArrowTop} className="ms-1" />
       : <CIcon icon={cilArrowBottom} className="ms-1" />;
   };
 
-  const filteredCustomers = partners.filter(partner =>
-    Object.values(partner).some(value => {
+  const filteredCustomers = customers.filter(customer =>
+    Object.values(customer).some(value => {
       if (typeof value === 'object' && value !== null) {
-        return Object.values(value).some(nestedValue =>
+        return Object.values(value).some(nestedValue => 
           nestedValue && nestedValue.toString().toLowerCase().includes(searchTerm.toLowerCase())
         );
       }
@@ -110,33 +117,24 @@ const PartnerList = () => {
     })
   );
 
-  const handleDeletePartner = async (partnerId) => {
+  const handleDeleteCenter = async (customerId) => {
     const result = await confirmDelete();
     if (result.isConfirmed) {
       try {
-        await axiosInstance.delete(`/partners/${partnerId}`);
-        setPartners((prev) => prev.filter((c) => c._id !== partnerId));
+        await axiosInstance.delete(`/centers/${customerId}`);
+        setCustomers((prev) => prev.filter((c) => c._id !== customerId));
+  
         showSuccess('Center deleted successfully!');
       } catch (error) {
         console.error('Error deleting center:', error);
+        // showError(error);
       }
     }
   };
- 
-  const handlePartnerAdded = (partner, isEdit) => {
-    if (isEdit) {
-      setPartners((prev) =>
-        prev.map((p) => (p._id === partner._id ? partner : p))
-      )
-    } else {
-      setPartners((prev) => [...prev, partner])
-    }
-  }
-
-  const handleEditPartner = (partner) => {
-    setEditingPartner(partner)
-    setShowModal(true)
-  }
+  
+  const handleEditCustomer = (customerId) => {
+     navigate(`/edit-center/${customerId}`)
+  };
 
   const toggleDropdown = (id) => {
     setDropdownOpen(prev => ({
@@ -149,21 +147,23 @@ const PartnerList = () => {
     const handleClickOutside = (event) => {
       const newDropdownState = {};
       let shouldUpdate = false;
-
+      
       Object.keys(dropdownRefs.current).forEach(key => {
         if (dropdownRefs.current[key] && !dropdownRefs.current[key].contains(event.target)) {
           newDropdownState[key] = false;
           shouldUpdate = true;
         }
       });
-
+      
       if (shouldUpdate) {
         setDropdownOpen(prev => ({ ...prev, ...newDropdownState }));
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   if (loading) {
@@ -184,26 +184,28 @@ const PartnerList = () => {
 
   return (
     <div>
-      <div className='title'>Partner List</div>
+      <div className='title'>Warehouse List </div>
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
-            <CButton size="sm" className="action-btn me-1" onClick={() => setShowModal(true)}>
-              <CIcon icon={cilPlus} className='icon' /> Add
-            </CButton>
+          {hasAnyPermission('Center', ['manage_own_center','manage_all_center']) && (
+            <Link to='/add-center'>
+              <CButton size="sm" className="action-btn me-1">
+                <CIcon icon={cilPlus} className='icon'/> Add
+              </CButton>
+            </Link>
+          )}
           </div>
-
+          
           <div>
-            <CPagination size="sm" aria-label="Page navigation">
-              <CPaginationItem>First</CPaginationItem>
-              <CPaginationItem>&lt;</CPaginationItem>
-              <CPaginationItem>1</CPaginationItem>
-              <CPaginationItem>&gt;</CPaginationItem>
-              <CPaginationItem>Last</CPaginationItem>
-            </CPagination>
+              <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+              />
           </div>
         </CCardHeader>
-
+        
         <CCardBody>
           <div className="d-flex justify-content-between mb-3">
             <div></div>
@@ -211,62 +213,91 @@ const PartnerList = () => {
               <CFormLabel className='mt-1 m-1'>Search:</CFormLabel>
               <CFormInput
                 type="text"
-                style={{ maxWidth: '350px', height: '30px', borderRadius: '0' }}
+                style={{maxWidth: '350px', height: '30px', borderRadius: '0'}}
                 className="d-inline-block square-search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
-
           <div className="responsive-table-wrapper">
           <CTable striped bordered hover responsive className='responsive-table'>
             <CTableHead>
               <CTableRow>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('centerName')} className="sortable-header">
-                  Partner Name {getSortIcon('centerName')}
+                  Center Title {getSortIcon('centerName')}
                 </CTableHeaderCell>
-                <CTableHeaderCell scope="col">Action</CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('reseller?.   businessName')} className="sortable-header">
+                  Reseller {getSortIcon('reseller?.businessName')}
+                </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('centerCode')} className="sortable-header">
+                 Center Code {getSortIcon('centerCode')}
+                </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerType')} className="sortable-header">
+                  Center Type {getSortIcon('center.centerType')}
+                </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('email')} className="sortable-header">
+                  Email {getSortIcon('email')}
+                </CTableHeaderCell>
+                
+                <CTableHeaderCell scope="col" onClick={() => handleSort('mobile')} className="sortable-header">
+                  Mobile {getSortIcon('mobile')}
+                </CTableHeaderCell>
+               
+                <CTableHeaderCell scope="col" onClick={() => handleSort('city')} className="sortable-header">
+                  Address {getSortIcon('city')}
+                </CTableHeaderCell>
+                <CTableHeaderCell scope="col">
+                  Action
+                </CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
               {filteredCustomers.length > 0 ? (
-                filteredCustomers.map((partner) => (
-                  <CTableRow key={partner._id}>
-                    <CTableDataCell>{partner.partnerName}</CTableDataCell>
+                filteredCustomers.map((customer) => (
+                  <CTableRow key={customer._id}>
+                    <CTableDataCell>{customer.centerName}</CTableDataCell>
+                    <CTableDataCell>{customer.reseller?.businessName || ''}</CTableDataCell>
+                    <CTableDataCell>{customer.centerCode}</CTableDataCell>
+                    <CTableDataCell>{customer.centerType === 'Outlet'?'Warehouse':'Center' || ''}</CTableDataCell>
+                    <CTableDataCell>{customer.email}</CTableDataCell>
+                    <CTableDataCell>{customer.mobile}</CTableDataCell>
+                    <CTableDataCell>{customer.addressLine1}</CTableDataCell>
                     <CTableDataCell>
-                      <div className="dropdown-container" ref={el => dropdownRefs.current[partner._id] = el}>
-                        <CButton
+                    {hasAnyPermission('Center', ['manage_own_center','manage_all_center']) && (
+                      <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
+                        <CButton 
                           size="sm"
                           className='option-button btn-sm'
-                          onClick={() => toggleDropdown(partner._id)}
+                          onClick={() => toggleDropdown(customer._id)}
                         >
                           <CIcon icon={cilSettings} /> Options
                         </CButton>
-                        {dropdownOpen[partner._id] && (
+                        {dropdownOpen[customer._id] && (
                           <div className="dropdown-menu show">
-                            <button
+                            <button 
                               className="dropdown-item"
-                              onClick={() => handleEditPartner(partner)}
+                              onClick={() => handleEditCustomer(customer._id)}
                             >
                               <CIcon icon={cilPencil} className="me-2" /> Edit
                             </button>
-                            <button
+                            <button 
                               className="dropdown-item"
-                              onClick={() => handleDeletePartner(partner._id)}
+                              onClick={() => handleDeleteCenter(customer._id)}
                             >
                               <CIcon icon={cilTrash} className="me-2" /> Delete
                             </button>
                           </div>
                         )}
                       </div>
+                    )}
                     </CTableDataCell>
                   </CTableRow>
                 ))
               ) : (
                 <CTableRow>
                   <CTableDataCell colSpan="9" className="text-center">
-                    No partner found
+                    No center found
                   </CTableDataCell>
                 </CTableRow>
               )}
@@ -275,18 +306,8 @@ const PartnerList = () => {
           </div>
         </CCardBody>
       </CCard>
-<AddPartner
-  visible={showModal}
-  onClose={() => {
-    setShowModal(false)
-    setEditingPartner(null)
-  }}
-  onPartnerAdded={handlePartnerAdded}
-  partner={editingPartner}
-/>
-
     </div>
   );
 };
 
-export default PartnerList;
+export default WarehouseList;

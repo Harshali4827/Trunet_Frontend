@@ -20,13 +20,13 @@ const AddCenter = () => {
     city: '',
     state: '',
     stockVerified: '',
-    partnerId: '',
-    areaId: ''
+    resellerId:'',
+    areaId: '',
   });
   
   const [centers, setCenters] = useState([]);
-  const [partners, setPartners] = useState([]);
   const [areas, setAreas] = useState([]);
+  const [resellers, setResellers] = useState([]);
   const [errors, setErrors] = useState({});
   const [alert, setAlert] = useState({ type: '', message: '' })
 
@@ -35,10 +35,10 @@ const AddCenter = () => {
       try {
         const centersRes = await axiosInstance.get('/centers');
         setCenters(centersRes.data.data || []);
-      
-        const partnersRes = await axiosInstance.get('/partners');
-        setPartners(partnersRes.data.data || []);
         
+        const resellersRes = await axiosInstance.get('/resellers');
+        setResellers(resellersRes.data.data || []);
+
         const areasRes = await axiosInstance.get('/areas');
         setAreas(areasRes.data.data || []);
       } catch (error) {
@@ -72,8 +72,8 @@ const AddCenter = () => {
         city: data.city || '',
         state: data.state || '',
         stockVerified: data.stockVerified || '',
-        partnerId: data.partner?._id || '',  
-        areaId: data.area?._id || ''         
+        resellerId: data.reseller?._id || '',  
+        areaId: data.area?._id || '' ,       
       });
     } catch (error) {
       console.error('Error fetching center:', error);
@@ -89,7 +89,10 @@ const AddCenter = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     let newErrors = {};
-    ['partnerId', 'areaId', 'centerType', 'centerName', 'centerCode', 'email','status' ].forEach((field) => {
+    
+    const requiredFields = ['resellerId', 'areaId', 'centerType', 'centerName', 'centerCode', 'email','status'];
+    
+    requiredFields.forEach((field) => {
       if (!formData[field]) newErrors[field] = 'This is a required field';
     });
 
@@ -137,18 +140,18 @@ const AddCenter = () => {
       city: '',
       state: '',
       stockVerified: '',
-      partnerId: '',
-      areaId: ''
+      resellerId:'',
+      areaId: '',
     });
     setErrors({});
   };
 
   return (
     <div className="form-container">
-      <div className="title">{id ? 'Edit' : 'Add'} Center</div>
+      <div className="title">{id ? 'Edit' : 'Add'} Storage Outlet</div>
       <div className="form-card">
         <div className="form-header">
-          Center
+          Outlet
         </div>
         <div className="form-body">
         {alert.message && (
@@ -163,7 +166,7 @@ const AddCenter = () => {
                 className={`form-label 
                   ${errors.centerType ? 'error-label' : formData.centerType ? 'valid-label' : ''}`}
                 htmlFor="centerType">
-                  Center Type <span className="required">*</span>
+                  Outlet Type <span className="required">*</span>
                 </label>
                 <select 
                  className={`form-input 
@@ -175,12 +178,35 @@ const AddCenter = () => {
                 >
                   <option value="">SELECT</option>
                   <option value="Center">Center</option>
-                  <option value="Outlet">Outlet</option>
+                  <option value="Outlet">Warehouse</option>
                 </select>
                 {errors.centerType && <span className="error">{errors.centerType}</span>}
               </div>
-
               <div className="form-group">
+                  <label 
+                  className={`form-label 
+                    ${errors.resellerId ? 'error-label' : formData.resellerId ? 'valid-label' : ''}`} 
+                  htmlFor="resellerId">
+                  Reseller Name <span className="required">*</span>
+                  </label>
+                  <select
+                    className={`form-input 
+                      ${errors.resellerId ? 'error-input' : formData.resellerId ? 'valid-input' : ''}`}
+                    id="resellerId"
+                    name="resellerId"
+                    value={formData.resellerId}
+                    onChange={handleChange}
+                  >
+                    <option value="">SELECT RESELLER</option>
+                    {resellers.map(reseller => (
+                      <option key={reseller.id} value={reseller._id}>
+                        {reseller.businessName}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.resellerId && <span className="error">{errors.resellerId}</span>}
+                </div>
+                <div className="form-group">
                 <label 
                 className={`form-label 
                   ${errors.centerName ? 'error-label' : formData.centerName ? 'valid-label' : ''}`} 
@@ -197,13 +223,12 @@ const AddCenter = () => {
                   onChange={handleChange}
                 />
                 {errors.centerName && <span className="error">{errors.centerName}</span>}
-              </div>
-
-              <div className="form-group">
-              </div>
+              </div> 
+               
             </div>
 
             <div className="form-row">
+          
             <div className="form-group">
                 <label 
                 className={`form-label 
@@ -240,7 +265,6 @@ const AddCenter = () => {
                 />
                 {errors.email && <span className="error">{errors.email}</span>}
               </div>
-
               <div className="form-group">
                 <label className="form-label" htmlFor="mobile">
                   Mobile
@@ -257,6 +281,7 @@ const AddCenter = () => {
             </div>
 
             <div className="form-row">
+            
             <div className="form-group">
                 <label 
                 className={`form-label 
@@ -309,6 +334,7 @@ const AddCenter = () => {
             
           
             <div className="form-row">
+            
             <div className="form-group">
                 <label className="form-label" htmlFor="city">
                   City
@@ -335,7 +361,6 @@ const AddCenter = () => {
                   onChange={handleChange}
                 />
               </div>
-              
               <div className="form-group">
                 <label className="form-label" htmlFor="stockVerified">
                   Stock Verified
@@ -352,36 +377,10 @@ const AddCenter = () => {
                   <option value="No">No</option>
                 </select>
               </div>
-              
             </div>
             
   
             <div className="form-row">
-              <div className="form-group">
-                <label 
-                className={`form-label 
-                  ${errors.partnerId ? 'error-label' : formData.partnerId ? 'valid-label' : ''}`} 
-                htmlFor="partnerId">
-                  Partner Name <span className="required">*</span>
-                </label>
-                <select
-                  className={`form-input 
-                  ${errors.partnerId ? 'error-input' : formData.partnerId ? 'valid-input' : ''}`}
-                  id="partnerId"
-                  name="partnerId"
-                  value={formData.partnerId}
-                  onChange={handleChange}
-                >
-                  <option value="">SELECT PARTNER</option>
-                  {partners.map(partner => (
-                    <option key={partner.id} value={partner._id}>
-                      {partner.partnerName}
-                    </option>
-                  ))}
-                </select>
-                {errors.partnerId && <span className="error">{errors.partnerId}</span>}
-              </div>
-
               <div className="form-group">
                 <label 
                 className={`form-label 
@@ -406,17 +405,17 @@ const AddCenter = () => {
                 </select>
                 {errors.areaId && <span className="error">{errors.areaId}</span>}
               </div>
-              
+              <div className="form-group"></div>
               <div className="form-group"></div>
             </div>
             
-            <div className="form-footer">
-              <button type="button" className="reset-button" onClick={handleReset}>
-                Reset
-              </button>
-              <button type="submit" className="submit-button">
-                Submit
-              </button>
+             <div className="form-footer">
+                  <button type="button" className="reset-button" onClick={handleReset}>
+                      Reset
+                  </button>
+                  <button type="submit" className="submit-button">
+                      Submit
+                  </button>
             </div>
           </form>
         </div>

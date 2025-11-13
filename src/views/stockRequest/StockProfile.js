@@ -9,6 +9,8 @@ import IncompleteRemarkModal from './IncompleteRemarkModal';
 import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
 import SerialNumbers from './SerialNumbers';
 import usePermission from 'src/utils/usePermission';
+import ChallanModal from './ChallanModal';
+import Swal from 'sweetalert2';
 
 const StockProfile = () => {
   const { id } = useParams();
@@ -28,11 +30,11 @@ const StockProfile = () => {
   const [serialModalVisible, setSerialModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [assignedSerials, setAssignedSerials] = useState({});
-  
+  const [challanModal, setChallanModal] = useState(false);
+
   const user = JSON.parse(localStorage.getItem('user')) || {};
   const userRole = (user?.role?.roleTitle || '').toLowerCase();
   const userCenter = JSON.parse(localStorage.getItem('userCenter')) || {};
-  // const userCenterType = userCenter.centerType || 'Outlet';
   const userCenterType = (userCenter.centerType || 'Outlet').toLowerCase();
   
   const userCenterId = userCenter._id;
@@ -103,12 +105,38 @@ const StockProfile = () => {
   }, [id]);
 
   
+  // const handleShipGoods = async (shipmentData) => {
+  //   try {
+  //     const response = await axiosInstance.post(`/stockrequest/${id}/ship`, shipmentData)
+  //     if (response.data.success) {
+  //       setAlert({ type: 'success', message: 'Shipment created successfully', visible: true })
+  //       setShipmentModal(false)
+  //       setTimeout(() => window.location.reload(), 1000)
+  //     } else {
+  //       setAlert({ type: 'danger', message: 'Failed to create shipment', visible: true })
+  //     }
+  //   } catch (err) {
+  //     console.error(err)
+  //     setAlert({ type: 'danger', message: 'Error creating shipment', visible: true })
+  //   }
+  // }
+   
+
   const handleShipGoods = async (shipmentData) => {
     try {
       const response = await axiosInstance.post(`/stockrequest/${id}/ship`, shipmentData)
       if (response.data.success) {
         setAlert({ type: 'success', message: 'Shipment created successfully', visible: true })
         setShipmentModal(false)
+        try {
+          await axiosInstance.patch(`/stockrequest/${id}/warehouse-challan-approval`, { 
+            warehouseChallanApproval: 'approved' 
+          });
+          console.log('Challan auto-approved after shipment');
+        } catch (challanError) {
+          console.error('Failed to auto-approve challan:', challanError);
+        }
+        
         setTimeout(() => window.location.reload(), 1000)
       } else {
         setAlert({ type: 'danger', message: 'Failed to create shipment', visible: true })
@@ -312,68 +340,17 @@ const handleCancelShipment = async () => {
 
 //complete
 
-// const handleCompleteIndent = async () => {
-//   try {
-//     let payload = [];
-
-//     if (userCenterType === 'Center') {
-//       payload = productReceipts;
-//     } else {
-//       payload = data.products.map(item => ({
-//         productId: item.product?._id,
-//         receivedQuantity: item.approvedQuantity || item.receivedQuantity || 0,
-//         receivedRemark: item.receivedRemark || '',
-//       }));
-//     }
-
-//     const response = await axiosInstance.post(`/stockrequest/${id}/complete`, {
-//       productReceipts: payload,
-//     });
-//     if (!response.data.success) {
-//       setAlert({
-//         type: 'danger',
-//         message: response.data.message || 'Failed to complete indent',
-//         visible: true,
-//       });
-//       return;
-//     }
-//     setAlert({
-//       type: 'success',
-//       message: 'Indent completed successfully',
-//       visible: true,
-//     });
-
-//     setTimeout(() => window.location.reload(), 1000);
-//   } catch (err) {
-//     console.error('Error in handleCompleteIndent:', err);
-
-//     const errorMessage =
-//       err.response?.data?.message ||
-//       err.message ||
-//       'An unexpected error occurred while completing the indent';
-
-//     setAlert({
-//       type: 'danger',
-//       message: errorMessage,
-//       visible: true,
-//     });
-//   }
-// };
-
-
 const handleCompleteIndent = async () => {
   try {
     let payload = [];
 
     if (isCenter) {
-      // For Center users, convert receivedQuantity from string to number
       payload = productReceipts.map(item => ({
         productId: item.productId,
         receivedQuantity: Number(item.receivedQuantity) || 0,
         receivedRemark: item.receivedRemark || '',
       }));
     } else {
-      // For non-Center users, use approved quantities as received quantities
       payload = data.products.map(item => ({
         productId: item.product?._id,
         receivedQuantity: item.approvedQuantity || item.receivedQuantity || 0,
@@ -417,6 +394,39 @@ const handleCompleteIndent = async () => {
   }
 };
 
+//complete indent and approve challan
+
+const handleCompleteIndentWithChallan = async () => {
+  const result = await Swal.fire({
+    title: 'Are you sure?',
+    text: 'Do you want to complete this indent and approve the challan?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#dc3545',
+    cancelButtonColor: '#6c757d',
+    confirmButtonText: 'Yes, complete it!',
+    cancelButtonText: 'Cancel'
+  });
+
+  if (!result.isConfirmed) {
+    return;
+  }
+
+  try {
+    await handleCompleteIndent();
+    const response = await axiosInstance.patch(`/stockrequest/${id}/center-challan-approval`, { 
+      centerChallanApproval: 'approved' 
+    });
+    
+    if (response.data.success) {
+      console.log('Challan auto-approved after completion');
+    }
+    
+  } catch (err) {
+    console.error('Error in complete process:', err);
+  }
+};
+
 // Update Shipment
 const handleOpenUpdateShipment = () => {
   if (data.shippingInfo) {
@@ -432,6 +442,7 @@ const handleOpenUpdateShipment = () => {
   setShipmentModal(true);
 };
 
+//updateShipment
 const handleUpdateShipment = async (shipmentData) => {
   try {
     const response = await axiosInstance.patch(`/stockrequest/${id}/shipping-info`, shipmentData);
@@ -448,6 +459,7 @@ const handleUpdateShipment = async (shipmentData) => {
   }
 };
 
+//Incomplete
 const handleMarkIncomplete = async (remark) => {
   try {
     const receivedProducts = productReceipts.map(item => ({
@@ -545,8 +557,6 @@ const handleIncomplete = async () => {
     });
   }
 };
-
-
   const handleApprovedBlur = (productId, value) => {
     if (value === '' || !/^\d+$/.test(value)) {
       setErrors(prev => ({ ...prev, [productId]: 'The input value was not a correct number' }));
@@ -586,7 +596,7 @@ const handleIncomplete = async () => {
     <div className="d-flex align-items-center">
 
     {data.status === 'Shipped' && hasPermission('Indent', 'complete_indent') && (
-      <CButton className='btn-action btn-incomplete me-2' onClick={handleCompleteIndent}>
+      <CButton className='btn-action btn-incomplete me-2' onClick={handleCompleteIndentWithChallan}>
       Complete The Indent
       </CButton>
     )}
@@ -675,6 +685,13 @@ const handleIncomplete = async () => {
         <td className="profile-label-cell">Received by:</td>
         <td className="profile-value-cell">{data.receivingInfo?.receivedBy?.fullName || ''}</td>
       </tr>
+      <tr className="table-row">
+        <td className="profile-label-cell">Challan Approved at:</td>
+        <td className="profile-value-cell">{formatDateTime(data.approvalInfo?.challanApprovedAt || '')}</td>
+
+        <td className="profile-label-cell">Challan Approved by:</td>
+        <td className="profile-value-cell">{data.approvalInfo?.challanApprovedBy?.fullName || ''},<br></br>{data.approvalInfo?.challanApprovedBy?.email || ''}</td>
+      </tr>
     </tbody>
   </table>
 </CCardBody>
@@ -706,12 +723,39 @@ const handleIncomplete = async () => {
           >
               <i className="fa fa-truck me-1"></i> Ship the Goods
              </CButton>
-
-          <CButton className="btn-action btn-reject" onClick={handleReject}>
+          <CButton className="btn-action btn-reject me-2" onClick={handleReject}>
             Reject Request
           </CButton>
         </>
       )}
+
+
+
+{(data.status === 'Confirmed' || data.status === 'Shipped' || data.status === 'Incompleted' || data.status === 'Completed') && (
+  <>
+    {(isWarehouse) && (
+      <CButton className="btn-action btn-submitted me-2" 
+       onClick={() => setChallanModal(true)}
+      >
+        View Challan
+      </CButton>
+    )}
+  </>
+)}
+
+
+{(data.status === 'Shipped' || data.status === 'Completed') && (
+  <>
+    {(isCenter) && (
+      <CButton className="btn-action btn-submitted me-2" 
+       onClick={() => setChallanModal(true)}
+      >
+        View Challan
+      </CButton>
+    )}
+  </>
+)}
+
 
       {data.status === 'Shipped' && userCenterType === 'outlet' && userRole === 'admin' && isWarehouse &&(
         <>
@@ -748,7 +792,7 @@ const handleIncomplete = async () => {
         </>
       )}
 
-        {data.status === 'Incompleted' && userCenterType === 'outlet' && userRole === 'admin' && isCenter && (
+        {data.status === 'Incompleted' && userCenterType === 'outlet' && userRole === 'admin' && isWarehouse && (
         <>
           <CButton className="btn-action btn-incomplete me-2" onClick={handleIncomplete}>
             Change Qty And Complete Request
@@ -888,6 +932,11 @@ const handleIncomplete = async () => {
   warehouseId={data?.warehouse?._id}
 />
 
+      <ChallanModal
+        visible={challanModal}
+        onClose={() => setChallanModal(false)}
+        data={data}
+      />
 
     </CContainer>
   );

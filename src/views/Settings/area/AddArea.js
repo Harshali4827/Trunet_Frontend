@@ -17,7 +17,7 @@ import '../../../css/form.css'
 const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
   const [partners, setPartners] = useState([])
   const [formData, setFormData] = useState({
-    partnerId: '',
+   resellerId: '',
     areaName: ''
   })
   const [errors, setErrors] = useState({})
@@ -26,7 +26,7 @@ const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
   useEffect(() => {
     const fetchPartners = async () => {
       try {
-        const response = await axiosInstance.get('/partners')
+        const response = await axiosInstance.get('/resellers')
         if (response.data.success) {
           setPartners(response.data.data)
         }
@@ -40,11 +40,11 @@ const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
   useEffect(() => {
     if (area) {
       setFormData({
-        partnerId: area.partner?._id || '',
+       resellerId: area.partner?._id || '',
         areaName: area.areaName || ''
       })
     } else {
-      setFormData({ partnerId: '', areaName: '' })
+      setFormData({resellerId: '', areaName: '' })
     }
     setErrors({})
     setAlert({ type: '', message: '' })
@@ -58,7 +58,7 @@ const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
 
   const handleSubmit = async () => {
     let newErrors = {}
-    if (!formData.partnerId) newErrors.partnerId = 'This is a required field'
+    if (!formData.resellerId) newErrors.resellerId = 'This is a required field'
     if (!formData.areaName.trim()) newErrors.areaName = 'This is a required field'
 
     if (Object.keys(newErrors).length) {
@@ -82,7 +82,7 @@ const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
         }
       }
 
-      setFormData({ partnerId: '', areaName: '' })
+      setFormData({resellerId: '', areaName: '' })
       setErrors({})
       setTimeout(() => {
         setAlert({ type: '', message: '' })
@@ -111,25 +111,25 @@ const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
           <div className="form-group">
             <label
               className={`form-label ${
-                errors.partnerId
+                errors.resellerId
                   ? 'error-label'
-                  : formData.partnerId
+                  : formData.resellerId
                   ? 'valid-label'
                   : ''
               }`}
-              htmlFor="partnerId"
+              htmlFor="resellerId"
             >
-              Partner Name <span className="required">*</span>
+              Reseller Name <span className="required">*</span>
             </label>
             <CFormSelect
-              id="partnerId"
-              name="partnerId"
-              value={formData.partnerId}
+              id="resellerId"
+              name="resellerId"
+              value={formData.resellerId}
               onChange={handleChange}
               className={`form-input no-radius-input ${
-                errors.partnerId
+                errors.resellerId
                   ? 'error-input'
-                  : formData.partnerId
+                  : formData.resellerId
                   ? 'valid-input'
                   : ''
               }`}
@@ -137,11 +137,11 @@ const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
               <option value="">SELECT</option>
               {partners.map((p) => (
                 <option key={p._id} value={p._id}>
-                  {p.partnerName}
+                  {p.businessName}
                 </option>
               ))}
             </CFormSelect>
-            {errors.partnerId && <span className="error">{errors.partnerId}</span>}
+            {errors.resellerId && <span className="error">{errors.resellerId}</span>}
           </div>
 
           <div className="form-group">

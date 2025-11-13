@@ -1,3 +1,4 @@
+import { exact } from 'prop-types'
 import React from 'react'
 import { Translation } from 'react-i18next'
 
@@ -33,6 +34,7 @@ const ControlRoomList = React.lazy(() => import('./views/Master/control-room/Con
 const ControlRoomProfile = React.lazy(() => import('./views/Master/control-room/ControlRoomProfile'));
 
 const CenterList = React.lazy(() => import('./views/Master/center/CenterList'));
+const WarehouseList = React.lazy(() => import('./views/Master/center/WarehouseList'));
 const AddCenter = React.lazy(() => import('./views/Master/center/AddCenter'));
 
 const ProductCategoryList = React.lazy(() => import('./views/Settings/product-category/ProductCategoryList'))
@@ -43,8 +45,8 @@ const ProductList = React.lazy(() => import('./views/Settings/products/ProductsL
 const AddVendor = React.lazy(() => import('./views/Settings/vendor/AddVendor'));
 const VendorList = React.lazy(() => import('./views/Settings/vendor/VendorList'));
 
-const AddPartner = React.lazy(() => import('./views/Settings/partner/AddPartner'));
-const PartnerList = React.lazy(() => import('./views/Settings/partner/PartnerList'));
+const AddReseller = React.lazy(() => import('./views/Settings/reseller/AddReseller'));
+const ResellerList = React.lazy(() => import('./views/Settings/reseller/ResellerList'))
 
 const AddArea = React.lazy(() => import('./views/Settings/area/AddArea'));
 const AreaList = React.lazy(() => import('./views/Settings/area/AreaList'));
@@ -82,6 +84,16 @@ const IndentUsageSummary = React.lazy(() => import('./views/Report/IndentUsageSu
 
 const TaxList = React.lazy(() => import('./views/Settings/tax/TaxList'))
 
+const AddRaisePO = React.lazy(() => import('./views/raisePO/AddRaisePO'))
+const RaisePOList = React.lazy(() => import('./views/raisePO/RaisePOList'))
+
+const SaleInvoice = React.lazy(() => import('./views/sale-invoice/SaleInvoice'))
+const FilledStock = React.lazy(() => import('./views/Report/FilledStock'))
+const CenterProfile = React.lazy(() => import('./views/Master/center/CenterProfile'))
+
+const FaultyStock = React.lazy(() => import('./views/faultyStock/FaultyStock'))
+const TransferFaultyStock = React.lazy(() => import('./views/faultyStock/TransferFaultyStock'))
+const ReturnFromRepair = React.lazy(() => import('./views/faultyStock/RepairFaultyStock'))
 const routes = [
 
   { path: '/', exact: true, name: <Translation>{(t) => t('home')}</Translation> },
@@ -179,6 +191,12 @@ const routes = [
     element: CenterList,
   },
   { 
+    path:'/warehouse-list', 
+    exact:true, 
+    name:<Translation>{(t) => t('Warehouse List')}</Translation>,
+    element: WarehouseList,
+  },
+  { 
     path:'/edit-center/:id', 
     exact:true, 
     name:<Translation>{(t) => t('Edit Center')}</Translation>,
@@ -229,22 +247,22 @@ const routes = [
     element: AddVendor,
   },
   { 
-    path:'/add-partner', 
+    path:'/add-reseller', 
     exact:true, 
-    name:<Translation>{(t) => t('Add Partner')}</Translation>,
-    element: AddPartner,
+    name:<Translation>{(t) => t('Add Reseller')}</Translation>,
+    element: AddReseller,
   },
   { 
-    path:'/partner-list', 
+    path:'/reseller-list', 
     exact:true, 
-    name:<Translation>{(t) => t('Partner List')}</Translation>,
-    element: PartnerList,
+    name:<Translation>{(t) => t('reseller List')}</Translation>,
+    element: ResellerList,
   },
   { 
-    path:'/update-partner/:id', 
+    path:'/update-reseller/:id', 
     exact:true, 
-    name:<Translation>{(t) => t('Update Partner')}</Translation>,
-    element: AddPartner,
+    name:<Translation>{(t) => t('Update reseller')}</Translation>,
+    element: AddReseller,
   },
   { 
     path:'/add-area', 
@@ -525,6 +543,60 @@ const routes = [
     name:<Translation>{(t) => t('Indent Usage Summary Report')}</Translation>,
     element: IndentUsageSummary,
     exact: true
+  },
+  {
+    path: '/raise-po',
+    name: <Translation>{(t) => t('Raise PO')}</Translation>,
+    element: RaisePOList,
+    exact: true,
+  },
+  {
+    path: '/add-po',
+    name: <Translation>{(t) => t('Add Raise PO')}</Translation>,
+    element: AddRaisePO,
+    exact: true,
+  },
+  {
+    path: '/sale-invoices',
+    name: <Translation>{(t) => t('Sale Invoice')}</Translation>,
+    element: SaleInvoice,
+    exact: true,
+  },
+  {
+    path: '/filled-stock',
+    name: <Translation>{(t) => t('Filled Stock')}</Translation>,
+    element: FilledStock,
+    exact: true,
+  },
+  {
+    path: '/center-profile',
+    name: <Translation>{(t) => t('Center Profile')}</Translation>,
+    element: CenterProfile,
+    exact: true,
+  },
+  {
+    path:'/center-profile/:id',
+    exact:true,
+    name:<Translation>{(t) => t('Center Profile')}</Translation>,
+    element: CenterProfile,
+  },
+  {
+    path:'/faulty-stock',
+    exact:true,
+    name:<Translation>{(t) => t('Faulty Stock')}</Translation>,
+    element: FaultyStock,
+  },
+  {
+    path:'/transfer-faulty-stock',
+    exact:true,
+    name:<Translation>{(t) => t('Transfer Faulty Stock')}</Translation>,
+    element: TransferFaultyStock,
+  },
+  {
+    path:'/repair-faulty-stock',
+    exact:true,
+    name:<Translation>{(t) => t('Repair Faulty Stock')}</Translation>,
+    element: ReturnFromRepair 
   }
 ]
 

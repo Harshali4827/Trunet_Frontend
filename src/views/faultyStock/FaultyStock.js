@@ -18,15 +18,16 @@ import {
   CSpinner
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilZoomOut, cilSettings } from '@coreui/icons';
+import { cilArrowTop, cilArrowBottom, cilSearch, cilZoomOut, cilSettings } from '@coreui/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
-import ReportSearchmodel from './ReportSearchModel';
-import Swal from 'sweetalert2';
 
-const ReportSubmissionList = () => {
+import Swal from 'sweetalert2';
+import ReportSearchmodel from '../reportSubmission/ReportSearchModel';
+
+const FaultyStock = () => {
   const [data, setData] = useState([]);
   const [centers, setCenters] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -41,10 +42,6 @@ const ReportSubmissionList = () => {
   });
   const [exportLoading, setExportLoading] = useState(false);
   const dropdownRefs = useRef({});
-  const navigate = useNavigate();
-  
-  const user = JSON.parse(localStorage.getItem('user')) || {};
-  const userRole = (user?.role?.roleTitle || '').toLowerCase();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -86,7 +83,7 @@ const ReportSubmissionList = () => {
         params.append('endDate', convertDateFormat(endDateStr));
       }
 
-      const url = params.toString() ? `/reportsubmission?${params.toString()}` : '/reportsubmission';
+      const url = params.toString() ? `/stockusage/faulty-stock?${params.toString()}` : '/stockusage/faulty-stock';
       
       const response = await axiosInstance.get(url);
       
@@ -172,10 +169,6 @@ const ReportSubmissionList = () => {
     });
     setSearchTerm('');
     fetchData();
-  };
-  
-  const handleClick = (itemId) => {
-    navigate(`/edit-reportSubmission/${itemId}`);
   };
 
   const handleApprove = async (item) => {
@@ -403,7 +396,7 @@ const ReportSubmissionList = () => {
 
   return (
     <div>
-      <div className='title'>Closing Stock Logs </div>
+      <div className='title'>Faulty Stock</div>
     
      <ReportSearchmodel
         visible={searchModalVisible}
@@ -416,11 +409,11 @@ const ReportSubmissionList = () => {
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
-            <Link to='/add-reportSubmission'>
-              <CButton size="sm" className="action-btn me-1">
-                <CIcon icon={cilPlus} className='icon'/> Add
-              </CButton>
-            </Link>
+              <Link to='/transfer-faulty-stock'>
+                <CButton size="sm" className="action-btn me-1">
+                <i className="fa fa-exchange fa-margin"></i> Transfer
+                </CButton>
+              </Link>
             <CButton 
               size="sm" 
               className="action-btn me-1"
@@ -492,21 +485,19 @@ const ReportSubmissionList = () => {
                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
                  Center {getSortIcon('center.centerName')}
                 </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
+                 Product {getSortIcon('center.centerName')}
+                </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('remark')} className="sortable-header">
-                  Remark {getSortIcon('remark')}
+                  Quantity {getSortIcon('remark')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('createdAt')} className="sortable-header">
-                  Created At {getSortIcon('createdAt')}
+                 Status {getSortIcon('createdAt')}
                 </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('createdBy.fullname')} className="sortable-header">
-                  Created By {getSortIcon('createdBy.fullname')}
-                </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('remark')} className="sortable-header">
-                  Approve Remark {getSortIcon('remark')}
-                </CTableHeaderCell>
-               {userRole === 'admin' &&  <CTableHeaderCell>
+              
+                <CTableHeaderCell>
                   Options
-                </CTableHeaderCell>}
+                </CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
@@ -515,20 +506,14 @@ const ReportSubmissionList = () => {
                   <CTableRow key={customer._id} className={customer.status === 'Approved' ? 'use-product-row' : 
                     customer.status === 'Duplicate' ? 'damage-product-row' : ''}>
                     <CTableDataCell>
-                      <button 
-                        className="btn btn-link p-0 text-decoration-none"
-                        onClick={() => handleClick(customer._id)}
-                        style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
-                      >
+            
                         {formatDate(customer.date || '')}
-                      </button>
                     </CTableDataCell>
                     <CTableDataCell>{customer.center?.centerName || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{customer.remark || ''}</CTableDataCell>
-                    <CTableDataCell>{formatDateTime(customer.createdAt || 'N/A')}</CTableDataCell>
-                    <CTableDataCell>{customer.createdBy.email || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{customer.approvedRemark || ''}</CTableDataCell>
-                    {userRole === 'admin' &&  <CTableDataCell>
+                    <CTableDataCell>{customer.product?.productTitle || 'N/A'}</CTableDataCell>
+                    <CTableDataCell>{customer.quantity || ''}</CTableDataCell>
+                    <CTableDataCell>{customer.overallStatus || ''}</CTableDataCell>
+                    <CTableDataCell>
                     <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
                         <CButton 
                           size="sm"
@@ -544,19 +529,18 @@ const ReportSubmissionList = () => {
                               className="dropdown-item"
                               onClick={() => handleApprove(customer)}
                             >
-                            <i className="fa fa-exchange fa-margin"></i> Approve
+                           <i className="fa fa-reply fa-margin"></i> Repaired
                             </button>
                             <button 
                             className="dropdown-item"
                             onClick={() => handleDuplicate(customer)}
                             >
-                            <i className="fa fa-exchange fa-margin"></i> Duplicate Entry
+                             <i className="fa fa-recycle fa-margin"></i>&nbsp; Irreparable
                           </button>
                           </div>
                         )}
                       </div>
                     </CTableDataCell>
-                   }
                   </CTableRow>
                 ))
               ) : (
@@ -575,4 +559,5 @@ const ReportSubmissionList = () => {
   );
 };
 
-export default ReportSubmissionList;
+export default FaultyStock;
+

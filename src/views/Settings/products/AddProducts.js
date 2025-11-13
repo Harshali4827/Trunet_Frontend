@@ -14,6 +14,8 @@ const AddProducts = () => {
     productTitle: '',
     productCode: '',
     productPrice: '',
+    salePrice:'',
+    hsnCode:'',
     productImage: '',
     productWeight: '',
     productBarcode: '',
@@ -94,7 +96,7 @@ const AddProducts = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     let newErrors = {};
-    ['productCategory', 'productTitle', 'status', 'trackSerialNumber', 'repairable', 'replaceable'].forEach((field) => {
+    ['productCategory', 'productTitle', 'status', 'trackSerialNumber', 'repairable', 'replaceable', 'productPrice','salePrice','hsnCode'].forEach((field) => {
       if (!formData[field]) newErrors[field] = 'This is a required field';
     });
 
@@ -149,6 +151,8 @@ const AddProducts = () => {
       productTitle: '',
       productCode: '',
       productPrice: '',
+      salePrice:'',
+      hsnCode:'',
       productImage: '',
       productWeight: '',
       productBarcode: '',
@@ -173,7 +177,7 @@ const AddProducts = () => {
 )}
           <form onSubmit={handleSubmit}>
             <div className="form-row">
-              <div className="form-group">
+              {/* <div className="form-group">
                 <label 
                 className={`form-label 
                   ${errors.productCategory ? 'error-label' : formData.productCategory ? 'valid-label' : ''}`}
@@ -208,7 +212,72 @@ const AddProducts = () => {
                   </ul>
                 )}
                 {errors.productCategory && <span className="error">{errors.productCategory}</span>}
-              </div>
+              </div> */}
+               
+               <div className="form-group select-dropdown-container">
+  <label
+    className={`form-label ${
+      errors.productCategory
+        ? 'error-label'
+        : formData.productCategory
+        ? 'valid-label'
+        : ''
+    }`}
+  >
+    Product Category <span className="required">*</span>
+  </label>
+
+  <div className="select-input-wrapper">
+    <input
+      type="text"
+      id="productCategory"
+      name="productCategory"
+      className={`form-input ${
+        errors.productCategory
+          ? 'error-input'
+          : formData.productCategory
+          ? 'valid-input'
+          : ''
+      }`}
+      value={
+        categories.find((c) => c._id === formData.productCategory)?.productCategory ||
+        formData.productCategory
+      }
+      onChange={handleCategoryChange}
+      onFocus={() => setShowDropdown(true)}
+      onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+      placeholder="Search Product Category"
+    />
+    <i className="fa fa-search search-icon"></i>
+  </div>
+
+  {showDropdown && (
+    <div className="select-dropdown">
+      <div className="select-dropdown-header">
+        <span>Select Category</span>
+      </div>
+      <div className="select-list">
+        {filteredCategories.length > 0 ? (
+          filteredCategories.map((cat) => (
+            <div
+              key={cat._id}
+              className="select-item"
+              onClick={() => selectCategory(cat)}
+            >
+              <div className="select-name">{cat.productCategory}</div>
+            </div>
+          ))
+        ) : (
+          <div className="no-select">No categories found</div>
+        )}
+      </div>
+    </div>
+  )}
+
+  {errors.productCategory && (
+    <span className="error">{errors.productCategory}</span>
+  )}
+</div>
 
               <div className="form-group">
                 <label 
@@ -245,21 +314,58 @@ const AddProducts = () => {
             </div>
 
             <div className="form-row">
-
               <div className="form-group">
-                <label className="form-label" htmlFor="productPrice">
-                  Product Price
+                <label  className={`form-label 
+                ${errors.productPrice ? 'error-label' : formData.productPrice ? 'valid-label' : ''}`}  htmlFor="productPrice">
+                  Product Price <span className="required">*</span>
                 </label>
                 <input
                   type="text"
                   id="productPrice"
                   name="productPrice"
-                  className="form-input"
+                  className={`form-input 
+                    ${errors.productPrice ? 'error-input' : formData.productPrice ? 'valid-input' : ''}`}
                   value={formData.productPrice}
                   onChange={handleChange}
                 />
+                {errors.productPrice && <span className="error">{errors.productPrice}</span>}
               </div>
               <div className="form-group">
+                <label  className={`form-label 
+                ${errors.salePrice ? 'error-label' : formData.salePrice ? 'valid-label' : ''}`}  htmlFor="salePrice">
+                  Sale Price <span className="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="salePrice"
+                  name="salePrice"
+                  className={`form-input 
+                    ${errors.salePrice ? 'error-input' : formData.salePrice ? 'valid-input' : ''}`}
+                  value={formData.salePrice}
+                  onChange={handleChange}
+                />
+                  {errors.salePrice && <span className="error">{errors.salePrice}</span>}
+              </div>
+              <div className="form-group">
+                <label className={`form-label 
+                ${errors.hsnCode ? 'error-label' : formData.hsnCode ? 'valid-label' : ''}`}  htmlFor="hsnCode">
+                 HSN Code <span className="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="hsnCode"
+                  name="hsnCode"
+                  className={`form-input 
+                    ${errors.hsnCode ? 'error-input' : formData.hsnCode ? 'valid-input' : ''}`}
+                  value={formData.hsnCode}
+                  onChange={handleChange}
+                />
+                  {errors.hsnCode && <span className="error">{errors.hsnCode}</span>}
+              </div>
+            </div>
+            
+            <div className="form-row">
+            <div className="form-group">
                 <label className="form-label" htmlFor="productImage">
                   Product Image
                 </label>
@@ -285,9 +391,6 @@ const AddProducts = () => {
                   onChange={handleChange}
                 />
               </div>
-            </div>
-            
-            <div className="form-row">
             <div className="form-group">
                 <label className="form-label" htmlFor="productBarcode">
                   Product Barcode
@@ -301,7 +404,12 @@ const AddProducts = () => {
                   onChange={handleChange}
                 />
               </div>
-            <div className="form-group">
+            </div>
+            
+
+
+            <div className="form-row">
+              <div className="form-group">
                 <label 
                 className={`form-label 
                   ${errors.status ? 'error-label' : formData.status ? 'valid-label' : ''}`}
@@ -336,10 +444,9 @@ const AddProducts = () => {
                   onChange={handleChange}
                 />
               </div>
-             
+              <div className="form-group"></div>
             </div>
-            
-          
+
             <div className="form-row">
                <div className="form-group">
                 <label 

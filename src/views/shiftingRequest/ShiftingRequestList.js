@@ -223,7 +223,6 @@ const ShiftinRequestList = () => {
     }
   };
 
-  // CSV Export function
   const generateDetailExport = async () => {
     try {
       setLoading(true);

@@ -18,15 +18,17 @@ import {
   CSpinner
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import { cilArrowTop, cilArrowBottom, cilSearch, cilPlus, cilZoomOut, cilSettings } from '@coreui/icons';
-import { Link, useNavigate } from 'react-router-dom';
+import { cilArrowTop, cilArrowBottom, cilSearch, cilZoomOut, cilSettings } from '@coreui/icons';
+import { Link,} from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
-import ReportSearchmodel from './ReportSearchModel';
-import Swal from 'sweetalert2';
 
-const ReportSubmissionList = () => {
+import Swal from 'sweetalert2';
+import ReportSearchmodel from '../reportSubmission/ReportSearchModel';
+import SerialNumbers from './RepairStatusModal';
+
+const RepairTeamStock = () => {
   const [data, setData] = useState([]);
   const [centers, setCenters] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,17 +37,21 @@ const ReportSubmissionList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState({});
+
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [repairType, setRepairType] = useState('');
+  const [nonSerialQty, setNonSerialQty] = useState(0);
+  const [nonSerialModal, setNonSerialModal] = useState(false);
+
+
   const [activeSearch, setActiveSearch] = useState({ 
     center: '',
     date: ''
   });
   const [exportLoading, setExportLoading] = useState(false);
   const dropdownRefs = useRef({});
-  const navigate = useNavigate();
   
-  const user = JSON.parse(localStorage.getItem('user')) || {};
-  const userRole = (user?.role?.roleTitle || '').toLowerCase();
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       Object.keys(dropdownRefs.current).forEach(key => {
@@ -86,7 +92,7 @@ const ReportSubmissionList = () => {
         params.append('endDate', convertDateFormat(endDateStr));
       }
 
-      const url = params.toString() ? `/reportsubmission?${params.toString()}` : '/reportsubmission';
+      const url = params.toString() ? `/faulty-stock/repair-transfers/center?${params.toString()}` : '/faulty-stock/repair-transfers/center';
       
       const response = await axiosInstance.get(url);
       
@@ -173,109 +179,91 @@ const ReportSubmissionList = () => {
     setSearchTerm('');
     fetchData();
   };
+
+  const handleRepairAction = async (item, type) => {
+    setDropdownOpen(prev => ({ ...prev, [item._id]: false }));
   
-  const handleClick = (itemId) => {
-    navigate(`/edit-reportSubmission/${itemId}`);
-  };
-
-  const handleApprove = async (item) => {
-    setDropdownOpen(prev => ({ ...prev, [item._id]: false }));
-
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: "You want to approve this stock closing entry?",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#6d7d9c',
-      confirmButtonText: 'Yes, approve it!',
-      cancelButtonText: 'Cancel'
-    });
-
-    if (result.isConfirmed) {
-      try {
-        const response = await axiosInstance.patch(
-          `/reportsubmission/${item._id}/status`,
-          { status: 'Approved' }
-        );
-
-        if (response.data.success) {
-          setData(prevData => 
-            prevData.map(customer => 
-              customer._id === item._id 
-                ? { ...customer, status: 'Approved' }
-                : customer
-            )
-          );
-
-          Swal.fire(
-            'Approved!',
-            'Stock closing has been approved successfully.',
-            'success'
-          );
+    try {
+      const productId = item.product?._id;
+      const response = await axiosInstance.get(`/faulty-stock/serials/${productId}`);
+  
+      if (response.data.success) {
+        const productData = response.data.data.product;
+        const serialNumbers = response.data.data.serialNumbers || [];
+  
+        setSelectedProduct({
+          ...item,
+          ...productData,
+          serialNumbers
+        });
+  
+        setRepairType(type);
+  
+        if (productData.trackSerialNumber === 'Yes') {
+          setModalVisible(true);
         } else {
-          throw new Error(response.data.message || 'Failed to approve');
+          setNonSerialModal(true);
         }
-      } catch (error) {
-        console.error('Error approving stock closing:', error);
-        Swal.fire(
-          'Error!',
-          error.response?.data?.message || 'Failed to approve stock closing.',
-          'error'
-        );
       }
+    } catch (err) {
+      console.error('Error fetching serial info:', err);
+      Swal.fire('Error', 'Failed to fetch product serial information', 'error');
     }
   };
+  
 
-  const handleDuplicate = async (item) => {
-    setDropdownOpen(prev => ({ ...prev, [item._id]: false }));
-
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: "You want to mark this stock closing entry as duplicate?",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#6d7d9c',
-      confirmButtonText: 'Yes, mark as duplicate!',
-      cancelButtonText: 'Cancel'
-    });
-
-    if (result.isConfirmed) {
-      try {
-        const response = await axiosInstance.patch(
-          `/reportsubmission/${item._id}/status`,
-          { status: 'Duplicate' }
-        );
-
-        if (response.data.success) {
-          setData(prevData => 
-            prevData.map(customer => 
-              customer._id === item._id 
-                ? { ...customer, status: 'Duplicate' }
-                : customer
-            )
-          );
-
-          Swal.fire(
-            'Marked as Duplicate!',
-            'Stock closing has been marked as duplicate.',
-            'success'
-          );
-        } else {
-          throw new Error(response.data.message || 'Failed to mark as duplicate');
-        }
-      } catch (error) {
-        console.error('Error marking stock closing as duplicate:', error);
-        Swal.fire(
-          'Error!',
-          error.response?.data?.message || 'Failed to mark as duplicate.',
-          'error'
-        );
+  const handleSerialNumbersUpdate = async (productId, selectedSerials) => {
+    try {
+      const payload = {
+        productId,
+        repairType,
+        serialNumbers: selectedSerials.map(s => s.serialNumber),
+      };
+  
+      const response = await axiosInstance.post('/faulty-stock/repair-update', payload);
+  
+      if (response.data.success) {
+        Swal.fire('Success', `Product marked as ${repairType}`, 'success');
+        fetchData();
+      } else {
+        Swal.fire('Error', response.data.message || 'Update failed', 'error');
       }
+    } catch (err) {
+      console.error('Error updating repair status:', err);
+      Swal.fire('Error', 'Failed to update repair status', 'error');
     }
   };
+  
 
+  const handleNonSerialSubmit = async () => {
+    if (nonSerialQty <= 0) {
+      Swal.fire('Error', 'Please enter valid quantity', 'warning');
+      return;
+    }
+  
+    try {
+      const payload = {
+        productId: selectedProduct.product?._id || selectedProduct.productId,
+        repairType,
+        quantity: nonSerialQty,
+      };
+  
+      const response = await axiosInstance.post('/faulty-stock/repair-update', payload);
+  
+      if (response.data.success) {
+        Swal.fire('Success', `Product marked as ${repairType}`, 'success');
+        fetchData();
+      } else {
+        Swal.fire('Error', response.data.message || 'Update failed', 'error');
+      }
+    } catch (err) {
+      console.error('Error updating non-serial repair status:', err);
+      Swal.fire('Error', 'Failed to update repair status', 'error');
+    } finally {
+      setNonSerialModal(false);
+    }
+  };
+  
   const generateCSVExport = async () => {
     try {
       setExportLoading(true);
@@ -401,9 +389,10 @@ const ReportSubmissionList = () => {
     }));
   };
 
+
   return (
     <div>
-      <div className='title'>Closing Stock Logs </div>
+      <div className='title'>Faulty Stock</div>
     
      <ReportSearchmodel
         visible={searchModalVisible}
@@ -416,11 +405,11 @@ const ReportSubmissionList = () => {
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
-            <Link to='/add-reportSubmission'>
-              <CButton size="sm" className="action-btn me-1">
-                <CIcon icon={cilPlus} className='icon'/> Add
-              </CButton>
-            </Link>
+              <Link to='/transfer-faulty-stock'>
+                <CButton size="sm" className="action-btn me-1">
+                <i className="fa fa-exchange fa-margin"></i> Transfer
+                </CButton>
+              </Link>
             <CButton 
               size="sm" 
               className="action-btn me-1"
@@ -492,21 +481,19 @@ const ReportSubmissionList = () => {
                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
                  Center {getSortIcon('center.centerName')}
                 </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
+                 Product {getSortIcon('center.centerName')}
+                </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('remark')} className="sortable-header">
-                  Remark {getSortIcon('remark')}
+                  Quantity {getSortIcon('remark')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('createdAt')} className="sortable-header">
-                  Created At {getSortIcon('createdAt')}
+                 Status {getSortIcon('createdAt')}
                 </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('createdBy.fullname')} className="sortable-header">
-                  Created By {getSortIcon('createdBy.fullname')}
-                </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('remark')} className="sortable-header">
-                  Approve Remark {getSortIcon('remark')}
-                </CTableHeaderCell>
-               {userRole === 'admin' &&  <CTableHeaderCell>
+              
+                <CTableHeaderCell>
                   Options
-                </CTableHeaderCell>}
+                </CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
@@ -515,20 +502,14 @@ const ReportSubmissionList = () => {
                   <CTableRow key={customer._id} className={customer.status === 'Approved' ? 'use-product-row' : 
                     customer.status === 'Duplicate' ? 'damage-product-row' : ''}>
                     <CTableDataCell>
-                      <button 
-                        className="btn btn-link p-0 text-decoration-none"
-                        onClick={() => handleClick(customer._id)}
-                        style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
-                      >
+            
                         {formatDate(customer.date || '')}
-                      </button>
                     </CTableDataCell>
-                    <CTableDataCell>{customer.center?.centerName || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{customer.remark || ''}</CTableDataCell>
-                    <CTableDataCell>{formatDateTime(customer.createdAt || 'N/A')}</CTableDataCell>
-                    <CTableDataCell>{customer.createdBy.email || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{customer.approvedRemark || ''}</CTableDataCell>
-                    {userRole === 'admin' &&  <CTableDataCell>
+                    <CTableDataCell>{customer.fromCenter?.centerName || 'N/A'}</CTableDataCell>
+                    <CTableDataCell>{customer.product?.productTitle || 'N/A'}</CTableDataCell>
+                    <CTableDataCell>{customer.quantity || ''}</CTableDataCell>
+                    <CTableDataCell>{customer.overallStatus || ''}</CTableDataCell>
+                    <CTableDataCell>
                     <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
                         <CButton 
                           size="sm"
@@ -542,21 +523,20 @@ const ReportSubmissionList = () => {
                           <div className="dropdown-menu show">
                             <button 
                               className="dropdown-item"
-                              onClick={() => handleApprove(customer)}
+                              onClick={() => handleRepairAction(customer, 'repaired')}
                             >
-                            <i className="fa fa-exchange fa-margin"></i> Approve
+                           <i className="fa fa-reply fa-margin"></i> Repaired
                             </button>
                             <button 
                             className="dropdown-item"
-                            onClick={() => handleDuplicate(customer)}
+                            onClick={() => handleRepairAction(customer, 'irreparable')}
                             >
-                            <i className="fa fa-exchange fa-margin"></i> Duplicate Entry
+                             <i className="fa fa-recycle fa-margin"></i>&nbsp; Irreparable
                           </button>
                           </div>
                         )}
                       </div>
                     </CTableDataCell>
-                   }
                   </CTableRow>
                 ))
               ) : (
@@ -570,9 +550,18 @@ const ReportSubmissionList = () => {
           </CTable>
           </div>
         </CCardBody>
+        <SerialNumbers
+  visible={modalVisible}
+  onClose={() => setModalVisible(false)}
+  product={{ product: selectedProduct }}
+  approvedQty={selectedProduct?.serialNumbers?.length || 0}
+  onSerialNumbersUpdate={handleSerialNumbersUpdate}
+  warehouseId={selectedProduct?.fromCenter?.id || ''}
+/>
+
       </CCard>
     </div>
   );
 };
 
-export default ReportSubmissionList;
+export default RepairTeamStock;

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../css/form.css';
 import { CButton } from '@coreui/react';
+import { CAlert } from '@coreui/react';
 
 const AddShiftingRequest = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const AddShiftingRequest = () => {
   const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [errors, setErrors] = useState({});
+  const [alert, setAlert] = useState({ type: '', message: '' })
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -164,13 +166,26 @@ const AddShiftingRequest = () => {
 
       if (id) {
         await axiosInstance.put(`/shiftingRequest/${id}`, payload);
+        setAlert({ type: 'success', message: 'Data updated successfully!' })
       } else {
         await axiosInstance.post('/shiftingRequest', payload);
+        setAlert({ type: 'success', message: 'Data added successfully!' })
       }
-      navigate('/shifting-request');
+      setTimeout(() =>navigate('/shifting-request'),1500)
     } catch (error) {
       console.error('Error saving shifting request:', error);
-    }
+      let message = 'Failed to save Data. Please try again!'
+    
+      if (error.response) {
+        message = error.response.data?.message || error.response.data?.error || message
+      } else if (error.request) {
+        message = 'No response from server. Please check your connection.'
+      } else {
+        message = error.message
+      }
+    
+      setAlert({ type: 'danger', message })
+    }    
   };
 
   const handleReset = () => {
@@ -222,6 +237,11 @@ const AddShiftingRequest = () => {
         </div>
 
         <div className="form-body">
+        {alert.message && (
+              <CAlert color={alert.type} dismissible onClose={() => setAlert({ type: '', message: '' })}>
+              {alert.message}
+              </CAlert>
+            )}
           <form onSubmit={handleSubmit}>
             <div className="form-row">
               <div className="form-group">

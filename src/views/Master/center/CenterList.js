@@ -39,7 +39,7 @@ const CenterList = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axiosInstance.get('/centers');
+        const response = await axiosInstance.get('/centers?centerType=Center');
         
         if (response.data.success) {
           setCustomers(response.data.data);
@@ -227,6 +227,9 @@ const CenterList = () => {
                 <CTableHeaderCell scope="col" onClick={() => handleSort('centerName')} className="sortable-header">
                   Center Title {getSortIcon('centerName')}
                 </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('reseller?.   businessName')} className="sortable-header">
+                  Reseller {getSortIcon('reseller?.businessName')}
+                </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('centerCode')} className="sortable-header">
                  Center Code {getSortIcon('centerCode')}
                 </CTableHeaderCell>
@@ -253,12 +256,13 @@ const CenterList = () => {
               {filteredCustomers.length > 0 ? (
                 filteredCustomers.map((customer) => (
                   <CTableRow key={customer._id}>
-                    <CTableDataCell>{customer.centerName}</CTableDataCell>
-                    <CTableDataCell>{customer.centerCode}</CTableDataCell>
+                    <CTableDataCell>{customer.centerName || ''}</CTableDataCell>
+                    <CTableDataCell>{customer.reseller?.businessName || ''}</CTableDataCell>
+                    <CTableDataCell>{customer.centerCode || ''}</CTableDataCell>
                     <CTableDataCell>{customer.centerType || ''}</CTableDataCell>
-                    <CTableDataCell>{customer.email}</CTableDataCell>
-                    <CTableDataCell>{customer.mobile}</CTableDataCell>
-                    <CTableDataCell>{customer.addressLine1}</CTableDataCell>
+                    <CTableDataCell>{customer.email || ''}</CTableDataCell>
+                    <CTableDataCell>{customer.mobile || ''}</CTableDataCell>
+                    <CTableDataCell>{customer.addressLine1 || ''}</CTableDataCell>
                     <CTableDataCell>
                     {hasAnyPermission('Center', ['manage_own_center','manage_all_center']) && (
                       <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>

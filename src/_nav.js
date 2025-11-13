@@ -307,6 +307,15 @@ const getNav = (permissions = []) => {
     })
   }
 
+  if (userCenterType == 'outlet') {
+    _nav.push({
+      component: CNavItem,
+      name: <Translation>{(t) => t('Raise PO')}</Translation>,
+      to: '/raise-po',
+      icon: <CIcon icon={cilMoney} customClassName="nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px' }} />,
+    })
+  }
+  
   if (userCenterType == 'outlet' && hasPermission(permissions, 'Purchase', ['add_purchase_stock', 'view_all_purchase_stock','view_own_purchase_stock'])) {
     _nav.push({
       component: CNavItem,
@@ -315,7 +324,7 @@ const getNav = (permissions = []) => {
       icon: <CIcon icon={cilMoney} customClassName="nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px' }} />,
     })
   }
-
+  
   if (hasPermission(permissions, 'Transfer', ['view_stock_transfer_own_center', 'manage_stock_transfer_own_center'])) {
     _nav.push({
       component: CNavItem,
@@ -334,7 +343,15 @@ const getNav = (permissions = []) => {
     })
   }
 
-
+  if (userCenterType == 'outlet') {
+    _nav.push({
+      component: CNavItem,
+      name: <Translation>{(t) => t('Sale Invoices')}</Translation>,
+      to: '/sale-invoices',
+      icon: <i className="fa fa-file-invoice nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px'}} />,
+    })
+  }
+  
   if (hasPermission(permissions, 'Closing', ['view_closing_stock_own_center', 'view_closing_stock_all_center'])) {
     _nav.push({
       component: CNavItem,
@@ -362,6 +379,7 @@ const getNav = (permissions = []) => {
   if (hasPermission(permissions, 'Center', ['view_all_center','view_own_center', 'manage_all_center'])) {
     masterItems.push({ component: CNavItem, name: 'Center', to: '/center-list' })
   }
+  
 
   // if (hasPermission(permissions, 'Indent', ['view_own_center', 'manage_indent'])) {
   //   masterItems.push({ component: CNavItem, name: 'Challan', to: '/base/challan' })
@@ -384,6 +402,7 @@ const getNav = (permissions = []) => {
   if (hasPermission(permissions, 'Report', ['view_outlet_stock','view_all_report','view_own_report'])) {
     reportItems.push({ component: CNavItem, name: 'Centers Stock', to: '/center-stock' })
     reportItems.push({ component: CNavItem, name: 'Available Stock', to: '/available-stock' })
+    reportItems.push({ component: CNavItem, name: 'Field Stock', to: '/filled-stock' })
     reportItems.push({ component: CNavItem, name: 'Transaction Report', to: '/transaction-report' })
     reportItems.push({ component: CNavItem, name: 'Purchase Detail', to: '/purchase-detail' })
     reportItems.push({ component: CNavItem, name: 'Indent Summary', to: '/indent-summary' })
@@ -412,17 +431,41 @@ const getNav = (permissions = []) => {
     })
   }
 
+  // ==== FAULTY STOCK === 
+
+
+//   if (userCenterType == 'outlet'){
+//     _nav.push({
+//       component: CNavItem,
+//       name: <Translation>{(t) => t('Faulty Stock')}</Translation>,
+//       to: '/faulty-stock',
+//       icon: <i className="fa fa-shopping-cart nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px' }} />,
+//     })
+//   }
+  
+//  {
+//     _nav.push({
+//       component: CNavItem,
+//       name: <Translation>{(t) => t('Repaired Faulty Stock')}</Translation>,
+//       to: '/repair-faulty-stock',
+//       icon: <i className="fa fa-shopping-cart nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px' }} />,
+//     })
+// }
+
+
+
   // ===== SETTINGS =====
   const settingsItems = []
 
   if (hasPermission(permissions, 'Settings', ['manage_user', 'manage_masters_data', 'manage_vendors'])) {
     settingsItems.push({ component: CNavItem, name: 'Center', to: '/center-list' })
+    settingsItems.push({ component: CNavItem, name: 'Warehouse', to: '/warehouse-list' })
     settingsItems.push({ component: CNavItem, name: 'Products', to: '/product-list' })
     settingsItems.push({ component: CNavItem, name: 'Product Categories', to: '/product-category' })
     settingsItems.push({ component: CNavItem, name: 'Tax', to: '/tax' })
     settingsItems.push({ component: CNavItem, name: 'Vendor', to: '/vendor-list' })
     settingsItems.push({ component: CNavItem, name: 'Package Duration', to: '/package-duration-list' })
-    settingsItems.push({ component: CNavItem, name: 'Partner', to: '/partner-list' })
+    settingsItems.push({ component: CNavItem, name: 'Reseller', to: '/reseller-list' })
     settingsItems.push({ component: CNavItem, name: 'Area', to: '/area-list' })
     settingsItems.push({ component: CNavItem, name: 'Users', to: '/user-list' })
     settingsItems.push({ component: CNavItem, name: 'Role', to: '/role-list' })

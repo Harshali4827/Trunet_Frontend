@@ -319,6 +319,12 @@ const CustomersList = () => {
                     {getSortIcon('center.area.areaName')}
                   </div>
                 </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('center.reseller.resellerName')} className="sortable-header">
+                  <div className="d-flex justify-content-between align-items-center">
+                    <span>Reseller</span>
+                    {getSortIcon('center.reseller.resellerName')}
+                  </div>
+                </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('mobile')} className="sortable-header">
                   <div className="d-flex justify-content-between align-items-center">
                     <span>Mobile</span>
@@ -359,6 +365,7 @@ const CustomersList = () => {
                     <CTableDataCell>{customer.center?.centerName || ''}</CTableDataCell>
                     <CTableDataCell>{customer.center?.partner?.partnerName || ''}</CTableDataCell>
                     <CTableDataCell>{customer.center?.area?.areaName || ''}</CTableDataCell>
+                    <CTableDataCell>{customer.center?.reseller?.resellerName || ''}</CTableDataCell>
                     <CTableDataCell>{customer.mobile}</CTableDataCell>
                     <CTableDataCell>{customer.email}</CTableDataCell>
                     <CTableDataCell>{customer.city}</CTableDataCell>

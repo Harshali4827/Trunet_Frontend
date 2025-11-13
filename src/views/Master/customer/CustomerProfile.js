@@ -234,6 +234,7 @@ const CustomerProfile = () => {
       </CBadge>
     );
   };
+  
   const toggleDropdown = (id) => {
     setDropdownOpen(prev => ({
       ...prev,
