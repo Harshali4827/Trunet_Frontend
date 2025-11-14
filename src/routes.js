@@ -1,4 +1,3 @@
-import { exact } from 'prop-types'
 import React from 'react'
 import { Translation } from 'react-i18next'
 
@@ -6,7 +5,6 @@ import { Translation } from 'react-i18next'
 const StockRequest = React.lazy(() => import('./views/stockRequest/StockRequest'))
 const AddStockRequest = React.lazy(() => import('./views/stockRequest/AddStockRequest'))
 const StockRequestProfile = React.lazy(() => import('./views/stockRequest/StockProfile'))
-
 
 const StockPurchase = React.lazy(() => import('./views/stockPurchase/StockPurchase'))
 const AddStockPurchase = React.lazy(() => import('./views/stockPurchase/AddStockPurchase'))
@@ -94,6 +92,10 @@ const CenterProfile = React.lazy(() => import('./views/Master/center/CenterProfi
 const FaultyStock = React.lazy(() => import('./views/faultyStock/FaultyStock'))
 const TransferFaultyStock = React.lazy(() => import('./views/faultyStock/TransferFaultyStock'))
 const ReturnFromRepair = React.lazy(() => import('./views/faultyStock/RepairFaultyStock'))
+const RepairedStock = React.lazy(() => import('./views/faultyStock/RepairedStock'))
+
+const TransferRepairedStock = React.lazy(() => import('./views/faultyStock/TransferRepairedStock'))
+
 const routes = [
 
   { path: '/', exact: true, name: <Translation>{(t) => t('home')}</Translation> },
@@ -597,6 +599,18 @@ const routes = [
     exact:true,
     name:<Translation>{(t) => t('Repair Faulty Stock')}</Translation>,
     element: ReturnFromRepair 
+  },
+  {
+    path:'/repaired-stock',
+    exact:true,
+    name:<Translation>{(t) => t('Repair Faulty Stock')}</Translation>,
+    element: RepairedStock 
+  },
+  {
+    path:'/transfer-repaired-stock',
+    exact:true,
+    name:<Translation>{(t) => t('Transfer Repair Stock')}</Translation>,
+    element: TransferRepairedStock 
   }
 ]
 

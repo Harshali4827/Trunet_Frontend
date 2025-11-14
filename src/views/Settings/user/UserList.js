@@ -298,7 +298,7 @@ const UserList = () => {
           </div>
           
           <div className="responsive-table-wrapper">
-          <CTable striped bordered hover responsive className='responsive-table'>
+          <CTable striped bordered hover className='responsive-table'>
             <CTableHead>
               <CTableRow>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('fullName')} className="sortable-header">

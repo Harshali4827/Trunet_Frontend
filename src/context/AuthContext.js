@@ -2,6 +2,7 @@
 import React, { createContext, useState, useEffect } from 'react'
 import PropTypes from 'prop-types'
 import axiosInstance from 'src/axiosInstance'
+import { showError } from 'src/utils/sweetAlerts'
 
 export const AuthContext = createContext()
 
@@ -21,6 +22,21 @@ export const AuthProvider = ({ children }) => {
       setPermissions(userData.permissions)
       localStorage.setItem('permissions', JSON.stringify(userData.permissions))
     } catch (err) {
+      const message = err?.response?.data?.message;
+
+    if (message === "Your token has expired. Please log in again.") {
+      localStorage.clear();
+      showError(message);
+      window.location.href = "/auth/login";
+      return;
+    }
+
+    if (message === "Your account has been disabled. Please contact administrator.") {
+      showError(message);
+      localStorage.clear();
+      window.location.href = "/auth/login";
+      return;
+    }
       console.error('Error fetching user info:', err)
     }
   }
@@ -29,7 +45,6 @@ export const AuthProvider = ({ children }) => {
     fetchUser()
   }, [])
 
-  // ✅ expose refetch function
   const refreshPermissions = async () => {
     await fetchUser()
   }

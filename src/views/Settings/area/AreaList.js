@@ -228,7 +228,7 @@ const AreaList = () => {
             </div>
           </div>
           <div className="responsive-table-wrapper">
-          <CTable striped bordered hover responsive className='responsive-table'>
+          <CTable striped bordered hover className='responsive-table'>
             <CTableHead>
               <CTableRow>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('businessName')} className="sortable-header">
@@ -244,7 +244,7 @@ const AreaList = () => {
               {filteredData.length > 0 ? (
                 filteredData.map((area) => (
                   <CTableRow key={area._id}>
-                    <CTableDataCell>{area.partner?.partnerName}</CTableDataCell>
+                    <CTableDataCell>{area.reseller?.businessName}</CTableDataCell>
                     <CTableDataCell>{area.areaName}</CTableDataCell>
                     <CTableDataCell>
                       <div className="dropdown-container" ref={el => dropdownRefs.current[area._id] = el}>

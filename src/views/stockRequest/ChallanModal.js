@@ -1,10 +1,16 @@
-import React from 'react';
-import { CModal, CModalHeader, CModalTitle, CModalBody } from '@coreui/react';
+import React, { useRef } from 'react';
+import { CModal, CModalHeader, CModalTitle, CModalBody, CButton } from '@coreui/react';
 import PropTypes from 'prop-types';
 import '../../css/challan.css';
 import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import CIcon from '@coreui/icons-react';
+import { cilArrowBottom, cilDelete } from '@coreui/icons';
 
 const ChallanModal = ({ visible, onClose, data }) => {
+  const challanRef = useRef();
+
   if (!data) return null;
 
   const companyInfo = {
@@ -12,9 +18,9 @@ const ChallanModal = ({ visible, onClose, data }) => {
     branch: data.center?.reseller?.businessName || "SSV ALPAH - Anand Nagar",
     address: data.center?.centerName || "Anand Nagar",
     area: data.center?.area?.areaName || "Anand Nagar",
-    contactPerson: data.createdBy?.fullName || "Sameer Kodlikar",
+    contactPerson: data.center?.reseller?.name || "Sameer Kodlikar",
     handoverTo: data.center?.centerName || "Satish",
-    contactNo: ""
+    contactNo: data.center?.reseller?.contactNumber || ""
   };
 
   const challanInfo = {
@@ -30,6 +36,43 @@ const ChallanModal = ({ visible, onClose, data }) => {
   const centerChallanApprovedAt = data.approvalInfo?.centerChallanApprovedAt;
   const centerChallanApprovedBy = data.approvalInfo?.centerChallanApprovedBy;
 
+
+  const downloadPDF = async () => {
+    if (!challanRef.current) return;
+
+    try {
+      const canvas = await html2canvas(challanRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgWidth = 210; 
+      const pageHeight = 295; 
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`challan-${challanInfo.challanNo}.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Error generating PDF. Please try again.');
+    }
+  };
+
   return (
     <CModal 
       visible={visible} 
@@ -40,9 +83,13 @@ const ChallanModal = ({ visible, onClose, data }) => {
     >
       <CModalHeader className="challan-modal-header">
         <CModalTitle>Challan Preview</CModalTitle>
+          <CButton onClick={downloadPDF} className="reset-button me-2">
+            {/* <CIcon icon={cilArrowBottom} className="me-2" /> */}
+            Download
+          </CButton>
       </CModalHeader>
       <CModalBody className="challan-modal-body">
-        <div className="challan-container">
+        <div  ref={challanRef} className="challan-container">
           <div className="challan-header">
             <h2 className="company-name">{companyInfo.name}</h2>
             <h3 className="branch-name">{companyInfo.branch}</h3>
@@ -167,6 +214,8 @@ ChallanModal.propTypes = {
       centerType: PropTypes.string,
       reseller: PropTypes.shape({
         businessName: PropTypes.string,
+        name:PropTypes.string,
+        contactNumber:PropTypes.string,
       }),
       area: PropTypes.shape({
         areaName: PropTypes.string,

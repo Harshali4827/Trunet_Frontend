@@ -18,13 +18,11 @@ import {
   CSpinner
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import { cilArrowTop, cilArrowBottom, cilSearch, cilZoomOut, cilSettings } from '@coreui/icons';
-import { Link, useNavigate } from 'react-router-dom';
+import { cilArrowTop, cilArrowBottom, cilSearch, cilZoomOut } from '@coreui/icons';
+import { Link } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
-
-import Swal from 'sweetalert2';
 import ReportSearchmodel from '../reportSubmission/ReportSearchModel';
 
 const FaultyStock = () => {
@@ -171,104 +169,6 @@ const FaultyStock = () => {
     fetchData();
   };
 
-  const handleApprove = async (item) => {
-    setDropdownOpen(prev => ({ ...prev, [item._id]: false }));
-
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: "You want to approve this stock closing entry?",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#6d7d9c',
-      confirmButtonText: 'Yes, approve it!',
-      cancelButtonText: 'Cancel'
-    });
-
-    if (result.isConfirmed) {
-      try {
-        const response = await axiosInstance.patch(
-          `/reportsubmission/${item._id}/status`,
-          { status: 'Approved' }
-        );
-
-        if (response.data.success) {
-          setData(prevData => 
-            prevData.map(customer => 
-              customer._id === item._id 
-                ? { ...customer, status: 'Approved' }
-                : customer
-            )
-          );
-
-          Swal.fire(
-            'Approved!',
-            'Stock closing has been approved successfully.',
-            'success'
-          );
-        } else {
-          throw new Error(response.data.message || 'Failed to approve');
-        }
-      } catch (error) {
-        console.error('Error approving stock closing:', error);
-        Swal.fire(
-          'Error!',
-          error.response?.data?.message || 'Failed to approve stock closing.',
-          'error'
-        );
-      }
-    }
-  };
-
-  const handleDuplicate = async (item) => {
-    setDropdownOpen(prev => ({ ...prev, [item._id]: false }));
-
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: "You want to mark this stock closing entry as duplicate?",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#6d7d9c',
-      confirmButtonText: 'Yes, mark as duplicate!',
-      cancelButtonText: 'Cancel'
-    });
-
-    if (result.isConfirmed) {
-      try {
-        const response = await axiosInstance.patch(
-          `/reportsubmission/${item._id}/status`,
-          { status: 'Duplicate' }
-        );
-
-        if (response.data.success) {
-          setData(prevData => 
-            prevData.map(customer => 
-              customer._id === item._id 
-                ? { ...customer, status: 'Duplicate' }
-                : customer
-            )
-          );
-
-          Swal.fire(
-            'Marked as Duplicate!',
-            'Stock closing has been marked as duplicate.',
-            'success'
-          );
-        } else {
-          throw new Error(response.data.message || 'Failed to mark as duplicate');
-        }
-      } catch (error) {
-        console.error('Error marking stock closing as duplicate:', error);
-        Swal.fire(
-          'Error!',
-          error.response?.data?.message || 'Failed to mark as duplicate.',
-          'error'
-        );
-      }
-    }
-  };
-
   const generateCSVExport = async () => {
     try {
       setExportLoading(true);
@@ -386,14 +286,7 @@ const FaultyStock = () => {
       </div>
     );
   }
-
-  const toggleDropdown = (id) => {
-    setDropdownOpen(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
-
+  
   return (
     <div>
       <div className='title'>Faulty Stock</div>
@@ -494,10 +387,6 @@ const FaultyStock = () => {
                 <CTableHeaderCell scope="col" onClick={() => handleSort('createdAt')} className="sortable-header">
                  Status {getSortIcon('createdAt')}
                 </CTableHeaderCell>
-              
-                <CTableHeaderCell>
-                  Options
-                </CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
@@ -513,34 +402,6 @@ const FaultyStock = () => {
                     <CTableDataCell>{customer.product?.productTitle || 'N/A'}</CTableDataCell>
                     <CTableDataCell>{customer.quantity || ''}</CTableDataCell>
                     <CTableDataCell>{customer.overallStatus || ''}</CTableDataCell>
-                    <CTableDataCell>
-                    <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
-                        <CButton 
-                          size="sm"
-                          className='option-button btn-sm'
-                          onClick={() => toggleDropdown(customer._id)}
-                        >
-                          <CIcon icon={cilSettings} />
-                          Options
-                        </CButton>
-                        {dropdownOpen[customer._id] && (
-                          <div className="dropdown-menu show">
-                            <button 
-                              className="dropdown-item"
-                              onClick={() => handleApprove(customer)}
-                            >
-                           <i className="fa fa-reply fa-margin"></i> Repaired
-                            </button>
-                            <button 
-                            className="dropdown-item"
-                            onClick={() => handleDuplicate(customer)}
-                            >
-                             <i className="fa fa-recycle fa-margin"></i>&nbsp; Irreparable
-                          </button>
-                          </div>
-                        )}
-                      </div>
-                    </CTableDataCell>
                   </CTableRow>
                 ))
               ) : (

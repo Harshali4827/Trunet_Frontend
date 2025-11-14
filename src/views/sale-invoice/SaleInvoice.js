@@ -26,8 +26,9 @@ import Pagination from 'src/utils/Pagination';
 import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
 import ChallanModal from '../stockRequest/ChallanModal';
 import SearchSaleInvoice from './SearchSaleInvoice';
-import InvoiceModal from './InvoiceModal';
 import { numToWords } from 'src/utils/NumToWords';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const SaleInvoices = () => {
   const [customers, setCustomers] = useState([]);
@@ -52,7 +53,7 @@ const SaleInvoices = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [showChallanModal, setShowChallanModal] = useState(false);
   const [selectedChallan, setSelectedChallan] = useState(null);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+
   const [invoiceMetaData, setInvoiceMetaData] = useState(null);
   
   const dropdownRefs = useRef({});
@@ -128,11 +129,6 @@ const SaleInvoices = () => {
     }
   };
  
-  const handleOpenInvoiceModal = () => {
-    if (selectedChallans.length === 0) return;
-    setShowInvoiceModal(true);
-  };
-
   const handleSelectChallan = (id) => {
     setSelectedChallans((prev) =>
       prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
@@ -242,7 +238,6 @@ const SaleInvoices = () => {
 
   const handleGenerateInvoice = (metaData) => {
     setInvoiceMetaData(metaData);
-    setShowInvoiceModal(false);
   
     const selectedData = customers.filter(c => selectedChallans.includes(c._id));
     if (selectedData.length === 0) return;
@@ -662,13 +657,7 @@ const SaleInvoices = () => {
         onClose={() => setShowChallanModal(false)}
         data={selectedChallan}
       />
-        <InvoiceModal
-        visible={showInvoiceModal}
-        onClose={() => setShowInvoiceModal(false)}
-        onGenerate={handleGenerateInvoice}
-        selectedChallansCount={selectedChallans.length}
-      />
-      
+
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
@@ -693,8 +682,7 @@ const SaleInvoices = () => {
                 <CButton 
                     size="sm"
                     className="action-btn me-2"
-                  // onClick={handleGenerateInvoice}
-                    onClick={handleOpenInvoiceModal}
+                   onClick={handleGenerateInvoice}
                 >
                 <CIcon icon={cilFile} className="me-1" />
                      Generate Invoice

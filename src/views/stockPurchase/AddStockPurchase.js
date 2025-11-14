@@ -354,37 +354,73 @@ const AddStockPurchase = () => {
         showAlert('danger', response.data.message || 'Failed to save stock purchase');
       }
       
-    } catch (error) {
+    }
+    // catch (error) {
+    //   console.error('Error saving stock purchase:', error);
+      
+    //   let errorMessage = 'Failed to save stock purchase';
+      
+    //   if (error.response?.data?.message) {
+    //     errorMessage = error.response.data.message;
+    //     if (errorMessage.includes('validation failed')) {
+    //       if (errorMessage.includes('invoiceNo')) {
+    //         errorMessage = 'Invoice number is required or already exists';
+    //       } else if (errorMessage.includes('vendor')) {
+    //         errorMessage = 'Please select a valid vendor';
+    //       } else if (errorMessage.includes('products')) {
+    //         errorMessage = 'Please select at least one product with valid quantity';
+    //       }
+    //     }
+    //     if (errorMessage.includes('duplicate') || errorMessage.includes('already exists')) {
+    //       errorMessage = 'Invoice number already exists. Please use a different invoice number.';
+    //     }
+    //   } else if (error.message) {
+    //     errorMessage = error.message;
+    //   }
+      
+    //   showAlert('danger', errorMessage);
+    // } finally {
+    //   setSubmitting(false);
+    // }
+
+    catch (error) {
       console.error('Error saving stock purchase:', error);
-      
+    
       let errorMessage = 'Failed to save stock purchase';
-      
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-        
-        // Handle specific backend validation errors
-        if (errorMessage.includes('validation failed')) {
-          if (errorMessage.includes('invoiceNo')) {
-            errorMessage = 'Invoice number is required or already exists';
-          } else if (errorMessage.includes('vendor')) {
-            errorMessage = 'Please select a valid vendor';
-          } else if (errorMessage.includes('products')) {
-            errorMessage = 'Please select at least one product with valid quantity';
-          }
+    
+      if (error.response?.data) {
+        const err = error.response.data;
+
+        if (err.errors && Array.isArray(err.errors)) {
+          const backendErrors = err.errors;
+    
+          backendErrors.forEach((e) => {
+            if (e.field === "products") {
+              showAlert('danger', e.message);
+    
+              const productId = e.value?.[0]?.product;
+    
+              if (productId) {
+                setErrors((prev) => ({
+                  ...prev,
+                  [`serial_${productId}`]: e.message
+                }));
+              }
+            }
+          });
+    
+          setSubmitting(false);
+          return;
         }
-        
-        // Handle duplicate invoice numbers
-        if (errorMessage.includes('duplicate') || errorMessage.includes('already exists')) {
-          errorMessage = 'Invoice number already exists. Please use a different invoice number.';
+        if (err.message) {
+          errorMessage = err.message;
         }
-      } else if (error.message) {
-        errorMessage = error.message;
       }
-      
+    
       showAlert('danger', errorMessage);
-    } finally {
       setSubmitting(false);
     }
+    
   };  
 
   const filteredProducts = products.filter((p) =>

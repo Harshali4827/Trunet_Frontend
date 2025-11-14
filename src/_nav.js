@@ -443,7 +443,7 @@ const getNav = (permissions = []) => {
 //     })
 //   }
   
-//  {
+//   if (userCenterType == 'center'){
 //     _nav.push({
 //       component: CNavItem,
 //       name: <Translation>{(t) => t('Repaired Faulty Stock')}</Translation>,
@@ -453,8 +453,7 @@ const getNav = (permissions = []) => {
 // }
 
 
-
-  // ===== SETTINGS =====
+    // ===== SETTINGS =====
   const settingsItems = []
 
   if (hasPermission(permissions, 'Settings', ['manage_user', 'manage_masters_data', 'manage_vendors'])) {
