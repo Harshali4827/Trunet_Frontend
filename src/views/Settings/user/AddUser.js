@@ -494,14 +494,13 @@ const AddUser = () => {
   const validateForm = () => {
     let newErrors = {};
     
-    // Common required fields for both add and edit
     const requiredFields = ['fullName', 'mobile', 'username', 'email', 'center', 'role', 'status'];
     
     requiredFields.forEach((field) => {
       if (!formData[field]) newErrors[field] = 'This is a required field';
     });
 
-    // Password validation only for new users
+
     if (!isEditing) {
       if (!formData.password) {
         newErrors.password = 'Password is required for new users';
@@ -511,12 +510,10 @@ const AddUser = () => {
       }
     }
 
-    // Password confirmation validation (only if passwords are provided)
     if (formData.password && formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
 
-    // Password length validation (only if password is provided)
     if (formData.password && formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters long';
     }
@@ -548,11 +545,22 @@ const AddUser = () => {
         status: formData.status
       };
 
-      // Only include password if it's provided (for updates) or for new users
+      
+      // if (formData.password) {
+      //   submitData.password = formData.password;
+      // }
+
+
       if (formData.password) {
         submitData.password = formData.password;
+        if (!isEditing) {
+          submitData.confirmPassword = formData.confirmPassword;
+        }
       }
 
+      if (isEditing && formData.password) {
+        submitData.confirmPassword = formData.confirmPassword;
+      }
       if (isEditing) {
         await axiosInstance.put(`/auth/user/${id}`, submitData);
         setAlert({ type: 'success', message: 'User updated successfully!' });
@@ -570,8 +578,7 @@ const AddUser = () => {
     
       if (error.response) {
         const responseData = error.response.data;
-        
-        // Handle validation errors from backend
+      
         if (responseData.success === false && responseData.errors && Array.isArray(responseData.errors)) {
           responseData.errors.forEach(errorMsg => {
             if (errorMsg.toLowerCase().includes('username')) {
