@@ -347,7 +347,7 @@ import './login.css'
 import { AuthContext } from 'src/context/AuthContext'
 
 const Login = () => {
-  const [formData, setFormData] = useState({ loginId: '', password: '' })
+  const [formData, setFormData] = useState({ username: '', password: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -369,7 +369,7 @@ const Login = () => {
     setError('')
     setSuccess('')
     
-    if (!formData.loginId || (activeTab === 1 && !formData.password)) {
+    if (!formData.username || (activeTab === 1 && !formData.password)) {
       setError('Please fill in all fields')
       return
     }
@@ -378,7 +378,7 @@ const Login = () => {
   
       try {
         const response = await axiosInstance.post('/auth/login', {
-          loginId: formData.loginId,
+          username: formData.username,
           password: formData.password,
         })
   
@@ -510,10 +510,10 @@ const Login = () => {
                           </CInputGroupText>
                           <CFormInput
                             type="text"
-                            name="loginId"
+                            name="username"
                             placeholder="Username"
                             autoComplete="username"
-                            value={formData.loginId}
+                            value={formData.username}
                             onChange={handleInputChange}
                             required
                           />
@@ -541,10 +541,10 @@ const Login = () => {
                           </CInputGroupText>
                           <CFormInput
                             type="text"
-                            name="loginId"
+                            name="username"
                             placeholder="Email"
                             autoComplete="username"
-                            value={formData.loginId}
+                            value={formData.username}
                             onChange={handleInputChange}
                             required
                           />

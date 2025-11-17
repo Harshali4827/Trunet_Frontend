@@ -342,6 +342,21 @@ const handleCancelShipment = async () => {
 
 const handleCompleteIndent = async () => {
   try {
+    if (userCenterType === 'center') {
+      const missingReceipts = productReceipts.filter(item => 
+        !item.receivedQuantity || item.receivedQuantity === '' || Number(item.receivedQuantity) <= 0
+      );
+
+      if (missingReceipts.length > 0) {
+        setAlert({
+          type: 'danger',
+          message: 'Please enter received quantity for all products before completing the indent',
+          visible: true,
+        });
+        return;
+      }
+    }
+
     let payload = [];
 
     if (isCenter) {
@@ -460,8 +475,24 @@ const handleUpdateShipment = async (shipmentData) => {
 };
 
 //Incomplete
+
 const handleMarkIncomplete = async (remark) => {
   try {
+
+    if (userCenterType === 'center') {
+      const missingReceipts = productReceipts.filter(item => 
+        !item.receivedQuantity || item.receivedQuantity === '' || Number(item.receivedQuantity) <= 0
+      );
+
+      if (missingReceipts.length > 0) {
+        setAlert({
+          type: 'danger',
+          message: 'Please enter received quantity for all products before marking as incomplete',
+          visible: true,
+        });
+        return;
+      }
+    }
     const receivedProducts = productReceipts.map(item => ({
       productId: item.productId,
       receivedQuantity: Number(item.receivedQuantity) || 0,

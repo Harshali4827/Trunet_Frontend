@@ -15,32 +15,32 @@ import axiosInstance from 'src/axiosInstance'
 import '../../../css/form.css'
 
 const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
-  const [partners, setPartners] = useState([])
+  const [resellers, setResellers] = useState([])
   const [formData, setFormData] = useState({
-   resellerId: '',
+    resellerId: '',
     areaName: ''
   })
   const [errors, setErrors] = useState({})
   const [alert, setAlert] = useState({ type: '', message: '' }) 
 
   useEffect(() => {
-    const fetchPartners = async () => {
+    const fetchResellers = async () => {
       try {
         const response = await axiosInstance.get('/resellers')
         if (response.data.success) {
-          setPartners(response.data.data)
+          setResellers(response.data.data)
         }
       } catch (error) {
-        console.error('Error fetching partners:', error)
+        console.error('Error fetching resellers:', error)
       }
     }
-    fetchPartners()
+    fetchResellers()
   }, [])
 
   useEffect(() => {
     if (area) {
       setFormData({
-       resellerId: area.partner?._id || '',
+       resellerId: area.reseller?._id || '',
         areaName: area.areaName || ''
       })
     } else {
@@ -135,7 +135,7 @@ const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
               }`}
             >
               <option value="">SELECT</option>
-              {partners.map((p) => (
+              {resellers.map((p) => (
                 <option key={p._id} value={p._id}>
                   {p.businessName}
                 </option>

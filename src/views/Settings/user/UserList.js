@@ -310,6 +310,9 @@ const UserList = () => {
                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
                   Center {getSortIcon('center.centerName')}
                 </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => handleSort('username')} className="sortable-header">
+                  Username {getSortIcon('username')}
+                </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('email')} className="sortable-header">
                   Email {getSortIcon('email')}
                 </CTableHeaderCell>
@@ -327,7 +330,8 @@ const UserList = () => {
                   <CTableRow key={item._id}>
                     <CTableDataCell>{item.fullName}</CTableDataCell>
                     <CTableDataCell>{item.role?.roleTitle || ''}</CTableDataCell>
-                    <CTableDataCell>{item.center?.centerName || 'N/A'}</CTableDataCell>
+                    <CTableDataCell>{item.center?.centerName || ''}</CTableDataCell>
+                    <CTableDataCell>{item.username || ''}</CTableDataCell>
                     <CTableDataCell>
                          <a 
                           href={`mailto:${item.email}`} 

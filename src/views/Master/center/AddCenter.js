@@ -39,8 +39,8 @@ const AddCenter = () => {
         const resellersRes = await axiosInstance.get('/resellers');
         setResellers(resellersRes.data.data || []);
 
-        const areasRes = await axiosInstance.get('/areas');
-        setAreas(areasRes.data.data || []);
+        // const areasRes = await axiosInstance.get('/areas');
+        // setAreas(areasRes.data.data || []);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
@@ -54,6 +54,25 @@ const AddCenter = () => {
       fetchCenter(id);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (formData.resellerId) {
+      fetchAreasByReseller(formData.resellerId);
+    } else {
+      setAreas([]); // Clear areas when no reseller is selected
+      setFormData(prev => ({ ...prev, areaId: '' })); // Reset area selection
+    }
+  }, [formData.resellerId]);
+
+  const fetchAreasByReseller = async (resellerId) => {
+    try {
+      const response = await axiosInstance.get(`/areas/reseller/${resellerId}`);
+      setAreas(response.data.data || []);
+    } catch (error) {
+      console.error('Error fetching areas:', error);
+      setAreas([]);
+    }
+  };
 
   const fetchCenter = async (centerId) => {
     try {
@@ -75,6 +94,9 @@ const AddCenter = () => {
         resellerId: data.reseller?._id || '',  
         areaId: data.area?._id || '' ,       
       });
+      if (data.reseller?._id) {
+        fetchAreasByReseller(data.reseller._id);
+      }
     } catch (error) {
       console.error('Error fetching center:', error);
     }
@@ -82,9 +104,19 @@ const AddCenter = () => {
   
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: '' }));
+    if (name === 'resellerId') {
+      setFormData(prev => ({ 
+        ...prev, 
+        [name]: value,
+        areaId: '' 
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+    
+    setErrors(prev => ({ ...prev, [name]: '' }));
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -395,8 +427,11 @@ const AddCenter = () => {
                   name="areaId"
                   value={formData.areaId}
                   onChange={handleChange}
+                  disabled={!formData.resellerId} 
                 >
-                  <option value="">SELECT AREA</option>
+                   <option value="">
+                    {formData.resellerId ? 'SELECT AREA' : 'SELECT RESELLER FIRST'}
+                  </option>
                   {areas.map(area => (
                     <option key={area.id} value={area._id}>
                       {area.areaName}
