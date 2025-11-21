@@ -59,8 +59,8 @@ const AddCenter = () => {
     if (formData.resellerId) {
       fetchAreasByReseller(formData.resellerId);
     } else {
-      setAreas([]); // Clear areas when no reseller is selected
-      setFormData(prev => ({ ...prev, areaId: '' })); // Reset area selection
+      setAreas([]);
+      setFormData(prev => ({ ...prev, areaId: '' }));
     }
   }, [formData.resellerId]);
 
@@ -122,7 +122,7 @@ const AddCenter = () => {
     e.preventDefault();
     let newErrors = {};
     
-    const requiredFields = ['resellerId', 'areaId', 'centerType', 'centerName', 'centerCode', 'email','status'];
+    const requiredFields = ['resellerId', 'areaId', 'centerType', 'centerName', 'centerCode', 'status'];
     
     requiredFields.forEach((field) => {
       if (!formData[field]) newErrors[field] = 'This is a required field';
@@ -281,21 +281,17 @@ const AddCenter = () => {
               </div>
               <div className="form-group">
                 <label 
-                className={`form-label 
-                  ${errors.email ? 'error-label' : formData.email ? 'valid-label' : ''}`} 
-                htmlFor="email">
-                  Email <span className="required">*</span>
+                className="form-label" htmlFor="email">
+                  Email
                 </label>
                 <input
                   type="email"
                   id="email"
                   name="email"
-                  className={`form-input 
-                  ${errors.email ? 'error-input' : formData.email ? 'valid-input' : ''}`}
+                  className="form-input" 
                   value={formData.email}
                   onChange={handleChange}
                 />
-                {errors.email && <span className="error">{errors.email}</span>}
               </div>
               <div className="form-group">
                 <label className="form-label" htmlFor="mobile">

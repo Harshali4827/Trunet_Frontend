@@ -225,16 +225,16 @@ const WarehouseList = () => {
             <CTableHead>
               <CTableRow>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('centerName')} className="sortable-header">
-                  Center Title {getSortIcon('centerName')}
+                  Warehouse Title {getSortIcon('centerName')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('reseller?.   businessName')} className="sortable-header">
                   Reseller {getSortIcon('reseller?.businessName')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('centerCode')} className="sortable-header">
-                 Center Code {getSortIcon('centerCode')}
+                 Warehouse Code {getSortIcon('centerCode')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerType')} className="sortable-header">
-                  Center Type {getSortIcon('center.centerType')}
+                   Type {getSortIcon('center.centerType')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('email')} className="sortable-header">
                   Email {getSortIcon('email')}

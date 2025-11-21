@@ -259,8 +259,8 @@ const ResellerList = () => {
                   <CTableRow key={vendor._id}>
                     <CTableDataCell>{vendor.businessName}</CTableDataCell>
                     <CTableDataCell>{vendor.contactNumber}</CTableDataCell>
-                    <CTableDataCell>{vendor.name || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{vendor.mobile}</CTableDataCell>
+                    <CTableDataCell>{vendor.name || ''}</CTableDataCell>
+                    <CTableDataCell>{vendor.contactNumber}</CTableDataCell>
                     <CTableDataCell>{vendor.email}</CTableDataCell>
                     <CTableDataCell>{vendor.city}</CTableDataCell>
                     <CTableDataCell>
