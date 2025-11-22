@@ -431,8 +431,8 @@ const ShiftinRequestList = () => {
               <CTableHead>
                 <CTableRow>
                   <CTableHeaderCell>User</CTableHeaderCell>
-                  <CTableHeaderCell>From Center</CTableHeaderCell>
-                  <CTableHeaderCell>To Center</CTableHeaderCell>
+                  <CTableHeaderCell>From Branch</CTableHeaderCell>
+                  <CTableHeaderCell>To Branch</CTableHeaderCell>
                   <CTableHeaderCell>Remark</CTableHeaderCell>
                   <CTableHeaderCell>Status</CTableHeaderCell>
                   <CTableHeaderCell>Status Detail</CTableHeaderCell>

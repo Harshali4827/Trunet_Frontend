@@ -440,10 +440,10 @@ const IndentDetail = () => {
                     Date {getSortIcon('date')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
-                    Center {getSortIcon('center.centerName')}
+                    Branch {getSortIcon('center.centerName')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('warehouse.centerName')} className="sortable-header">
-                    Parent Center {getSortIcon('warehouse.centerName')}
+                    Parent Branch {getSortIcon('warehouse.centerName')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('productDetail.product.productTitle')} className="sortable-header">
                     Product {getSortIcon('productDetail.product.productTitle')}

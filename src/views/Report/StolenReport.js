@@ -49,15 +49,13 @@ const StolenReport = () => {
       setLoading(true);
       const params = new URLSearchParams();
       
-      // New filters
       if (searchParams.center) {
         params.append('center', searchParams.center);
       }
       if (searchParams.product) {
         params.append('product', searchParams.product);
       }
-      
-      // Date range filter
+  
       if (searchParams.date && searchParams.date.includes(' to ')) {
         const [startDateStr, endDateStr] = searchParams.date.split(' to ');
         const convertDateFormat = (dateStr) => {
@@ -451,7 +449,7 @@ const StolenReport = () => {
                     Type {getSortIcon('usageType')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
-                    Center {getSortIcon('center.centerName')}
+                    Branch {getSortIcon('center.centerName')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('itemDetail.product.productTitle')} className="sortable-header">
                     Product {getSortIcon('itemDetail.product.productTitle')}

@@ -490,7 +490,7 @@ const ReportSubmissionList = () => {
                    Date {getSortIcon('username')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
-                 Center {getSortIcon('center.centerName')}
+                 Branch {getSortIcon('center.centerName')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('remark')} className="sortable-header">
                   Remark {getSortIcon('remark')}

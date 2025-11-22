@@ -70,7 +70,7 @@ const TransactionSearch = ({ visible, onClose, onSearch, centers, products, cust
       
       setSearchData(prev => ({ 
         ...prev, 
-        date: dateValue, // Store the display value
+        date: dateValue,
         dateFilter: 'Custom',
         startDate: formatDateForAPI(startDate),
         endDate: formatDateForAPI(endDate)
@@ -78,7 +78,7 @@ const TransactionSearch = ({ visible, onClose, onSearch, centers, products, cust
     } else {
       setSearchData(prev => ({ 
         ...prev, 
-        date: dateValue, // Store the display value
+        date: dateValue,
         dateFilter: '',
         startDate: '',
         endDate: ''
@@ -96,7 +96,7 @@ const TransactionSearch = ({ visible, onClose, onSearch, centers, products, cust
         <div className="form-row">
           <div className="form-group">
             <label className="form-label" htmlFor="center">
-              Center
+              Branch
             </label>
             <CFormSelect
               id="center"

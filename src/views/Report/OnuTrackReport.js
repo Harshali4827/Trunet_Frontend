@@ -538,7 +538,7 @@ const OnuTrackReport = () => {
                   <CTableHeaderCell>Type</CTableHeaderCell>
                   <CTableHeaderCell>Use In</CTableHeaderCell>
                   <CTableHeaderCell>Product</CTableHeaderCell>
-                  <CTableHeaderCell>Center</CTableHeaderCell>
+                  <CTableHeaderCell>Branch</CTableHeaderCell>
                   <CTableHeaderCell>Customer</CTableHeaderCell>
                 </CTableRow>
               </CTableHead>

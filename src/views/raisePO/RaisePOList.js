@@ -675,7 +675,7 @@ const StockPurchase = () => {
                 <CTableRow>
                   <CTableHeaderCell scope="col">Select</CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('outlet')} className="sortable-header">
-                    Center {getSortIcon('outlet')}
+                    Branch {getSortIcon('outlet')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('date')} className="sortable-header">
                     Date {getSortIcon('date')}

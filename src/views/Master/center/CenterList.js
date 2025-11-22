@@ -177,14 +177,14 @@ const CenterList = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading center: {error}
+        Error loading branch: {error}
       </div>
     );
   }
 
   return (
     <div>
-      <div className='title'>Center List </div>
+      <div className='title'>Branch List </div>
       <CCard className='table-container mt-4'>
         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
           <div>
@@ -225,16 +225,16 @@ const CenterList = () => {
             <CTableHead>
               <CTableRow>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('centerName')} className="sortable-header">
-                  Center Title {getSortIcon('centerName')}
+                  Branch Title {getSortIcon('centerName')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('reseller?.   businessName')} className="sortable-header">
                   Reseller {getSortIcon('reseller?.businessName')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('centerCode')} className="sortable-header">
-                 Center Code {getSortIcon('centerCode')}
+                 Branch Code {getSortIcon('centerCode')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerType')} className="sortable-header">
-                  Center Type {getSortIcon('center.centerType')}
+                  Branch Type {getSortIcon('center.centerType')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('email')} className="sortable-header">
                   Email {getSortIcon('email')}
@@ -297,7 +297,7 @@ const CenterList = () => {
               ) : (
                 <CTableRow>
                   <CTableDataCell colSpan="9" className="text-center">
-                    No center found
+                    No branch found
                   </CTableDataCell>
                 </CTableRow>
               )}

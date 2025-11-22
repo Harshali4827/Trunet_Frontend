@@ -27,8 +27,6 @@ import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
 import ChallanModal from '../stockRequest/ChallanModal';
 import SearchSaleInvoice from './SearchSaleInvoice';
 import { numToWords } from 'src/utils/NumToWords';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 const SaleInvoices = () => {
   const [customers, setCustomers] = useState([]);
@@ -554,7 +552,7 @@ const SaleInvoices = () => {
               Warehouse {getSortIcon('warehouse.centerName')}
             </CTableHeaderCell>
             <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
-              Center {getSortIcon('center.centerName')}
+              Branch {getSortIcon('center.centerName')}
             </CTableHeaderCell>
             <CTableHeaderCell scope="col" onClick={() => handleSort('createdBy.email')} className="sortable-header">
               Posted By {getSortIcon('createdBy.email')}

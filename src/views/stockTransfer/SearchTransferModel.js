@@ -85,7 +85,7 @@ const SearchTransferModel = ({ visible, onClose, onSearch, centers, outlets }) =
         <CModalBody>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Center</label>
+              <label className="form-label">Branch</label>
               <CFormSelect
                 name="center"
                 value={searchData.center}

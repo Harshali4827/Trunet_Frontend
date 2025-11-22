@@ -303,7 +303,7 @@ const CustomersList = () => {
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
                   <div className="d-flex justify-content-between align-items-center">
-                    <span>Center</span>
+                    <span>Branch</span>
                     {getSortIcon('center.centerName')}
                   </div>
                 </CTableHeaderCell>

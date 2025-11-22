@@ -62,7 +62,7 @@ const SearchShiftingModel = ({ visible, onClose, onSearch, centers }) => {
 
           <div className="form-group">
             <label className="form-label" htmlFor="center">
-              Center
+              Branch
             </label>
             <CFormSelect
               id="center"

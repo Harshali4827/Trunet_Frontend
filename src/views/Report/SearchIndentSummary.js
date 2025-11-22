@@ -41,7 +41,6 @@ const SearchIndentSummary = ({ visible, onClose, onSearch, centers, products }) 
   }
 
   const handleSearch = () => {
-    // Send only the data needed for API call
     const apiSearchData = {
       product: searchData.product,
       center: searchData.center,
@@ -53,28 +52,15 @@ const SearchIndentSummary = ({ visible, onClose, onSearch, centers, products }) 
     onClose()
   }
 
-  const handleReset = () => {
-    const resetData = { 
-      product: '', 
-      center: '', 
-      usageType: '', 
-      startDate: '', 
-      endDate: '',
-      dateDisplay: '' 
-    }
-    setSearchData(resetData)
-    onSearch({ product: '', center: '', usageType: '', startDate: '', endDate: '' })
-  }
-
   const handleDateChange = (dateValue) => {
     if (dateValue && dateValue.includes(' to ')) {
       const [startDate, endDate] = dateValue.split(' to ');
       
       setSearchData(prev => ({ 
         ...prev, 
-        dateDisplay: dateValue, // Store display value for the input
-        startDate: startDate,   // Store in DD-MM-YYYY format for display
-        endDate: endDate        // Store in DD-MM-YYYY format for display
+        dateDisplay: dateValue, 
+        startDate: startDate,  
+        endDate: endDate       
       }));
     } else {
       setSearchData(prev => ({ 
@@ -96,7 +82,7 @@ const SearchIndentSummary = ({ visible, onClose, onSearch, centers, products }) 
         <div className="form-row">
           <div className="form-group">
             <label className="form-label" htmlFor="center">
-              Center
+              Branch
             </label>
             <CFormSelect
               id="center"
@@ -105,7 +91,7 @@ const SearchIndentSummary = ({ visible, onClose, onSearch, centers, products }) 
               onChange={handleChange}
               className="form-input no-radius-input"
             >
-              <option value="">SELECT CENTER</option>
+              <option value="">SELECT</option>
               {centers.map((center) => (
                 <option key={center._id} value={center._id}>
                   {center.centerName}
@@ -143,7 +129,7 @@ const SearchIndentSummary = ({ visible, onClose, onSearch, centers, products }) 
               Date
             </label>
             <DatePicker
-              value={searchData.dateDisplay} // Use the display value
+              value={searchData.dateDisplay}
               onChange={handleDateChange}
               placeholder="Select Date Range"
               className="no-radius-input date-input"
@@ -176,7 +162,7 @@ const SearchIndentSummary = ({ visible, onClose, onSearch, centers, products }) 
         <CButton 
           color="secondary" 
           className="me-2" 
-          onClick={onClose} // Changed from handleReset to onClose
+          onClick={onClose}
         >
           Close
         </CButton>

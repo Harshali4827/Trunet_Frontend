@@ -308,7 +308,7 @@ const UserList = () => {
                  Role {getSortIcon('role.roleTitle')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
-                  Center {getSortIcon('center.centerName')}
+                  Branch {getSortIcon('center.centerName')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('username')} className="sortable-header">
                   Username {getSortIcon('username')}

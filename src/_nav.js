@@ -377,7 +377,7 @@ const getNav = (permissions = []) => {
   }
 
   if (hasPermission(permissions, 'Center', ['view_all_center','view_own_center', 'manage_all_center'])) {
-    masterItems.push({ component: CNavItem, name: 'Center', to: '/center-list' })
+    masterItems.push({ component: CNavItem, name: 'Branch', to: '/center-list' })
   }
   
 
@@ -400,7 +400,7 @@ const getNav = (permissions = []) => {
   const reportItems = []
 
   if (hasPermission(permissions, 'Report', ['view_outlet_stock','view_all_report','view_own_report'])) {
-    reportItems.push({ component: CNavItem, name: 'Centers Stock', to: '/center-stock' })
+    reportItems.push({ component: CNavItem, name: 'Branch Stock', to: '/center-stock' })
     reportItems.push({ component: CNavItem, name: 'Available Stock', to: '/available-stock' })
     reportItems.push({ component: CNavItem, name: 'Field Stock', to: '/filled-stock' })
     reportItems.push({ component: CNavItem, name: 'Transaction Report', to: '/transaction-report' })
@@ -457,8 +457,8 @@ const getNav = (permissions = []) => {
   const settingsItems = []
 
   if (hasPermission(permissions, 'Settings', ['manage_user', 'manage_masters_data', 'manage_vendors'])) {
-    settingsItems.push({ component: CNavItem, name: 'Center', to: '/center-list' })
-    settingsItems.push({ component: CNavItem, name: 'Warehouse', to: '/warehouse-list' })
+    settingsItems.push({ component: CNavItem, name: 'Branch', to: '/center-list' })
+    // settingsItems.push({ component: CNavItem, name: 'Warehouse', to: '/warehouse-list' })
     settingsItems.push({ component: CNavItem, name: 'Products', to: '/product-list' })
     settingsItems.push({ component: CNavItem, name: 'Product Categories', to: '/product-category' })
     settingsItems.push({ component: CNavItem, name: 'Tax', to: '/tax' })

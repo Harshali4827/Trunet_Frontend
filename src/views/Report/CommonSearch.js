@@ -81,7 +81,7 @@ const CommonSearch = ({ visible, onClose, onSearch, centers, products }) => {
         <div className="form-row">
           <div className="form-group">
             <label className="form-label" htmlFor="center">
-              Center
+              Branch
             </label>
             <CFormSelect
               id="center"

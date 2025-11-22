@@ -433,7 +433,7 @@ const PurchaseDetail = () => {
                     Date {getSortIcon('date')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('outlet')} className="sortable-header">
-                    Center {getSortIcon('outlet')}
+                    Branch {getSortIcon('outlet')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('invoiceNo')} className="sortable-header">
                     Invoice No. {getSortIcon('invoiceNo')}

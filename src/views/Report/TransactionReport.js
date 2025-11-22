@@ -425,11 +425,11 @@ const TransactionReport = () => {
                 </CTableHeaderCell>
 
                 <CTableHeaderCell scope="col" onClick={() => handleSort('outlet')} className="sortable-header">
-                 Center {getSortIcon('outlet')}
+                 Branch {getSortIcon('outlet')}
                 </CTableHeaderCell>
 
                 <CTableHeaderCell scope="col" onClick={() => handleSort('outlet')} className="sortable-header">
-                 Parent Center {getSortIcon('outlet')}
+                 Parent Branch {getSortIcon('outlet')}
                 </CTableHeaderCell>
 
                 <CTableHeaderCell scope="col" onClick={() => handleSort('vendor.businessName')} className="sortable-header">

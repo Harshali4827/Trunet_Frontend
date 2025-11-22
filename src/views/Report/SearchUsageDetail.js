@@ -99,7 +99,7 @@ const SearchUsageDetail = ({ visible, onClose, onSearch, centers, products, cust
         <div className="form-row">
           <div className="form-group">
             <label className="form-label" htmlFor="center">
-              Center
+              Branch
             </label>
             <CFormSelect
               id="center"
@@ -108,7 +108,7 @@ const SearchUsageDetail = ({ visible, onClose, onSearch, centers, products, cust
               onChange={handleChange}
               className="form-input no-radius-input"
             >
-              <option value="">SELECT CENTER</option>
+              <option value="">SELECT</option>
               {centers.map((center) => (
                 <option key={center._id} value={center._id}>
                   {center.centerName}

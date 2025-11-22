@@ -242,8 +242,6 @@ const TransferSummary = () => {
   const generateDetailExport = async () => {
     try {
       setLoading(true);
-      
-      // Use activeSearch filters instead of fetching all data
       const params = new URLSearchParams();
       
       if (activeSearch.center) {
@@ -405,10 +403,10 @@ const TransferSummary = () => {
               <CTableHead>
                 <CTableRow>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('fromCenter')} className="sortable-header">
-                    Center {getSortIcon('fromCenter')}
+                    Branch {getSortIcon('fromCenter')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('toCenter')} className="sortable-header">
-                    Parent Center {getSortIcon('toCenter')}
+                    Parent Branch {getSortIcon('toCenter')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('product')} className="sortable-header">
                     Product {getSortIcon('product')}

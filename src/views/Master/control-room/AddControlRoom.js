@@ -135,7 +135,7 @@ const AddControlRoom = () => {
                 className={`form-label 
                 ${errors.center ? 'error-label' : formData.center ? 'valid-label' : ''}`}
                  htmlFor="center">
-                  Center <span className="required">*</span>
+                  Branch <span className="required">*</span>
                 </label>
                 <select
                   id="center"

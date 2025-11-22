@@ -193,7 +193,7 @@ const AddCustomer = () => {
                 <label className={`form-label 
                   ${errors.centerId ? 'error-label' : formData.centerId ? 'valid-label' : ''}`}
                   htmlFor="centerId">
-                  Center <span className="required">*</span>
+                  Branch <span className="required">*</span>
                 </label>
                 <select
                   id="centerId"

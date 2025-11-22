@@ -496,12 +496,6 @@ const Login = () => {
                         {error}
                       </CAlert>
                     )}
-                    {success && (
-                      <CAlert color="success" className="mb-3">
-                        {success}
-                      </CAlert>
-                    )}
-
                     <CTabContent>
                       <CTabPane visible={activeTab === 1}>
                         <CInputGroup className="mb-3">

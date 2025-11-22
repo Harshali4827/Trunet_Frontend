@@ -406,10 +406,10 @@ const ProductSerialTrack = () => {
                     Serial {getSortIcon('Serial')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('PurchaseCenter.name')} className="sortable-header">
-                    Purchase Center {getSortIcon('PurchaseCenter.name')}
+                    Purchase Branch {getSortIcon('PurchaseCenter.name')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('Center.name')} className="sortable-header">
-                    Center {getSortIcon('Center.name')}
+                    Branch {getSortIcon('Center.name')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('Product.name')} className="sortable-header">
                     Product {getSortIcon('Product.name')}

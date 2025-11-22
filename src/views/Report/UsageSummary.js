@@ -378,7 +378,7 @@ const UsageSummary = () => {
               <CTableHead>
                 <CTableRow>
                   <CTableHeaderCell onClick={() => handleSort('Center')} className="sortable-header">
-                    Center {getSortIcon('Center')}
+                    Branch {getSortIcon('Center')}
                   </CTableHeaderCell>
                   <CTableHeaderCell onClick={() => handleSort('Product')} className="sortable-header">
                     Product {getSortIcon('Product')}

@@ -243,7 +243,7 @@ const AddCenter = () => {
                 className={`form-label 
                   ${errors.centerName ? 'error-label' : formData.centerName ? 'valid-label' : ''}`} 
                 htmlFor="centerName">
-                  Center Name <span className="required">*</span>
+                  Branch Name <span className="required">*</span>
                 </label>
                 <input
                   type="text"
@@ -266,7 +266,7 @@ const AddCenter = () => {
                 className={`form-label 
                   ${errors.centerCode ? 'error-label' : formData.centerCode ? 'valid-label' : ''}`}
                 htmlFor="centerCode">
-                  Center Code <span className="required">*</span>
+                  Branch Code <span className="required">*</span>
                 </label>
                 <input
                   type="text"

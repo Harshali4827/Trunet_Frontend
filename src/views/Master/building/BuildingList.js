@@ -294,7 +294,7 @@ const BuildingList = () => {
                  Address {getSortIcon('address1')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
-                  Center {getSortIcon('center.centerName')}
+                  Branch {getSortIcon('center.centerName')}
                 </CTableHeaderCell>
             
                 <CTableHeaderCell scope="col">

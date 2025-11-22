@@ -51,7 +51,7 @@ const IndentUsageSummarySearch = ({ visible, onClose, onSearch, centers, product
         <div className="form-row">
           <div className="form-group">
             <label className="form-label" htmlFor="center">
-              Center
+              Branch
             </label>
             <CFormSelect
               id="center"

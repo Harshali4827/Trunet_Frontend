@@ -295,7 +295,7 @@ const CenterStock = () => {
 
   return (
     <div>
-      <div className='title'>Centers Stock </div>
+      <div className='title'>Branch Stock </div>
     
       <SearchCenterStock
         visible={searchModalVisible}
@@ -373,7 +373,7 @@ const CenterStock = () => {
             <CTableHead>
               <CTableRow>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('outlet')} className="sortable-header">
-                 Center {getSortIcon('outlet')}
+                 Branch {getSortIcon('outlet')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('date')} className="sortable-header">
                 Product {getSortIcon('date')}

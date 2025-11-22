@@ -207,7 +207,6 @@ const UsageReplace = () => {
       setLoading(true);
       const params = new URLSearchParams();
       
-      // Apply the same filters as active search
       if (activeSearch.center) {
         params.append('center', activeSearch.center);
       }
@@ -412,7 +411,7 @@ const UsageReplace = () => {
                    Type {getSortIcon('usageType')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
-                    Center {getSortIcon('center.centerName')}
+                    Branch {getSortIcon('center.centerName')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('product.productTitle')} className="sortable-header">
                     Product {getSortIcon('product.productTitle')}

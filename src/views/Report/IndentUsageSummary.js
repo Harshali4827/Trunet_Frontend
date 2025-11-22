@@ -432,7 +432,7 @@ const IndentUsageSummary = () => {
             <ul className='summary-list'>
               <li><strong>Date:</strong>{getFormattedDateRange()}</li>
               {filters?.center && (
-                <li><strong>Center:</strong> {filters.center.name}</li>
+                <li><strong>Branch:</strong> {filters.center.name}</li>
               )}
              
             </ul>
@@ -456,7 +456,7 @@ const IndentUsageSummary = () => {
               <CTableHead>
                 <CTableRow>
                   <CTableHeaderCell onClick={() => handleSort('center.name')} className="sortable-header">
-                    Center {getSortIcon('center.name')}
+                    Branch {getSortIcon('center.name')}
                   </CTableHeaderCell>
                   <CTableHeaderCell onClick={() => handleSort('productName')} className="sortable-header">
                     Product {getSortIcon('productName')}

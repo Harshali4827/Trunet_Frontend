@@ -64,7 +64,7 @@ const ReportSearchmodel = ({ visible, onClose, onSearch, centers, initialSearchD
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="center">
-              Center
+              Branch
             </label>
             <CFormSelect
               id="center"

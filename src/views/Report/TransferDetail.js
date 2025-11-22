@@ -456,10 +456,10 @@ const TransferDetail = () => {
                     Date {getSortIcon('date')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('fromCenter.centerName')} className="sortable-header">
-                   Center {getSortIcon('fromCenter.centerName')}
+                   Branch {getSortIcon('fromCenter.centerName')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('toCenter.centerName')} className="sortable-header">
-                    Parent Center {getSortIcon('toCenter.centerName')}
+                    Parent Branch {getSortIcon('toCenter.centerName')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('productDetail.product.productTitle')} className="sortable-header">
                     Product {getSortIcon('productDetail.product.productTitle')}

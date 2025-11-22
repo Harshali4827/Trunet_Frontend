@@ -407,10 +407,10 @@ const IndentSummary = () => {
               <CTableHead>
                 <CTableRow>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('center')} className="sortable-header">
-                    Center {getSortIcon('center')}
+                    Branch {getSortIcon('center')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('parentCenter')} className="sortable-header">
-                    Parent Center {getSortIcon('parentCenter')}
+                    Branch Center {getSortIcon('parentCenter')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('product')} className="sortable-header">
                     Product {getSortIcon('product')}

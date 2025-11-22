@@ -182,6 +182,61 @@ const StockProfile = () => {
     );
   };  
 
+// const handleApprove = async () => {
+//   let hasError = false;
+
+//   const payload = approvedProducts.map(p => {
+//     if (p.approvedQty === '' || !/^\d+$/.test(p.approvedQty)) {
+//       setErrors(prev => ({ ...prev, [p._id]: 'The input value was not a correct number' }));
+//       hasError = true;
+//     }
+
+//     return {
+//       productId: p.productId,
+//       approvedQuantity: Number(p.approvedQty),
+//       approvedRemark: p.approvedRemark || '',
+//       approvedSerials: (assignedSerials[p.productId] || []).map(s => s.serialNumber),
+//     };
+//   });
+
+//   if (hasError) return;
+
+//   try {
+//     const response = await axiosInstance.post(`/stockrequest/${id}/approve`, {
+//       productApprovals: payload,
+//     });
+//     if (!response.data.success) {
+//       setAlert({
+//         type: 'danger',
+//         message: response.data.message || 'Failed to approve request',
+//         visible: true,
+//       });
+//       return;
+//     }
+//     setAlert({
+//       type: 'success',
+//       message: 'Stock request approved successfully',
+//       visible: true,
+//     });
+//     setTimeout(() => window.location.reload(), 1000);
+//   } catch (err) {
+//     console.error(err);
+
+//     const errorMessage =
+//       err.response?.data?.message ||
+//       err.message || 
+//       'An unexpected error occurred';
+
+//     setAlert({
+//       type: 'danger',
+//       message: errorMessage,
+//       visible: true,
+//     });
+//   }
+// };
+
+
+
 const handleApprove = async () => {
   let hasError = false;
 
@@ -191,11 +246,15 @@ const handleApprove = async () => {
       hasError = true;
     }
 
+    // Filter serial numbers to only include up to the approved quantity
+    const productSerials = assignedSerials[p.productId] || [];
+    const limitedSerials = productSerials.slice(0, Number(p.approvedQty));
+
     return {
       productId: p.productId,
       approvedQuantity: Number(p.approvedQty),
       approvedRemark: p.approvedRemark || '',
-      approvedSerials: (assignedSerials[p.productId] || []).map(s => s.serialNumber),
+      approvedSerials: limitedSerials.map(s => s.serialNumber),
     };
   });
 
@@ -234,7 +293,6 @@ const handleApprove = async () => {
     });
   }
 };
-
 // Reject
 const handleReject = async () => {
   try {
@@ -858,7 +916,7 @@ const handleIncomplete = async () => {
                       <CTableDataCell>{item.product?.productTitle || ''}</CTableDataCell>
                       <CTableDataCell>{item.centerStockQuantity || 0}</CTableDataCell>
                       <CTableDataCell>{item.quantity || 0}</CTableDataCell>
-                      <CTableDataCell>{item.productInStock || 0}</CTableDataCell>
+                      <CTableDataCell>{item.outletStock.availableQuantity || 0}</CTableDataCell>
                       <CTableDataCell>{item.productRemark || ''}</CTableDataCell>
                       <CTableDataCell>
   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -957,7 +1015,8 @@ const handleIncomplete = async () => {
   visible={serialModalVisible}
   onClose={() => setSerialModalVisible(false)}
   product={selectedProduct}
-  approvedQty={approvedProducts.find(p => p._id === selectedProduct?._id)?.approvedQty || 0}
+  //approvedQty={approvedProducts.find(p => p._id === selectedProduct?._id)?.approvedQty || 0}
+  approvedQty={Number(approvedProducts.find(p => p._id === selectedProduct?._id)?.approvedQty) || 0}
   initialSerials={assignedSerials[selectedProduct?.product?._id] || []} 
   onSerialNumbersUpdate={handleSerialNumbersUpdate}
   warehouseId={data?.warehouse?._id}

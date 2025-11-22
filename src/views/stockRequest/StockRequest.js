@@ -445,7 +445,7 @@ const StockRequest = () => {
               From {getSortIcon('warehouse.centerName')}
             </CTableHeaderCell>
             <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
-              Center {getSortIcon('center.centerName')}
+              Branch {getSortIcon('center.centerName')}
             </CTableHeaderCell>
             <CTableHeaderCell scope="col" onClick={() => handleSort('createdBy.email')} className="sortable-header">
               Posted By {getSortIcon('createdBy.email')}

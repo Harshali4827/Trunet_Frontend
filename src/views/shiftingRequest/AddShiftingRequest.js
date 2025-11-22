@@ -315,7 +315,7 @@ const AddShiftingRequest = () => {
                 <label className={`form-label 
                   ${errors.toCenter ? 'error-label' : formData.toCenter ? 'valid-label' : ''}`}
                   htmlFor="toCenter">
-                  To Center <span className="required">*</span>
+                  To Branch <span className="required">*</span>
                 </label>
                 <select
                   id="toCenter"

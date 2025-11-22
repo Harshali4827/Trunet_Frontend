@@ -242,7 +242,7 @@ const userCenterType = (userCenter.centerType || 'Outlet').toLowerCase();
                     className={`form-label ${errors.centerId ? 'error-label' : centerId ? 'valid-label' : ''}`}
                     htmlFor="centerId"
                   >
-                    Center <span className="required">*</span>
+                    Branch <span className="required">*</span>
                   </label>
                   <select
                     id="centerId"
