@@ -556,7 +556,7 @@ const AddStockRequest = () => {
   });
 
   const [warehouses, setWarehouses] = useState([]);
-  const [allWarehouses, setAllWarehouses] = useState([]); // Store all warehouses for debugging
+  const [allWarehouses, setAllWarehouses] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [warehouseLoading, setWarehouseLoading] = useState(true);
@@ -601,62 +601,12 @@ const AddStockRequest = () => {
     try {
       const res = await axiosInstance.get('/centers?centerType=Outlet');
       if (res.data.success) {
-        console.log('All warehouses:', res.data.data); // Debug log
-        setAllWarehouses(res.data.data); // Store all for debugging
-        
-        // Filter warehouses - try different approaches
-        const telecomWarehouses = res.data.data.filter(warehouse => {
-          // Check if telecomIncluded exists and is true
-          if (warehouse.telecomIncluded === true) {
-            return true;
-          }
-          
-          // Also check if center name contains "TELECOM" as fallback
-          if (warehouse.centerName && warehouse.centerName.toUpperCase().includes('TELECOM')) {
-            return true;
-          }
-          
-          return false;
-        });
-        
-        console.log('Filtered telecom warehouses:', telecomWarehouses); // Debug log
-        setWarehouses(telecomWarehouses);
-      }
-    } catch (error) {
-      console.error('Error fetching warehouses:', error);
-    } finally {
-      setWarehouseLoading(false);
-    }
-  };
-
-  // Alternative approach - show all warehouses but mark telecom ones
-  const fetchWarehousesAlternative = async () => {
-    try {
-      const res = await axiosInstance.get('/centers?centerType=Outlet');
-      if (res.data.success) {
-        console.log('All warehouses:', res.data.data);
-        
-        // If no warehouses have telecomIncluded field, use name-based filtering
-        const hasTelecomIncludedField = res.data.data.some(warehouse => 
-          'telecomIncluded' in warehouse
+        const telecomWarehouses = res.data.data.filter(warehouse => 
+          warehouse.centerName?.toLowerCase().includes('telecom') || 
+          warehouse.centerType?.toLowerCase().includes('telecom') ||
+          warehouse.category?.toLowerCase().includes('telecom')
         );
-        
-        let filteredWarehouses;
-        
-        if (hasTelecomIncludedField) {
-          // Use telecomIncluded field
-          filteredWarehouses = res.data.data.filter(warehouse => 
-            warehouse.telecomIncluded === true
-          );
-        } else {
-          // Fallback: filter by name containing "TELECOM"
-          filteredWarehouses = res.data.data.filter(warehouse =>
-            warehouse.centerName && warehouse.centerName.toUpperCase().includes('TELECOM')
-          );
-        }
-        
-        console.log('Filtered warehouses:', filteredWarehouses);
-        setWarehouses(filteredWarehouses);
+        setWarehouses(telecomWarehouses);
       }
     } catch (error) {
       console.error('Error fetching warehouses:', error);
