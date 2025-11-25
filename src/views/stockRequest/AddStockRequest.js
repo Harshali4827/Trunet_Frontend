@@ -1,4 +1,4 @@
-// import React, { useState, useEffect } from 'react';
+// import React, { useState, useEffect, useRef } from 'react';
 // import { useNavigate, useParams } from 'react-router-dom';
 // import axiosInstance from 'src/axiosInstance';
 // import '../../css/form.css';
@@ -37,6 +37,8 @@
 //   const [errors, setErrors] = useState({});
 //   const [generatingOrderNo, setGeneratingOrderNo] = useState(false);
 //   const [alert, setAlert] = useState({ show: false, message: '', type: '' });
+//   const [selectionOrder, setSelectionOrder] = useState([]);
+//   const selectionCounter = useRef(0);
 
 //   useEffect(() => {
 //     fetchWarehouses();
@@ -55,8 +57,7 @@
 //   const generateAutoOrderNumber = async () => {
 //     setGeneratingOrderNo(true);
 //     try {
-//       const orderNumber = await generateOrderNumber
-//       (axiosInstance, 'stockrequest');
+//       const orderNumber = await generateOrderNumber(axiosInstance, 'stockrequest');
 //       setFormData(prev => ({
 //         ...prev,
 //         orderNumber: orderNumber
@@ -67,6 +68,7 @@
 //       setGeneratingOrderNo(false);
 //     }
 //   };
+
 //   const fetchWarehouses = async () => {
 //     try {
 //       const res = await axiosInstance.get('/centers?centerType=Outlet');
@@ -80,12 +82,12 @@
 //     }
 //   };
 
+
 //   const fetchProducts = async () => {
 //     try {
 //       const res = await axiosInstance.get('/stockpurchase/products/with-stock');
 //       if (res.data.success) {
 //         setProducts(res.data.data);
-//         //setProducts(res.data.data.products || []);
 //       }
 //     } catch (error) {
 //       console.error('Error fetching products:', error);
@@ -107,14 +109,20 @@
 //       });
   
 //       const selectedProducts = {};
-//       data.products.forEach((p) => {
+//       const order = [];
+      
+//       data.products.forEach((p, index) => {
 //         selectedProducts[p.product._id] = { 
 //           quantity: p.quantity,
 //           productRemark: p.productRemark || '',
 //           productInStock: p.productInStock || 0,
 //         };
+//         order.push({ productId: p.product._id, order: index });
 //       });
+      
 //       setSelectedRows(selectedProducts);
+//       setSelectionOrder(order);
+//       selectionCounter.current = data.products.length;
 //     } catch (error) {
 //       console.error('Error fetching stock request:', error);
 //     }
@@ -124,8 +132,14 @@
 //     setSelectedRows((prev) => {
 //       const updated = { ...prev };
 //       if (updated[productId]) {
+//         setSelectionOrder(prevOrder => prevOrder.filter(item => item.productId !== productId));
 //         delete updated[productId];
 //       } else {
+//         const newOrder = selectionCounter.current++;
+//         setSelectionOrder(prevOrder => [
+//           { productId, order: newOrder },
+//           ...prevOrder
+//         ]);
 //         updated[productId] = { quantity: '', productRemark: '', productInStock: productStock || 0 };
 //       }
 //       return updated;
@@ -252,10 +266,25 @@
 //   const handleBack = () => {
 //     navigate('/stock-request');
 //   };
+//   const filteredAndSortedProducts = products
+//     .filter((p) =>
+//       p.productTitle?.toLowerCase().includes(searchTerm.toLowerCase())
+//     )
+//     .sort((a, b) => {
+//       const aSelected = !!selectedRows[a._id];
+//       const bSelected = !!selectedRows[b._id];
 
-//   const filteredProducts = products.filter((p) =>
-//     p.productTitle?.toLowerCase().includes(searchTerm.toLowerCase())
-//   );
+//       if (aSelected && bSelected) {
+//         const aOrder = selectionOrder.find(item => item.productId === a._id)?.order || 0;
+//         const bOrder = selectionOrder.find(item => item.productId === b._id)?.order || 0;
+//         return aOrder - bOrder;
+//       }
+
+//       if (aSelected && !bSelected) return -1;
+//       if (!aSelected && bSelected) return 1;
+      
+//       return 0;
+//     });
 
 //   return (
 //     <div className="form-container">
@@ -349,7 +378,6 @@
 //                     className="form-input"
 //                     value={formData.orderNumber}
 //                     onChange={handleChange}
-//                     // readOnly
 //                     disabled
 //                   />
 //               </div>
@@ -407,8 +435,8 @@
 //                     </CTableRow>
 //                   </CTableHead>
 //                   <CTableBody>
-//                     {filteredProducts.length > 0 ? (
-//                       filteredProducts.map((p) => (
+//                     {filteredAndSortedProducts.length > 0 ? (
+//                       filteredAndSortedProducts.map((p) => (
 //                         <CTableRow key={p._id} className={selectedRows[p._id] ? 'selected-row' : ''}>
 //                           <CTableDataCell>
 //                             <input
@@ -494,6 +522,9 @@
 // export default AddStockRequest;
 
 
+
+
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
@@ -525,6 +556,7 @@ const AddStockRequest = () => {
   });
 
   const [warehouses, setWarehouses] = useState([]);
+  const [allWarehouses, setAllWarehouses] = useState([]); // Store all warehouses for debugging
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [warehouseLoading, setWarehouseLoading] = useState(true);
@@ -533,8 +565,6 @@ const AddStockRequest = () => {
   const [errors, setErrors] = useState({});
   const [generatingOrderNo, setGeneratingOrderNo] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: '', type: '' });
-  
-  // Track selection order - NEW STATE
   const [selectionOrder, setSelectionOrder] = useState([]);
   const selectionCounter = useRef(0);
 
@@ -571,7 +601,62 @@ const AddStockRequest = () => {
     try {
       const res = await axiosInstance.get('/centers?centerType=Outlet');
       if (res.data.success) {
-        setWarehouses(res.data.data);
+        console.log('All warehouses:', res.data.data); // Debug log
+        setAllWarehouses(res.data.data); // Store all for debugging
+        
+        // Filter warehouses - try different approaches
+        const telecomWarehouses = res.data.data.filter(warehouse => {
+          // Check if telecomIncluded exists and is true
+          if (warehouse.telecomIncluded === true) {
+            return true;
+          }
+          
+          // Also check if center name contains "TELECOM" as fallback
+          if (warehouse.centerName && warehouse.centerName.toUpperCase().includes('TELECOM')) {
+            return true;
+          }
+          
+          return false;
+        });
+        
+        console.log('Filtered telecom warehouses:', telecomWarehouses); // Debug log
+        setWarehouses(telecomWarehouses);
+      }
+    } catch (error) {
+      console.error('Error fetching warehouses:', error);
+    } finally {
+      setWarehouseLoading(false);
+    }
+  };
+
+  // Alternative approach - show all warehouses but mark telecom ones
+  const fetchWarehousesAlternative = async () => {
+    try {
+      const res = await axiosInstance.get('/centers?centerType=Outlet');
+      if (res.data.success) {
+        console.log('All warehouses:', res.data.data);
+        
+        // If no warehouses have telecomIncluded field, use name-based filtering
+        const hasTelecomIncludedField = res.data.data.some(warehouse => 
+          'telecomIncluded' in warehouse
+        );
+        
+        let filteredWarehouses;
+        
+        if (hasTelecomIncludedField) {
+          // Use telecomIncluded field
+          filteredWarehouses = res.data.data.filter(warehouse => 
+            warehouse.telecomIncluded === true
+          );
+        } else {
+          // Fallback: filter by name containing "TELECOM"
+          filteredWarehouses = res.data.data.filter(warehouse =>
+            warehouse.centerName && warehouse.centerName.toUpperCase().includes('TELECOM')
+          );
+        }
+        
+        console.log('Filtered warehouses:', filteredWarehouses);
+        setWarehouses(filteredWarehouses);
       }
     } catch (error) {
       console.error('Error fetching warehouses:', error);
@@ -625,15 +710,14 @@ const AddStockRequest = () => {
     }
   };  
 
+  // Rest of your component remains the same...
   const handleRowSelect = (productId, productStock) => {
     setSelectedRows((prev) => {
       const updated = { ...prev };
       if (updated[productId]) {
-        // Remove from selection order when unselecting
         setSelectionOrder(prevOrder => prevOrder.filter(item => item.productId !== productId));
         delete updated[productId];
       } else {
-        // Add to selection order when selecting - NEW LOGIC
         const newOrder = selectionCounter.current++;
         setSelectionOrder(prevOrder => [
           { productId, order: newOrder },
@@ -766,7 +850,6 @@ const AddStockRequest = () => {
     navigate('/stock-request');
   };
 
-  // Filter and sort products - UPDATED LOGIC
   const filteredAndSortedProducts = products
     .filter((p) =>
       p.productTitle?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -774,19 +857,16 @@ const AddStockRequest = () => {
     .sort((a, b) => {
       const aSelected = !!selectedRows[a._id];
       const bSelected = !!selectedRows[b._id];
-      
-      // If both are selected, sort by selection order (latest first)
+
       if (aSelected && bSelected) {
         const aOrder = selectionOrder.find(item => item.productId === a._id)?.order || 0;
         const bOrder = selectionOrder.find(item => item.productId === b._id)?.order || 0;
-        return aOrder - bOrder; // Lower order number means selected later (because we prepend to array)
+        return aOrder - bOrder;
       }
-      
-      // Selected products come before non-selected
+
       if (aSelected && !bSelected) return -1;
       if (!aSelected && bSelected) return 1;
       
-      // If both are not selected, maintain original order
       return 0;
     });
 
@@ -850,6 +930,9 @@ const AddStockRequest = () => {
                   ))}
                 </CFormSelect>
                 {errors.warehouse && <span className="error-text">{errors.warehouse}</span>}
+                {warehouses.length === 0 && !warehouseLoading && (
+                  <span className="error-text">No telecom warehouses available</span>
+                )}
               </div>
 
               <div className="form-group">
@@ -886,7 +969,6 @@ const AddStockRequest = () => {
                   />
               </div>
             </div>
-
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label" htmlFor="remark">

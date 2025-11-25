@@ -245,8 +245,6 @@ const handleApprove = async () => {
       setErrors(prev => ({ ...prev, [p._id]: 'The input value was not a correct number' }));
       hasError = true;
     }
-
-    // Filter serial numbers to only include up to the approved quantity
     const productSerials = assignedSerials[p.productId] || [];
     const limitedSerials = productSerials.slice(0, Number(p.approvedQty));
 

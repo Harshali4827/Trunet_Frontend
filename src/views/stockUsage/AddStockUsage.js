@@ -1,4 +1,4 @@
-// import React, { useState, useEffect } from 'react';
+// import React, { useState, useEffect, useRef } from 'react';
 // import { useNavigate, useParams } from 'react-router-dom';
 // import axiosInstance from 'src/axiosInstance';
 // import '../../css/form.css';
@@ -69,6 +69,10 @@
 //   const [assignedSerials, setAssignedSerials] = useState({});
 //   const [alert, setAlert] = useState({ show: false, message: '', type: '' });
 
+//   // Track selection order - NEW STATE
+//   const [selectionOrder, setSelectionOrder] = useState([]);
+//   const selectionCounter = useRef(0);
+
 //   useEffect(() => {
 //     if (id) {
 //       fetchStockUsage(id);
@@ -132,8 +136,9 @@
 //       if (data.items && data.items.length > 0) {
 //         const existingSelectedRows = {};
 //         const existingAssignedSerials = {};
+//         const order = [];
         
-//         data.items.forEach(item => {
+//         data.items.forEach((item, index) => {
 //           const productId = item.product?.productId || item.product;
 //           existingSelectedRows[productId] = {
 //             quantity: item.quantity.toString(),
@@ -144,10 +149,14 @@
 //           if (item.serialNumbers && item.serialNumbers.length > 0) {
 //             existingAssignedSerials[productId] = item.serialNumbers;
 //           }
+          
+//           order.push({ productId, order: index });
 //         });
         
 //         setSelectedRows(existingSelectedRows);
 //         setAssignedSerials(existingAssignedSerials);
+//         setSelectionOrder(order);
+//         selectionCounter.current = data.items.length;
 //       }
       
 //     } catch (error) {
@@ -207,8 +216,16 @@
 //     setSelectedRows((prev) => {
 //       const updated = { ...prev };
 //       if (updated[productId]) {
+//         // Remove from selection order when unselecting
+//         setSelectionOrder(prevOrder => prevOrder.filter(item => item.productId !== productId));
 //         delete updated[productId];
 //       } else {
+//         // Add to selection order when selecting - NEW LOGIC
+//         const newOrder = selectionCounter.current++;
+//         setSelectionOrder(prevOrder => [
+//           { productId, order: newOrder },
+//           ...prevOrder
+//         ]);
 //         updated[productId] = { quantity: '', productRemark: '', productInStock: productStock || 0 };
 //       }
 //       return updated;
@@ -530,6 +547,8 @@
 //     setControlRoomSearchTerm('');
 //     setSelectedRows({});
 //     setAssignedSerials({});
+//     setSelectionOrder([]);
+//     selectionCounter.current = 0;
 //     setErrors({});
 //     showAlert('Form has been reset', 'info');
 //   };
@@ -593,9 +612,24 @@
 //     showAlert('Control room added successfully!', 'success');
 //   };
 
-//   const filteredProducts = products.filter((p) =>
-//     p.productTitle?.toLowerCase().includes(searchTerm.toLowerCase())
-//   );
+//   const filteredProducts = products
+//     .filter((p) =>
+//       p.productTitle?.toLowerCase().includes(searchTerm.toLowerCase())
+//     )
+//     .sort((a, b) => {
+//       const aSelected = !!selectedRows[a._id];
+//       const bSelected = !!selectedRows[b._id];
+
+//       if (aSelected && bSelected) {
+//         const aOrder = selectionOrder.find(item => item.productId === a._id)?.order || 0;
+//         const bOrder = selectionOrder.find(item => item.productId === b._id)?.order || 0;
+//         return aOrder - bOrder;
+//       }
+
+//       if (aSelected && !bSelected) return -1;
+//       if (!aSelected && bSelected) return 1;
+//       return 0;
+//     });
 
 //   const renderConditionalFields = () => {
 //     switch (formData.usageType) {
@@ -1496,7 +1530,11 @@ const AddStockUsage = () => {
   const [selectedRows, setSelectedRows] = useState({});
   const [buildings, setBuildings] = useState([]);
   const [filteredBuildings, setFilteredBuildings] = useState([]);
-  const [buildingSearchTerm, setBuildingSearchTerm] = useState('');
+  
+  // FIX 1: Separate search terms for From and To Building
+  const [fromBuildingSearchTerm, setFromBuildingSearchTerm] = useState('');
+  const [toBuildingSearchTerm, setToBuildingSearchTerm] = useState('');
+  
   const [showBuildingDropdown, setShowBuildingDropdown] = useState(false);
   const [currentBuildingType, setCurrentBuildingType] = useState(''); 
   const [controlRooms, setControlRooms] = useState([]);
@@ -1551,13 +1589,17 @@ const AddStockUsage = () => {
       const data = res.data.data;
       const apiDate = data.date ? data.date.split('T')[0] : '';
       
+      // FIX: Set proper search terms for both buildings
+      const fromBuilding = data.fromBuilding?._id || data.fromBuilding || '';
+      const toBuilding = data.toBuilding?._id || data.toBuilding || '';
+      
       setFormData(prev => ({
         ...prev,
         ...data,
         date: apiDate,
         customer: data.customer?._id || data.customer || '',
-        fromBuilding: data.fromBuilding?._id || data.fromBuilding || '',
-        toBuilding: data.toBuilding?._id || data.toBuilding || '',
+        fromBuilding: fromBuilding,
+        toBuilding: toBuilding,
         controlRoom: data.controlRoom?._id || data.controlRoom || ''
       }));
     
@@ -1565,8 +1607,15 @@ const AddStockUsage = () => {
         setCustomerSearchTerm(data.customer.name || data.customer.username || '');
       }
       
+      // FIX: Set proper building names in search terms
       if (data.fromBuilding) {
-        setBuildingSearchTerm(data.fromBuilding.buildingName || '');
+        const fromBuildingObj = buildings.find(b => b._id === fromBuilding) || data.fromBuilding;
+        setFromBuildingSearchTerm(fromBuildingObj.buildingName || '');
+      }
+      
+      if (data.toBuilding) {
+        const toBuildingObj = buildings.find(b => b._id === toBuilding) || data.toBuilding;
+        setToBuildingSearchTerm(toBuildingObj.buildingName || '');
       }
       
       if (data.controlRoom) {
@@ -1694,17 +1743,20 @@ const AddStockUsage = () => {
     }
   }, [customerSearchTerm, customers]);
 
+  // FIX: Separate building search filtering
   useEffect(() => {
-    if (buildingSearchTerm) {
+    const searchTerm = currentBuildingType === 'to' ? toBuildingSearchTerm : fromBuildingSearchTerm;
+    
+    if (searchTerm) {
       const filtered = buildings.filter(building =>
-        building.buildingName?.toLowerCase().includes(buildingSearchTerm.toLowerCase()) ||
-        building.code?.toLowerCase().includes(buildingSearchTerm.toLowerCase())
+        building.buildingName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        building.code?.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredBuildings(filtered);
     } else {
       setFilteredBuildings(buildings);
     }
-  }, [buildingSearchTerm, buildings]);
+  }, [fromBuildingSearchTerm, toBuildingSearchTerm, currentBuildingType, buildings]);
 
   useEffect(() => {
     if (controlRoomSearchTerm) {
@@ -1752,23 +1804,23 @@ const AddStockUsage = () => {
     }, 200);
   };
 
-  const handleBuildingSearchChange = (e, type = 'from') => {
+  // FIX 2: Separate building search handlers for From and To
+  const handleFromBuildingSearchChange = (e) => {
     const value = e.target.value;
-    setBuildingSearchTerm(value);
-    setCurrentBuildingType(type);
-    
-    if (type === 'from') {
-      setFormData(prev => ({
-        ...prev,
-        fromBuilding: value
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        toBuilding: value,
-  
-      }));
-    }
+    setFromBuildingSearchTerm(value);
+    setFormData(prev => ({
+      ...prev,
+      fromBuilding: value
+    }));
+  };
+
+  const handleToBuildingSearchChange = (e) => {
+    const value = e.target.value;
+    setToBuildingSearchTerm(value);
+    setFormData(prev => ({
+      ...prev,
+      toBuilding: value,
+    }));
   };
 
   const handleBuildingSelect = (building, type = 'from') => {
@@ -1777,12 +1829,13 @@ const AddStockUsage = () => {
         ...prev,
         fromBuilding: building._id || building.id,
       }));
-      setBuildingSearchTerm(building.buildingName);
+      setFromBuildingSearchTerm(building.buildingName); // FIX: Set building name, not ID
     } else {
       setFormData(prev => ({
         ...prev,
         toBuilding: building._id || building.id,
       }));
+      setToBuildingSearchTerm(building.buildingName); // FIX: Set building name, not ID
     }
     setShowBuildingDropdown(false);
   };
@@ -1983,7 +2036,8 @@ const AddStockUsage = () => {
       wireChangeAmount: ''
     });
     setCustomerSearchTerm('');
-    setBuildingSearchTerm('');
+    setFromBuildingSearchTerm(''); // FIX: Reset both building search terms
+    setToBuildingSearchTerm('');
     setControlRoomSearchTerm('');
     setSelectedRows({});
     setAssignedSerials({});
@@ -2026,12 +2080,13 @@ const AddStockUsage = () => {
         ...prev,
         fromBuilding: newBuilding._id || newBuilding.id,
       }));
-      setBuildingSearchTerm(newBuilding.name);
+      setFromBuildingSearchTerm(newBuilding.buildingName); // FIX: Set building name
     } else {
       setFormData((prev) => ({
         ...prev,
         toBuilding: newBuilding._id || newBuilding.id
       }));
+      setToBuildingSearchTerm(newBuilding.buildingName); // FIX: Set building name
     }
     showAlert('Building added successfully!', 'success');
   };
@@ -2052,7 +2107,6 @@ const AddStockUsage = () => {
     showAlert('Control room added successfully!', 'success');
   };
 
-  // Filter and sort products - UPDATED LOGIC
   const filteredProducts = products
     .filter((p) =>
       p.productTitle?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -2060,19 +2114,15 @@ const AddStockUsage = () => {
     .sort((a, b) => {
       const aSelected = !!selectedRows[a._id];
       const bSelected = !!selectedRows[b._id];
-      
-      // If both are selected, sort by selection order (latest first)
+
       if (aSelected && bSelected) {
         const aOrder = selectionOrder.find(item => item.productId === a._id)?.order || 0;
         const bOrder = selectionOrder.find(item => item.productId === b._id)?.order || 0;
-        return aOrder - bOrder; // Lower order number means selected later (because we prepend to array)
+        return aOrder - bOrder;
       }
-      
-      // Selected products come before non-selected
+
       if (aSelected && !bSelected) return -1;
       if (!aSelected && bSelected) return 1;
-      
-      // If both are not selected, maintain original order
       return 0;
     });
 
@@ -2285,8 +2335,8 @@ const AddStockUsage = () => {
                     type="text"
                     name="fromBuilding"
                     className={`form-input ${errors.fromBuilding ? 'error-input' : formData.fromBuilding ? 'valid-input' : ''}`}
-                    value={buildingSearchTerm}
-                    onChange={(e) => handleBuildingSearchChange(e, 'from')}
+                    value={fromBuildingSearchTerm} // FIX: Use fromBuildingSearchTerm
+                    onChange={handleFromBuildingSearchChange}
                     onFocus={() => handleBuildingInputFocus('from')}
                     onBlur={handleBuildingInputBlur}
                     placeholder="Search Building"
@@ -2340,8 +2390,8 @@ const AddStockUsage = () => {
                     type="text"
                     name="fromBuilding"
                     className={`form-input ${errors.fromBuilding ? 'error-input' : formData.fromBuilding ? 'valid-input' : ''}`}
-                    value={buildingSearchTerm}
-                    onChange={(e) => handleBuildingSearchChange(e, 'from')}
+                    value={fromBuildingSearchTerm} // FIX: Use fromBuildingSearchTerm
+                    onChange={handleFromBuildingSearchChange}
                     onFocus={() => handleBuildingInputFocus('from')}
                     onBlur={handleBuildingInputBlur}
                     placeholder="Search Building"
@@ -2387,8 +2437,8 @@ const AddStockUsage = () => {
                     type="text"
                     name="toBuilding"
                     className={`form-input ${errors.toBuilding ? 'error-input' : formData.toBuilding ? 'valid-input' : ''}`}
-                    value={formData.toBuilding}
-                    onChange={(e) => handleBuildingSearchChange(e, 'to')}
+                    value={toBuildingSearchTerm} // FIX: Use toBuildingSearchTerm
+                    onChange={handleToBuildingSearchChange}
                     onFocus={() => handleBuildingInputFocus('to')}
                     onBlur={handleBuildingInputBlur}
                     placeholder="Search Building"
@@ -2428,6 +2478,7 @@ const AddStockUsage = () => {
           </div>
         );
 
+      // ... rest of the component remains the same
       case 'Control Room':
         return (
           <div className="form-row">
@@ -2516,8 +2567,8 @@ const AddStockUsage = () => {
                         type="text"
                         name="fromBuilding"
                         className={`form-input ${errors.fromBuilding ? 'error-input' : formData.fromBuilding ? 'valid-input' : ''}`}
-                        value={buildingSearchTerm}
-                        onChange={(e) => handleBuildingSearchChange(e, 'from')}
+                        value={fromBuildingSearchTerm} // FIX: Use fromBuildingSearchTerm
+                        onChange={handleFromBuildingSearchChange}
                         onFocus={() => handleBuildingInputFocus('from')}
                         onBlur={handleBuildingInputBlur}
                         placeholder="Search Building"

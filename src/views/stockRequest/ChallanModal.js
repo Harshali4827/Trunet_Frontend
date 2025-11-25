@@ -97,7 +97,7 @@ const ChallanModal = ({ visible, onClose, data }) => {
           <table className="challan-details-table">
             <tbody>
               <tr className="table-row">
-                <td className="details-label">Address:</td>
+                <td className="details-label">Branch:</td>
                 <td className="details-value">{companyInfo.address}</td>
                 <td className="details-label">Challan No:</td>
                 <td className="details-value">{challanInfo.challanNo}</td>
@@ -118,7 +118,7 @@ const ChallanModal = ({ visible, onClose, data }) => {
                 <td className="details-label">Contact Person:</td>
                 <td className="details-value">{companyInfo.contactPerson}</td>
                 <td className="details-label">Handover To:</td>
-                <td className="details-value">{companyInfo.handoverTo}</td>
+                <td className="details-value">Driver/Manager/Zonal</td>
               </tr>
               <tr className="table-row">
                 <td className="details-label">Contact No:</td>

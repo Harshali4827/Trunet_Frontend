@@ -350,7 +350,7 @@ const StockPurchase = () => {
                 State Name : Maharashtra, Code : 27
                 <hr/>
 
-                <span class="label">Buyer (Bill to)</span><br/>
+                <span class="label">Supplier (Bill from)</span><br/>
                 ${selectedPO.vendor?.businessName || ' '}<br/>
                 ${selectedPO.vendor?.address1 || ''},${selectedPO.vendor?.city || '' }<br/>
                 GSTIN/UIN: ${selectedPO.vendor?.gstNumber || ''}<br/>
