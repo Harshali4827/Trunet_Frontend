@@ -599,7 +599,7 @@ const AddStockRequest = () => {
 
   const fetchWarehouses = async () => {
     try {
-      const res = await axiosInstance.get('/centers?centerType=Outlet');
+      const res = await axiosInstance.get('/centers/main-warehouse?centerType=Outlet');
       if (res.data.success) {
         const telecomWarehouses = res.data.data.filter(warehouse => 
           warehouse.centerName?.toLowerCase().includes('telecom') || 
@@ -900,6 +900,7 @@ const AddStockRequest = () => {
                   ${errors.date ? 'error-input' : formData.date ? 'valid-input' : ''}`}
                   value={formData.date}
                   onChange={handleChange}
+                  disabled
                 />
                 {errors.date && <span className="error-text">{errors.date}</span>}
               </div>

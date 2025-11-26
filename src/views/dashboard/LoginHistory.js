@@ -191,10 +191,10 @@ const LoginHistory = () => {
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                   >
                     <td style={{ padding: "0.25rem 0.75rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {record.name}
+                      {record.user?.fullName}
                     </td>
                     <td style={{ padding: "0.25rem 0.75rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {record.email}
+                      {record.user?.email}
                     </td>
                     <td style={{ padding: "0.25rem 0.75rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {record.browser}

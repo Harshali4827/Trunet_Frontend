@@ -103,7 +103,6 @@ const Dashboard = () => {
   const [animate, setAnimate] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState(null);
 
-  // Get user center type from localStorage
   const userCenter = JSON.parse(localStorage.getItem('userCenter')) || {};
   const userCenterType = (userCenter.centerType || 'Outlet').toLowerCase();
 
@@ -113,7 +112,6 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    // Only show notice if user center type is not 'center'
     if (showNotice && userCenterType !== 'center') {
       setTimeout(() => setAnimate(true), 50);
     } else {
@@ -123,7 +121,7 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-root">
-      {showNotice && userCenterType !== 'center' && (
+      {/* {showNotice && userCenterType !== 'center' && (
         <div className="overlay-container">
           <div className="overlay-background" />
           <div className={`notice-box ${animate ? 'animate' : ''}`}>
@@ -165,7 +163,7 @@ const Dashboard = () => {
             </button>
           </div>
         </div>
-      )}
+      )} */}
 
       {selectedNotification ? (
         <NotificationDetails

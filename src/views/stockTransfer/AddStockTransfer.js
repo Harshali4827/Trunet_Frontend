@@ -530,7 +530,6 @@ const AddStockTransfer = () => {
   const [generatingOrderNo, setGeneratingOrderNo] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: '', type: '' });
 
-  // Track selection order - NEW STATE
   const [selectionOrder, setSelectionOrder] = useState([]);
   const selectionCounter = useRef(0);
 
@@ -625,11 +624,9 @@ const AddStockTransfer = () => {
     setSelectedRows((prev) => {
       const updated = { ...prev };
       if (updated[productId]) {
-        // Remove from selection order when unselecting
         setSelectionOrder(prevOrder => prevOrder.filter(item => item.productId !== productId));
         delete updated[productId];
       } else {
-        // Add to selection order when selecting - NEW LOGIC
         const newOrder = selectionCounter.current++;
         setSelectionOrder(prevOrder => [
           { productId, order: newOrder },
@@ -757,8 +754,6 @@ const AddStockTransfer = () => {
   const handleBack = () => {
     navigate(-1);
   };
-
-  // Filter and sort products - UPDATED LOGIC
   const filteredProducts = products
     .filter((p) =>
       p.productTitle?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -766,19 +761,14 @@ const AddStockTransfer = () => {
     .sort((a, b) => {
       const aSelected = !!selectedRows[a._id];
       const bSelected = !!selectedRows[b._id];
-      
-      // If both are selected, sort by selection order (latest first)
       if (aSelected && bSelected) {
         const aOrder = selectionOrder.find(item => item.productId === a._id)?.order || 0;
         const bOrder = selectionOrder.find(item => item.productId === b._id)?.order || 0;
-        return aOrder - bOrder; // Lower order number means selected later (because we prepend to array)
+        return aOrder - bOrder;
       }
-      
-      // Selected products come before non-selected
+
       if (aSelected && !bSelected) return -1;
       if (!aSelected && bSelected) return 1;
-      
-      // If both are not selected, maintain original order
       return 0;
     });
 
@@ -858,7 +848,8 @@ const AddStockTransfer = () => {
                   name="date"
                   className={`form-input 
                     ${errors.date ? 'error-input' : formData.date ? 'valid-input' : ''}`}
-                  disabled={centerLoading}
+                  // disabled={centerLoading}
+                  disabled
                   value={formData.date}
                   onChange={handleChange}
                 />
