@@ -12,15 +12,23 @@
 // import PropTypes from 'prop-types'
 // import '../../css/form.css'
 // import DatePicker from 'src/utils/DatePicker'
+
 // const SearchStockPurchase = ({ visible, onClose, onSearch, centers }) => {
 //   const [searchData, setSearchData] = useState({
 //     keyword: '',
-//     outlet: ''
+//     outlet: '',
+//     startDate: '',
+//     endDate: ''
 //   })
 
 //   useEffect(() => {
 //     if (!visible) {
-//       setSearchData({ keyword: '', outlet: '' })
+//       setSearchData({ 
+//         keyword: '', 
+//         outlet: '', 
+//         startDate: '', 
+//         endDate: '' 
+//       })
 //     }
 //   }, [visible])
 
@@ -39,14 +47,12 @@
       
 //       setSearchData(prev => ({ 
 //         ...prev, 
-//         dateFilter: 'Custom',
 //         startDate: formatDateForAPI(startDate),
 //         endDate: formatDateForAPI(endDate)
 //       }));
 //     } else {
 //       setSearchData(prev => ({ 
 //         ...prev, 
-//         dateFilter: '',
 //         startDate: '',
 //         endDate: ''
 //       }));
@@ -54,17 +60,41 @@
 //   };
 
 //   const handleSearch = () => {
+//     if (searchData.startDate && searchData.endDate) {
+//       const start = new Date(searchData.startDate);
+//       const end = new Date(searchData.endDate);
+//       if (start > end) {
+//         alert('Start date cannot be after end date');
+//         return;
+//       }
+//     }
+    
 //     onSearch(searchData)
 //     onClose()
 //   }
 
 //   const handleReset = () => {
-//     setSearchData({ keyword: '', outlet: '' })
-//     onSearch({ keyword: '', outlet: '' })
+//     setSearchData({ 
+//       keyword: '', 
+//       outlet: '', 
+//       startDate: '', 
+//       endDate: '' 
+//     })
+//     onSearch({ 
+//       keyword: '', 
+//       outlet: '', 
+//       startDate: '', 
+//       endDate: '' 
+//     })
+//     onClose()
+//   }
+
+//   const handleClose = () => {
+//     onClose()
 //   }
 
 //   return (
-//     <CModal size="lg" visible={visible} onClose={onClose}>
+//     <CModal size="lg" visible={visible} onClose={handleClose}>
 //       <CModalHeader>
 //         <CModalTitle>Search</CModalTitle>
 //       </CModalHeader>
@@ -82,6 +112,7 @@
 //               value={searchData.keyword}
 //               onChange={handleChange}
 //               className="form-input no-radius-input"
+//               placeholder='Keyword'
 //             />
 //           </div>
 
@@ -96,7 +127,7 @@
 //               onChange={handleChange}
 //               className="form-input no-radius-input"
 //             >
-//               <option value="">SELECT CENTER</option>
+//               <option value="">SELECT</option>
 //               {centers.map((center) => (
 //                 <option key={center._id} value={center._id}>
 //                   {center.centerName}
@@ -105,10 +136,11 @@
 //             </CFormSelect>
 //           </div>
 //         </div>
+        
 //         <div className="form-row">
 //           <div className="form-group">
 //             <label className="form-label" htmlFor="date">
-//               Date
+//               Date Range
 //             </label>
 //             <DatePicker
 //               value={searchData.date}
@@ -117,8 +149,7 @@
 //               className="no-radius-input date-input"
 //             />
 //           </div>
-//           <div className="form-group"></div>
-//           </div>
+//         </div>
 //       </CModalBody>
 
 //       <CModalFooter>
@@ -127,13 +158,13 @@
 //           className="me-2" 
 //           onClick={handleReset}
 //         >
-//           Close
+//           Clear All
 //         </CButton>
 //         <CButton 
-//           className="reset-button" 
+//           color="primary" 
 //           onClick={handleSearch}
 //         >
-//           Search
+//           Apply Filters
 //         </CButton>
 //       </CModalFooter>
 //     </CModal>
@@ -174,6 +205,21 @@ const SearchStockPurchase = ({ visible, onClose, onSearch, centers }) => {
     startDate: '',
     endDate: ''
   })
+
+  // Convert startDate and endDate to DatePicker format
+  const formatDateForPicker = (dateStr) => {
+    if (!dateStr) return '';
+    const [year, month, day] = dateStr.split('-');
+    return `${day}-${month}-${year}`;
+  };
+
+  // Get the value for DatePicker
+  const getDatePickerValue = () => {
+    if (searchData.startDate && searchData.endDate) {
+      return `${formatDateForPicker(searchData.startDate)} to ${formatDateForPicker(searchData.endDate)}`;
+    }
+    return '';
+  };
 
   useEffect(() => {
     if (!visible) {
@@ -296,8 +342,9 @@ const SearchStockPurchase = ({ visible, onClose, onSearch, centers }) => {
             <label className="form-label" htmlFor="date">
               Date Range
             </label>
+            {/* Pass the formatted date value to DatePicker */}
             <DatePicker
-              value={searchData.date}
+              value={getDatePickerValue()} // This is the key fix
               onChange={handleDateChange}
               placeholder="Date"
               className="no-radius-input date-input"
@@ -312,13 +359,13 @@ const SearchStockPurchase = ({ visible, onClose, onSearch, centers }) => {
           className="me-2" 
           onClick={handleReset}
         >
-          Clear All
+          Clear
         </CButton>
         <CButton 
-          color="primary" 
+         className='reset-button'
           onClick={handleSearch}
         >
-          Apply Filters
+          Search
         </CButton>
       </CModalFooter>
     </CModal>

@@ -112,7 +112,7 @@ const SearchStockUsage = ({ visible, onClose, onSearch, centers }) => {
           className="me-2" 
           onClick={handleReset}
         >
-          Close
+          Reset
         </CButton>
         <CButton 
           className="reset-button" 

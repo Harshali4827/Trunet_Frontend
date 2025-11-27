@@ -400,7 +400,7 @@ const getNav = (permissions = []) => {
   const reportItems = []
 
   if (hasPermission(permissions, 'Report', ['view_outlet_stock','view_all_report','view_own_report'])) {
-    reportItems.push({ component: CNavItem, name: 'Branch Stock', to: '/center-stock' })
+    // reportItems.push({ component: CNavItem, name: 'Branch Stock', to: '/center-stock' })
     reportItems.push({ component: CNavItem, name: 'Available Stock', to: '/available-stock' })
     reportItems.push({ component: CNavItem, name: 'Field Stock', to: '/filled-stock' })
     reportItems.push({ component: CNavItem, name: 'Transaction Report', to: '/transaction-report' })

@@ -48,11 +48,70 @@ const UsageDetail = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // const fetchData = async (searchParams = {}, page = 1) => {
+  //   try {
+  //     setLoading(true);
+  //     const params = new URLSearchParams();
+
+  //     if (searchParams.center) {
+  //       params.append('center', searchParams.center);
+  //     }
+  //     if (searchParams.product) {
+  //       params.append('product', searchParams.product);
+  //     }
+  //     if (searchParams.usageType) {
+  //       params.append('usageType', searchParams.usageType);
+  //     }
+  //     if (searchParams.connectionType) {
+  //       params.append('connectionType', searchParams.connectionType);
+  //     }
+  //     if (searchParams.customer) {
+  //       params.append('customer', searchParams.customer);
+  //     }
+  //     if (searchParams.startDate && searchParams.endDate) {
+  //       const convertDateFormat = (dateStr) => {
+  //         const [day, month, year] = dateStr.split('-');
+  //         return `${year}-${month}-${day}`;
+  //       };
+        
+  //       params.append('startDate', convertDateFormat(searchParams.startDate));
+  //       params.append('endDate', convertDateFormat(searchParams.endDate));
+  //     }
+      
+  //     params.append('page', page);
+  //     const url = params.toString() ? `/reports/usages?${params.toString()}` : '/reports/usages';
+      
+  //     console.log('Fetching Usage Detail URL:', url);
+  //     const response = await axiosInstance.get(url);
+      
+  //     if (response.data.success) {
+  //       setData(response.data.data);
+  //       setCurrentPage(response.data.pagination.currentPage);
+  //       setTotalPages(response.data.pagination.totalPages);
+  //     } else {
+  //       throw new Error('API returned unsuccessful response');
+  //     }
+  //   } catch (err) {
+  //     setError(err.message);
+  //     console.error('Error fetching data:', err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
+
+  //Date filter working
+const convertDateFormat = (dateStr) => {
+  const [day, month, year] = dateStr.split('-');
+  return `${year}-${month}-${day}`;
+};
+
   const fetchData = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-
+  
       if (searchParams.center) {
         params.append('center', searchParams.center);
       }
@@ -70,8 +129,16 @@ const UsageDetail = () => {
       }
       if (searchParams.startDate && searchParams.endDate) {
         const convertDateFormat = (dateStr) => {
-          const [day, month, year] = dateStr.split('-');
-          return `${year}-${month}-${day}`;
+          if (dateStr.includes('-')) {
+            const parts = dateStr.split('-');
+            if (parts[0].length === 4) {
+              return dateStr;
+            } else {
+              const [day, month, year] = parts;
+              return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            }
+          }
+          return dateStr;
         };
         
         params.append('startDate', convertDateFormat(searchParams.startDate));
@@ -82,6 +149,13 @@ const UsageDetail = () => {
       const url = params.toString() ? `/reports/usages?${params.toString()}` : '/reports/usages';
       
       console.log('Fetching Usage Detail URL:', url);
+      console.log('Date params:', {
+        startDate: searchParams.startDate,
+        endDate: searchParams.endDate,
+        convertedStart: searchParams.startDate ? convertDateFormat(searchParams.startDate) : null,
+        convertedEnd: searchParams.endDate ? convertDateFormat(searchParams.endDate) : null
+      });
+      
       const response = await axiosInstance.get(url);
       
       if (response.data.success) {
@@ -94,6 +168,10 @@ const UsageDetail = () => {
     } catch (err) {
       setError(err.message);
       console.error('Error fetching data:', err);
+      if (err.response) {
+        console.error('Error response:', err.response.data);
+        console.error('Error status:', err.response.status);
+      }
     } finally {
       setLoading(false);
     }
@@ -308,7 +386,7 @@ const UsageDetail = () => {
       setLoading(true);
     
       const params = new URLSearchParams();
-
+  
       if (activeSearch.center) {
         params.append('center', activeSearch.center);
       }
@@ -326,13 +404,22 @@ const UsageDetail = () => {
       }
       if (activeSearch.startDate && activeSearch.endDate) {
         const convertDateFormat = (dateStr) => {
-          const [day, month, year] = dateStr.split('-');
-          return `${year}-${month}-${day}`;
+          if (dateStr.includes('-')) {
+            const parts = dateStr.split('-');
+            if (parts[0].length === 4) {
+              return dateStr;
+            } else {
+              const [day, month, year] = parts;
+              return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            }
+          }
+          return dateStr;
         };
         
         params.append('startDate', convertDateFormat(activeSearch.startDate));
         params.append('endDate', convertDateFormat(activeSearch.endDate));
       }
+      
       if (activeSearch.keyword) {
         params.append('search', activeSearch.keyword);
       }
@@ -340,9 +427,18 @@ const UsageDetail = () => {
         params.append('outlet', activeSearch.outlet);
       }
       
+      // params.append('limit', 10000);
+      
       const url = params.toString() ? `/reports/usages?${params.toString()}` : '/reports/usages';
       
       console.log('Export URL with filters:', url);
+      console.log('Export Date params:', {
+        startDate: activeSearch.startDate,
+        endDate: activeSearch.endDate,
+        convertedStart: activeSearch.startDate ? convertDateFormat(activeSearch.startDate) : null,
+        convertedEnd: activeSearch.endDate ? convertDateFormat(activeSearch.endDate) : null
+      });
+      
       const response = await axiosInstance.get(url);
       
       if (response.data.success) {

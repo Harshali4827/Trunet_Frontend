@@ -85,7 +85,7 @@ const userCenterType = (userCenter.centerType || 'Outlet').toLowerCase();
           const initialSelectedRows = {};
           productSummary.forEach(product => {
             initialSelectedRows[product.productId] = {
-              productQty: product.currentStock?.warehouse?.available || 0,
+              productQty: product.currentStock?.warehouse?.available || product.currentStock?.center?.available,
               damageQty: product.currentStock?.distributedCenters?.damaged || 0,
               comment: '',
             };
@@ -330,7 +330,8 @@ const userCenterType = (userCenter.centerType || 'Outlet').toLowerCase();
                             {p.productName}
                           </CTableDataCell>
                           <CTableDataCell>
-                            {p.currentStock?.warehouse?.available || 0}
+                            {p.currentStock?.warehouse?.available || p.currentStock?.center?.available}
+                      
                           </CTableDataCell>
                           <CTableDataCell>
                             <CFormInput
