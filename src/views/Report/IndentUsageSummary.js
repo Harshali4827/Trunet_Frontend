@@ -98,7 +98,7 @@
 
 //   const fetchProducts = async () => {
 //     try {
-//       const response = await axiosInstance.get('/products');
+//       const response = await axiosInstance.get('/products/all');
 //       if (response.data.success) {
 //         setProducts(response.data.data);
 //       }
@@ -694,7 +694,7 @@ const IndentUsageSummary = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axiosInstance.get('/products');
+      const response = await axiosInstance.get('/products/all');
       if (response.data.success) {
         setProducts(response.data.data);
       }

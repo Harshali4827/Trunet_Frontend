@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CCard, CCardBody, CButton, CSpinner, CContainer, CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CFormInput, CFormText, CAlert } from '@coreui/react';
+import RejectionReasonModal from './RejectionReasonModal';
 import axiosInstance from 'src/axiosInstance';
 import '../../css/profile.css'
 import '../../css/form.css';
@@ -31,7 +32,7 @@ const StockProfile = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [assignedSerials, setAssignedSerials] = useState({});
   const [challanModal, setChallanModal] = useState(false);
-
+  const [rejectionModal, setRejectionModal] = useState(false);
   const user = JSON.parse(localStorage.getItem('user')) || {};
   const userRole = (user?.role?.roleTitle || '').toLowerCase();
   const userCenter = JSON.parse(localStorage.getItem('userCenter')) || {};
@@ -62,6 +63,10 @@ const StockProfile = () => {
     }));
   };
   
+  const openRejectionModal = () => {
+    setRejectionModal(true);
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -292,9 +297,12 @@ const handleApprove = async () => {
   }
 };
 // Reject
-const handleReject = async () => {
+const handleReject = async (rejectionReason) => {
   try {
-    const response = await axiosInstance.put(`/stockrequest/${id}`, { status: 'Rejected' });
+    const response = await axiosInstance.put(`/stockrequest/${id}`, { 
+      status: 'Rejected', 
+      rejectionReason: rejectionReason 
+    });
     if (response.data.success) {
       setAlert({ type: 'success', message: 'Stock request rejected successfully', visible: true });
       setTimeout(() => window.location.reload(), 1000);
@@ -303,7 +311,8 @@ const handleReject = async () => {
     }
   } catch (err) {
     console.error(err);
-    setAlert({ type: 'danger', message: 'Error rejecting stock request', visible: true });
+    const errorMessage = err.response?.data?.message || 'Error rejecting stock request';
+    setAlert({ type: 'danger', message: errorMessage, visible: true });
   }
 };
 
@@ -810,7 +819,7 @@ const handleIncomplete = async () => {
           >
               <i className="fa fa-truck me-1"></i> Ship the Goods
              </CButton>
-          <CButton className="btn-action btn-reject me-2" onClick={handleReject}>
+          <CButton className="btn-action btn-reject me-2" onClick={openRejectionModal}>
             Reject Request
           </CButton>
         </>
@@ -852,7 +861,7 @@ const handleIncomplete = async () => {
           <CButton className="btn-action btn-reject me-2" onClick={handleCancelShipment}>
             Cancel Shipment
           </CButton>
-          <CButton className="btn-action btn-reject me-2" onClick={handleReject}>
+          <CButton className="btn-action btn-reject me-2" onClick={openRejectionModal}>
             Reject Request
           </CButton>
         </>
@@ -873,7 +882,7 @@ const handleIncomplete = async () => {
           <CButton className="btn-action btn-submitted me-2" onClick={handleApprove}>
             Submit &amp; Approve Request
           </CButton>
-          <CButton className="btn-action btn-reject" onClick={handleReject}>
+          <CButton className="btn-action btn-reject" onClick={openRejectionModal}>
             Submit &amp; Reject Request
           </CButton>
         </>
@@ -1025,7 +1034,11 @@ const handleIncomplete = async () => {
         onClose={() => setChallanModal(false)}
         data={data}
       />
-
+     <RejectionReasonModal
+  visible={rejectionModal}
+  onClose={() => setRejectionModal(false)}
+  onSubmit={handleReject}
+/>
     </CContainer>
   );
 };
