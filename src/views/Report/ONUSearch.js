@@ -11,13 +11,14 @@ import {
 import PropTypes from 'prop-types'
 import '../../css/form.css'
 import { CFormInput } from '@coreui/react-pro'
+import Select from 'react-select'
 
-const ONUSearch = ({ visible, onClose, onSearch, products, partners, centers }) => {
+const ONUSearch = ({ visible, onClose, onSearch, products, resellers, centers }) => {
   const [searchData, setSearchData] = useState({
     product: '',
     status: '',
     keyword: '',
-    partner: '',
+    reseller: '',
     usageType: '',
     customer: ''
   })
@@ -28,7 +29,7 @@ const ONUSearch = ({ visible, onClose, onSearch, products, partners, centers }) 
         product: '', 
         status: '', 
         keyword: '', 
-        partner: '',
+        reseller: '',
         usageType: '',
         customer: ''
       })
@@ -50,7 +51,7 @@ const ONUSearch = ({ visible, onClose, onSearch, products, partners, centers }) 
       product: '', 
       status: '', 
       keyword: '', 
-      partner: '',
+      reseller: '',
       usageType: '',
       customer: ''
     })
@@ -58,7 +59,7 @@ const ONUSearch = ({ visible, onClose, onSearch, products, partners, centers }) 
       product: '', 
       status: '', 
       keyword: '', 
-      partner: '',
+      reseller: '',
       usageType: '',
       customer: ''
     })
@@ -77,7 +78,7 @@ const ONUSearch = ({ visible, onClose, onSearch, products, partners, centers }) 
             <label className="form-label" htmlFor="product">
               Product
             </label>
-            <CFormSelect
+            {/* <CFormSelect
               id="product"
               name="product"
               value={searchData.product}
@@ -90,7 +91,34 @@ const ONUSearch = ({ visible, onClose, onSearch, products, partners, centers }) 
                   {product.productTitle}
                 </option>
               ))}
-            </CFormSelect>
+            </CFormSelect> */}
+              <Select
+              id="product"
+              name="product"
+              placeholder="Search Product..."
+              value={
+                searchData.product
+                  ? {
+                      value: searchData.product,
+                      label:
+                        products.find((p) => p._id === searchData.product)?.productTitle || ''
+                    }
+                  : null
+              }
+              onChange={(selected) =>
+                setSearchData((prev) => ({
+                  ...prev,
+                  product: selected ? selected.value : ''
+                }))
+              }
+              options={products.map((p) => ({
+                value: p._id,
+                label: p.productTitle
+              }))}
+              isClearable
+              classNamePrefix="react-select"
+              className="no-radius-input"
+            />
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="status">
@@ -115,23 +143,37 @@ const ONUSearch = ({ visible, onClose, onSearch, products, partners, centers }) 
 
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label" htmlFor="partner">
-              Partner Name
+            <label className="form-label" htmlFor="reseller">
+              Reseller Name
             </label>
-            <CFormSelect
-              id="partner"
-              name="partner"
-              value={searchData.partner}
-              onChange={handleChange}
-              className="form-input no-radius-input"
-            >
-              <option value="">SELECT</option>
-              {partners.map((partner) => (
-                <option key={partner._id} value={partner._id}>
-                  {partner.partnerName}
-                </option>
-              ))}
-            </CFormSelect>
+            <Select
+    id="reseller"
+    name="reseller"
+    placeholder="Select Reseller..."
+    value={
+      searchData.reseller
+        ? {
+            value: searchData.reseller,
+            label: resellers.find((r) => r._id === searchData.reseller)
+              ? resellers.find((r) => r._id === searchData.reseller).businessName
+              : "",
+          }
+        : null
+    }
+    onChange={(selected) =>
+      setSearchData((prev) => ({
+        ...prev,
+        reseller: selected ? selected.value : "",
+      }))
+    }
+    options={resellers.map((reseller) => ({
+      value: reseller._id,
+      label: reseller.businessName,
+    }))}
+    isClearable
+    classNamePrefix="react-select"
+    className="no-radius-input"
+  />
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="keyword">
@@ -174,7 +216,7 @@ ONUSearch.propTypes = {
   onClose: PropTypes.func.isRequired,
   onSearch: PropTypes.func.isRequired,
   products: PropTypes.array.isRequired,
-  partners: PropTypes.array.isRequired,
+  resellers: PropTypes.array.isRequired,
   centers: PropTypes.array
 }
 

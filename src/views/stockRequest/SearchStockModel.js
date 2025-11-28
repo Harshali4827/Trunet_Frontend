@@ -12,7 +12,7 @@ import {
 import PropTypes from 'prop-types'
 import '../../css/search.css';
 import DatePicker from 'src/utils/DatePicker';
-
+import Select from 'react-select';
 const SearchStockModel = ({ visible, onClose, onSearch, centers, outlets }) => {
   const [searchData, setSearchData] = useState({
     center: '',
@@ -32,30 +32,6 @@ const SearchStockModel = ({ visible, onClose, onSearch, centers, outlets }) => {
     const { name, value } = e.target
     setSearchData(prev => ({ ...prev, [name]: value }))
   }
-
-  const handleDateChange = (dateValue) => {
-    if (dateValue && dateValue.includes(' to ')) {
-      const [startDate, endDate] = dateValue.split(' to ');
-      const formatDateForAPI = (dateStr) => {
-        const [day, month, year] = dateStr.split('-');
-        return `${year}-${month}-${day}`;
-      };
-      
-      setSearchData(prev => ({ 
-        ...prev, 
-        dateFilter: 'Custom',
-        startDate: formatDateForAPI(startDate),
-        endDate: formatDateForAPI(endDate)
-      }));
-    } else {
-      setSearchData(prev => ({ 
-        ...prev, 
-        dateFilter: '',
-        startDate: '',
-        endDate: ''
-      }));
-    }
-  };
 
   const handleIndentDateChange = (dateValue) => {
     if (dateValue && dateValue.includes(' to ')) {
@@ -110,22 +86,37 @@ const SearchStockModel = ({ visible, onClose, onSearch, centers, outlets }) => {
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Branch</label>
-              <CFormSelect
-                name="center"
-                value={searchData.center}
-                onChange={handleChange}
-                className="form-input no-radius-input"
-              >
-                <option value="">SELECT</option>
-                {centers.map((center) => (
-                  <option key={center._id} value={center._id}>
-                    {center.centerName}
-                  </option>
-                ))}
-              </CFormSelect>
+              <Select
+    id="center"
+    name="center"
+    placeholder="Select Branch..."
+    value={
+      searchData.center
+        ? {
+            value: searchData.center,
+            label: centers.find((c) => c._id === searchData.center)
+              ? centers.find((c) => c._id === searchData.center).centerName
+              : "",
+          }
+        : null
+    }
+    onChange={(selected) =>
+      setSearchData((prev) => ({
+        ...prev,
+        center: selected ? selected.value : "",
+      }))
+    }
+    options={centers.map((center) => ({
+      value: center._id,
+      label: center.centerName,
+    }))}
+    isClearable
+    classNamePrefix="react-select"
+    className="no-radius-input"
+  />
             </div>
             <div className="form-group">
-              <label className="form-label">Outlet</label>
+              {/* <label className="form-label">Outlet</label>
               <CFormSelect
                 name="outlet"
                 value={searchData.outlet}
@@ -138,7 +129,7 @@ const SearchStockModel = ({ visible, onClose, onSearch, centers, outlets }) => {
                     {outlet.centerName}
                   </option>
                 ))}
-              </CFormSelect>
+              </CFormSelect> */}
             </div>
           </div>
           
@@ -227,7 +218,7 @@ const SearchStockModel = ({ visible, onClose, onSearch, centers, outlets }) => {
           <CButton color="secondary" onClick={onClose}>
             Close
           </CButton>
-          <CButton color="primary" onClick={handleSearch}>
+          <CButton className='reset-button' onClick={handleSearch}>
             Search
           </CButton>
         </CModalFooter>

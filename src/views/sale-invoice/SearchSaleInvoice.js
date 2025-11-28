@@ -5,13 +5,13 @@ import {
   CModalTitle,
   CModalBody,
   CModalFooter,
-  CFormInput,
   CFormSelect,
   CButton
 } from '@coreui/react'
 import PropTypes from 'prop-types'
 import '../../css/search.css';
 import DatePicker from 'src/utils/DatePicker';
+import Select from 'react-select';
 
 const SearchSaleInvoice = ({ visible, onClose, onSearch, centers, resellers }) => {
   const [searchData, setSearchData] = useState({
@@ -83,35 +83,65 @@ const SearchSaleInvoice = ({ visible, onClose, onSearch, centers, resellers }) =
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Reseller</label>
-              <CFormSelect
-                name="reseller"
-                value={searchData.reseller}
-                onChange={handleChange}
-                className="form-input no-radius-input"
-              >
-                <option value="">SELECT RESELLER</option>
-                {resellers.map((reseller) => (
-                  <option key={reseller._id} value={reseller._id}>
-                    {reseller.businessName}
-                  </option>
-                ))}
-              </CFormSelect>
+              <Select
+    id="reseller"
+    name="reseller"
+    placeholder="Select Reseller..."
+    value={
+      searchData.reseller
+        ? {
+            value: searchData.reseller,
+            label: resellers.find((r) => r._id === searchData.reseller)
+              ? resellers.find((r) => r._id === searchData.reseller).businessName
+              : "",
+          }
+        : null
+    }
+    onChange={(selected) =>
+      setSearchData((prev) => ({
+        ...prev,
+        reseller: selected ? selected.value : "",
+      }))
+    }
+    options={resellers.map((reseller) => ({
+      value: reseller._id,
+      label: reseller.businessName,
+    }))}
+    isClearable
+    classNamePrefix="react-select"
+    className="no-radius-input"
+  />
             </div>
             <div className="form-group">
               <label className="form-label">Branch</label>
-              <CFormSelect
-                name="center"
-                value={searchData.center}
-                onChange={handleChange}
-                className="form-input no-radius-input"
-              >
-                <option value="">SELECT</option>
-                {centers.map((center) => (
-                  <option key={center._id} value={center._id}>
-                    {center.centerName}
-                  </option>
-                ))}
-              </CFormSelect>
+              <Select
+    id="center"
+    name="center"
+    placeholder="Select Branch..."
+    value={
+      searchData.center
+        ? {
+            value: searchData.center,
+            label: centers.find((c) => c._id === searchData.center)
+              ? centers.find((c) => c._id === searchData.center).centerName
+              : "",
+          }
+        : null
+    }
+    onChange={(selected) =>
+      setSearchData((prev) => ({
+        ...prev,
+        center: selected ? selected.value : "",
+      }))
+    }
+    options={centers.map((center) => ({
+      value: center._id,
+      label: center.centerName,
+    }))}
+    isClearable
+    classNamePrefix="react-select"
+    className="no-radius-input"
+  />
             </div>
           </div>
         
@@ -134,10 +164,7 @@ const SearchSaleInvoice = ({ visible, onClose, onSearch, centers, resellers }) =
           <CButton color="secondary" onClick={handleReset}>
             Reset
           </CButton>
-          <CButton color="secondary" onClick={onClose}>
-            Close
-          </CButton>
-          <CButton color="primary" onClick={handleSearch}>
+          <CButton className='reset-button' onClick={handleSearch}>
             Search
           </CButton>
         </CModalFooter>

@@ -11,6 +11,7 @@ import {
 import PropTypes from 'prop-types'
 import '../../css/form.css'
 import { CFormInput } from '@coreui/react-pro'
+import Select from 'react-select'
 
 const ProductSerialSearch = ({ visible, onClose, onSearch, products }) => {
   const [searchData, setSearchData] = useState({
@@ -53,7 +54,7 @@ const ProductSerialSearch = ({ visible, onClose, onSearch, products }) => {
             <label className="form-label" htmlFor="product">
               Product
             </label>
-            <CFormSelect
+            {/* <CFormSelect
               id="product"
               name="product"
               value={searchData.product}
@@ -66,7 +67,33 @@ const ProductSerialSearch = ({ visible, onClose, onSearch, products }) => {
                   {product.productTitle}
                 </option>
               ))}
-            </CFormSelect>
+            </CFormSelect> */}
+            <Select
+              id="product"
+              name="product"
+              placeholder="Search Product..."
+              value={
+                searchData.product
+                  ? {
+                      value: searchData.product,
+                      label: products.find((p) => p._id === searchData.product)?.productTitle || ''
+                    }
+                  : null
+              }
+              onChange={(selected) =>
+                setSearchData((prev) => ({
+                  ...prev,
+                  product: selected ? selected.value : ''
+                }))
+              }
+              options={products.map((product) => ({
+                value: product._id,
+                label: product.productTitle
+              }))}
+              isClearable
+              classNamePrefix="react-select"
+              className="no-radius-input"
+            />
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="status">

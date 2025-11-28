@@ -56,7 +56,11 @@
 //   const [selectedRows, setSelectedRows] = useState({});
 //   const [buildings, setBuildings] = useState([]);
 //   const [filteredBuildings, setFilteredBuildings] = useState([]);
-//   const [buildingSearchTerm, setBuildingSearchTerm] = useState('');
+  
+//   // FIX 1: Separate search terms for From and To Building
+//   const [fromBuildingSearchTerm, setFromBuildingSearchTerm] = useState('');
+//   const [toBuildingSearchTerm, setToBuildingSearchTerm] = useState('');
+  
 //   const [showBuildingDropdown, setShowBuildingDropdown] = useState(false);
 //   const [currentBuildingType, setCurrentBuildingType] = useState(''); 
 //   const [controlRooms, setControlRooms] = useState([]);
@@ -111,13 +115,17 @@
 //       const data = res.data.data;
 //       const apiDate = data.date ? data.date.split('T')[0] : '';
       
+//       // FIX: Set proper search terms for both buildings
+//       const fromBuilding = data.fromBuilding?._id || data.fromBuilding || '';
+//       const toBuilding = data.toBuilding?._id || data.toBuilding || '';
+      
 //       setFormData(prev => ({
 //         ...prev,
 //         ...data,
 //         date: apiDate,
 //         customer: data.customer?._id || data.customer || '',
-//         fromBuilding: data.fromBuilding?._id || data.fromBuilding || '',
-//         toBuilding: data.toBuilding?._id || data.toBuilding || '',
+//         fromBuilding: fromBuilding,
+//         toBuilding: toBuilding,
 //         controlRoom: data.controlRoom?._id || data.controlRoom || ''
 //       }));
     
@@ -125,8 +133,15 @@
 //         setCustomerSearchTerm(data.customer.name || data.customer.username || '');
 //       }
       
+//       // FIX: Set proper building names in search terms
 //       if (data.fromBuilding) {
-//         setBuildingSearchTerm(data.fromBuilding.buildingName || '');
+//         const fromBuildingObj = buildings.find(b => b._id === fromBuilding) || data.fromBuilding;
+//         setFromBuildingSearchTerm(fromBuildingObj.buildingName || '');
+//       }
+      
+//       if (data.toBuilding) {
+//         const toBuildingObj = buildings.find(b => b._id === toBuilding) || data.toBuilding;
+//         setToBuildingSearchTerm(toBuildingObj.buildingName || '');
 //       }
       
 //       if (data.controlRoom) {
@@ -254,17 +269,20 @@
 //     }
 //   }, [customerSearchTerm, customers]);
 
+//   // FIX: Separate building search filtering
 //   useEffect(() => {
-//     if (buildingSearchTerm) {
+//     const searchTerm = currentBuildingType === 'to' ? toBuildingSearchTerm : fromBuildingSearchTerm;
+    
+//     if (searchTerm) {
 //       const filtered = buildings.filter(building =>
-//         building.buildingName?.toLowerCase().includes(buildingSearchTerm.toLowerCase()) ||
-//         building.code?.toLowerCase().includes(buildingSearchTerm.toLowerCase())
+//         building.buildingName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+//         building.code?.toLowerCase().includes(searchTerm.toLowerCase())
 //       );
 //       setFilteredBuildings(filtered);
 //     } else {
 //       setFilteredBuildings(buildings);
 //     }
-//   }, [buildingSearchTerm, buildings]);
+//   }, [fromBuildingSearchTerm, toBuildingSearchTerm, currentBuildingType, buildings]);
 
 //   useEffect(() => {
 //     if (controlRoomSearchTerm) {
@@ -312,23 +330,23 @@
 //     }, 200);
 //   };
 
-//   const handleBuildingSearchChange = (e, type = 'from') => {
+//   // FIX 2: Separate building search handlers for From and To
+//   const handleFromBuildingSearchChange = (e) => {
 //     const value = e.target.value;
-//     setBuildingSearchTerm(value);
-//     setCurrentBuildingType(type);
-    
-//     if (type === 'from') {
-//       setFormData(prev => ({
-//         ...prev,
-//         fromBuilding: value
-//       }));
-//     } else {
-//       setFormData(prev => ({
-//         ...prev,
-//         toBuilding: value,
-  
-//       }));
-//     }
+//     setFromBuildingSearchTerm(value);
+//     setFormData(prev => ({
+//       ...prev,
+//       fromBuilding: value
+//     }));
+//   };
+
+//   const handleToBuildingSearchChange = (e) => {
+//     const value = e.target.value;
+//     setToBuildingSearchTerm(value);
+//     setFormData(prev => ({
+//       ...prev,
+//       toBuilding: value,
+//     }));
 //   };
 
 //   const handleBuildingSelect = (building, type = 'from') => {
@@ -337,12 +355,13 @@
 //         ...prev,
 //         fromBuilding: building._id || building.id,
 //       }));
-//       setBuildingSearchTerm(building.buildingName);
+//       setFromBuildingSearchTerm(building.buildingName); // FIX: Set building name, not ID
 //     } else {
 //       setFormData(prev => ({
 //         ...prev,
 //         toBuilding: building._id || building.id,
 //       }));
+//       setToBuildingSearchTerm(building.buildingName); // FIX: Set building name, not ID
 //     }
 //     setShowBuildingDropdown(false);
 //   };
@@ -543,7 +562,8 @@
 //       wireChangeAmount: ''
 //     });
 //     setCustomerSearchTerm('');
-//     setBuildingSearchTerm('');
+//     setFromBuildingSearchTerm('');
+//     setToBuildingSearchTerm('');
 //     setControlRoomSearchTerm('');
 //     setSelectedRows({});
 //     setAssignedSerials({});
@@ -586,12 +606,13 @@
 //         ...prev,
 //         fromBuilding: newBuilding._id || newBuilding.id,
 //       }));
-//       setBuildingSearchTerm(newBuilding.name);
+//       setFromBuildingSearchTerm(newBuilding.buildingName); 
 //     } else {
 //       setFormData((prev) => ({
 //         ...prev,
 //         toBuilding: newBuilding._id || newBuilding.id
 //       }));
+//       setToBuildingSearchTerm(newBuilding.buildingName);
 //     }
 //     showAlert('Building added successfully!', 'success');
 //   };
@@ -840,8 +861,8 @@
 //                     type="text"
 //                     name="fromBuilding"
 //                     className={`form-input ${errors.fromBuilding ? 'error-input' : formData.fromBuilding ? 'valid-input' : ''}`}
-//                     value={buildingSearchTerm}
-//                     onChange={(e) => handleBuildingSearchChange(e, 'from')}
+//                     value={fromBuildingSearchTerm} // FIX: Use fromBuildingSearchTerm
+//                     onChange={handleFromBuildingSearchChange}
 //                     onFocus={() => handleBuildingInputFocus('from')}
 //                     onBlur={handleBuildingInputBlur}
 //                     placeholder="Search Building"
@@ -895,8 +916,8 @@
 //                     type="text"
 //                     name="fromBuilding"
 //                     className={`form-input ${errors.fromBuilding ? 'error-input' : formData.fromBuilding ? 'valid-input' : ''}`}
-//                     value={buildingSearchTerm}
-//                     onChange={(e) => handleBuildingSearchChange(e, 'from')}
+//                     value={fromBuildingSearchTerm} // FIX: Use fromBuildingSearchTerm
+//                     onChange={handleFromBuildingSearchChange}
 //                     onFocus={() => handleBuildingInputFocus('from')}
 //                     onBlur={handleBuildingInputBlur}
 //                     placeholder="Search Building"
@@ -942,8 +963,8 @@
 //                     type="text"
 //                     name="toBuilding"
 //                     className={`form-input ${errors.toBuilding ? 'error-input' : formData.toBuilding ? 'valid-input' : ''}`}
-//                     value={formData.toBuilding}
-//                     onChange={(e) => handleBuildingSearchChange(e, 'to')}
+//                     value={toBuildingSearchTerm} // FIX: Use toBuildingSearchTerm
+//                     onChange={handleToBuildingSearchChange}
 //                     onFocus={() => handleBuildingInputFocus('to')}
 //                     onBlur={handleBuildingInputBlur}
 //                     placeholder="Search Building"
@@ -983,6 +1004,7 @@
 //           </div>
 //         );
 
+//       // ... rest of the component remains the same
 //       case 'Control Room':
 //         return (
 //           <div className="form-row">
@@ -1071,8 +1093,8 @@
 //                         type="text"
 //                         name="fromBuilding"
 //                         className={`form-input ${errors.fromBuilding ? 'error-input' : formData.fromBuilding ? 'valid-input' : ''}`}
-//                         value={buildingSearchTerm}
-//                         onChange={(e) => handleBuildingSearchChange(e, 'from')}
+//                         value={fromBuildingSearchTerm} // FIX: Use fromBuildingSearchTerm
+//                         onChange={handleFromBuildingSearchChange}
 //                         onFocus={() => handleBuildingInputFocus('from')}
 //                         onBlur={handleBuildingInputBlur}
 //                         placeholder="Search Building"
@@ -1472,6 +1494,10 @@
 
 
 
+
+
+
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
@@ -1484,6 +1510,7 @@ import BuildingFormModal from './BuildingModel';
 import CustomerModel from './CustomerModel';
 import ControlRoomModel from './ControlRoomModel';
 import UsageSerialNumbers from './UsageSerialNumbers';
+import Select from 'react-select';
 
 const AddStockUsage = () => {
   const navigate = useNavigate();
@@ -1522,32 +1549,19 @@ const AddStockUsage = () => {
   const [isControlRoomModalOpen, setIsControlRoomModalOpen] = useState(false);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [customers, setCustomers] = useState([]);
-  const [filteredCustomers, setFilteredCustomers] = useState([]);
-  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
-  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [products, setProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRows, setSelectedRows] = useState({});
   const [buildings, setBuildings] = useState([]);
-  const [filteredBuildings, setFilteredBuildings] = useState([]);
-  
-  // FIX 1: Separate search terms for From and To Building
-  const [fromBuildingSearchTerm, setFromBuildingSearchTerm] = useState('');
-  const [toBuildingSearchTerm, setToBuildingSearchTerm] = useState('');
-  
-  const [showBuildingDropdown, setShowBuildingDropdown] = useState(false);
-  const [currentBuildingType, setCurrentBuildingType] = useState(''); 
   const [controlRooms, setControlRooms] = useState([]);
-  const [filteredControlRooms, setFilteredControlRooms] = useState([]);
-  const [controlRoomSearchTerm, setControlRoomSearchTerm] = useState('');
-  const [showControlRoomDropdown, setShowControlRoomDropdown] = useState(false);
+  const [currentBuildingType, setCurrentBuildingType] = useState(''); 
   const [loading, setLoading] = useState(true);
   const [serialModalVisible, setSerialModalVisible] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [assignedSerials, setAssignedSerials] = useState({});
   const [alert, setAlert] = useState({ show: false, message: '', type: '' });
 
-  // Track selection order - NEW STATE
+  // Track selection order
   const [selectionOrder, setSelectionOrder] = useState([]);
   const selectionCounter = useRef(0);
 
@@ -1589,7 +1603,6 @@ const AddStockUsage = () => {
       const data = res.data.data;
       const apiDate = data.date ? data.date.split('T')[0] : '';
       
-      // FIX: Set proper search terms for both buildings
       const fromBuilding = data.fromBuilding?._id || data.fromBuilding || '';
       const toBuilding = data.toBuilding?._id || data.toBuilding || '';
       
@@ -1603,25 +1616,6 @@ const AddStockUsage = () => {
         controlRoom: data.controlRoom?._id || data.controlRoom || ''
       }));
     
-      if (data.customer) {
-        setCustomerSearchTerm(data.customer.name || data.customer.username || '');
-      }
-      
-      // FIX: Set proper building names in search terms
-      if (data.fromBuilding) {
-        const fromBuildingObj = buildings.find(b => b._id === fromBuilding) || data.fromBuilding;
-        setFromBuildingSearchTerm(fromBuildingObj.buildingName || '');
-      }
-      
-      if (data.toBuilding) {
-        const toBuildingObj = buildings.find(b => b._id === toBuilding) || data.toBuilding;
-        setToBuildingSearchTerm(toBuildingObj.buildingName || '');
-      }
-      
-      if (data.controlRoom) {
-        setControlRoomSearchTerm(data.controlRoom.buildingName || '');
-      }
-  
       if (data.items && data.items.length > 0) {
         const existingSelectedRows = {};
         const existingAssignedSerials = {};
@@ -1658,7 +1652,6 @@ const AddStockUsage = () => {
     try {
       const res = await axiosInstance.get('/customers');
       setCustomers(res.data.data || []);
-      setFilteredCustomers(res.data.data || []);
     } catch (error) {
       console.error('Error fetching customers:', error);
       showAlert('Failed to fetch customers', 'danger');
@@ -1669,7 +1662,6 @@ const AddStockUsage = () => {
     try {
       const res = await axiosInstance.get('/buildings');
       setBuildings(res.data.data || []);
-      setFilteredBuildings(res.data.data || []);
     } catch (error) {
       console.error('Error fetching buildings:', error);
       showAlert('Failed to fetch buildings', 'danger');
@@ -1680,7 +1672,6 @@ const AddStockUsage = () => {
     try {
       const res = await axiosInstance.get('/controlRooms');
       setControlRooms(res.data.data || []);
-      setFilteredControlRooms(res.data.data || []);
     } catch (error) {
       console.error('Error fetching control rooms:', error);
       showAlert('Failed to fetch control rooms', 'danger');
@@ -1709,7 +1700,7 @@ const AddStockUsage = () => {
         setSelectionOrder(prevOrder => prevOrder.filter(item => item.productId !== productId));
         delete updated[productId];
       } else {
-        // Add to selection order when selecting - NEW LOGIC
+        // Add to selection order when selecting
         const newOrder = selectionCounter.current++;
         setSelectionOrder(prevOrder => [
           { productId, order: newOrder },
@@ -1730,153 +1721,11 @@ const AddStockUsage = () => {
       }
     }));
   };
-  
-  useEffect(() => {
-    if (customerSearchTerm) {
-      const filtered = customers.filter(customer =>
-        customer.name?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-        customer.username?.toLowerCase().includes(customerSearchTerm.toLowerCase())
-      );
-      setFilteredCustomers(filtered);
-    } else {
-      setFilteredCustomers(customers);
-    }
-  }, [customerSearchTerm, customers]);
-
-  // FIX: Separate building search filtering
-  useEffect(() => {
-    const searchTerm = currentBuildingType === 'to' ? toBuildingSearchTerm : fromBuildingSearchTerm;
-    
-    if (searchTerm) {
-      const filtered = buildings.filter(building =>
-        building.buildingName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        building.code?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredBuildings(filtered);
-    } else {
-      setFilteredBuildings(buildings);
-    }
-  }, [fromBuildingSearchTerm, toBuildingSearchTerm, currentBuildingType, buildings]);
-
-  useEffect(() => {
-    if (controlRoomSearchTerm) {
-      const filtered = controlRooms.filter(controlRoom =>
-        controlRoom.buildingName?.toLowerCase().includes(controlRoomSearchTerm.toLowerCase()) ||
-        controlRoom.code?.toLowerCase().includes(controlRoomSearchTerm.toLowerCase())
-      );
-      setFilteredControlRooms(filtered);
-    } else {
-      setFilteredControlRooms(controlRooms);
-    }
-  }, [controlRoomSearchTerm, controlRooms]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: '' }));
-  };
-
-  const handleCustomerSearchChange = (e) => {
-    const value = e.target.value;
-    setCustomerSearchTerm(value);
-    setFormData(prev => ({
-      ...prev,
-      customer: value,
-    }));
-  };
-
-  const handleCustomerSelect = (customer) => {
-    setFormData(prev => ({
-      ...prev,
-      customer:customer._id,
-    }));
-    setCustomerSearchTerm(customer.name || customer.username);
-    setShowCustomerDropdown(false);
-  };
-
-  const handleCustomerInputFocus = () => {
-    setShowCustomerDropdown(true);
-  };
-
-  const handleCustomerInputBlur = () => {
-    setTimeout(() => {
-      setShowCustomerDropdown(false);
-    }, 200);
-  };
-
-  // FIX 2: Separate building search handlers for From and To
-  const handleFromBuildingSearchChange = (e) => {
-    const value = e.target.value;
-    setFromBuildingSearchTerm(value);
-    setFormData(prev => ({
-      ...prev,
-      fromBuilding: value
-    }));
-  };
-
-  const handleToBuildingSearchChange = (e) => {
-    const value = e.target.value;
-    setToBuildingSearchTerm(value);
-    setFormData(prev => ({
-      ...prev,
-      toBuilding: value,
-    }));
-  };
-
-  const handleBuildingSelect = (building, type = 'from') => {
-    if (type === 'from') {
-      setFormData(prev => ({
-        ...prev,
-        fromBuilding: building._id || building.id,
-      }));
-      setFromBuildingSearchTerm(building.buildingName); // FIX: Set building name, not ID
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        toBuilding: building._id || building.id,
-      }));
-      setToBuildingSearchTerm(building.buildingName); // FIX: Set building name, not ID
-    }
-    setShowBuildingDropdown(false);
-  };
-
-  const handleBuildingInputFocus = (type = 'from') => {
-    setCurrentBuildingType(type);
-    setShowBuildingDropdown(true);
-  };
-
-  const handleBuildingInputBlur = () => {
-    setTimeout(() => {
-      setShowBuildingDropdown(false);
-    }, 200);
-  };
-
-  const handleControlRoomSearchChange = (e) => {
-    const value = e.target.value;
-    setControlRoomSearchTerm(value);
-    setFormData(prev => ({
-      ...prev,
-      controlRoom: value,
-    }));
-  };
-
-  const handleControlRoomSelect = (controlRoom) => {
-    setFormData(prev => ({
-      ...prev,
-      controlRoom: controlRoom._id || controlRoom.id,
-    }));
-    setControlRoomSearchTerm(controlRoom.buildingName);
-    setShowControlRoomDropdown(false);
-  };
-
-  const handleControlRoomInputFocus = () => {
-    setShowControlRoomDropdown(true);
-  };
-
-  const handleControlRoomInputBlur = () => {
-    setTimeout(() => {
-      setShowControlRoomDropdown(false);
-    }, 200);
   };
 
   const handleSubmit = async (e) => {
@@ -2035,10 +1884,6 @@ const AddStockUsage = () => {
       shiftingAmount: '',
       wireChangeAmount: ''
     });
-    setCustomerSearchTerm('');
-    setFromBuildingSearchTerm(''); // FIX: Reset both building search terms
-    setToBuildingSearchTerm('');
-    setControlRoomSearchTerm('');
     setSelectedRows({});
     setAssignedSerials({});
     setSelectionOrder([]);
@@ -2057,13 +1902,11 @@ const AddStockUsage = () => {
 
   const handleCustomerAdded = (newCustomer) => {
     setCustomers((prev) => [...prev, newCustomer]);
-    setFilteredCustomers((prev) => [...prev, newCustomer]);
 
     setFormData((prev) => ({
       ...prev,
       customer: newCustomer._id,
     }));
-    setCustomerSearchTerm(newCustomer.name || newCustomer.username);
     showAlert('Customer added successfully!', 'success');
   };
 
@@ -2073,20 +1916,17 @@ const AddStockUsage = () => {
 
   const handleBuildingAdded = (newBuilding) => {
     setBuildings((prev) => [...prev, newBuilding]);
-    setFilteredBuildings((prev) => [...prev, newBuilding]);
 
     if (currentBuildingType === 'from') {
       setFormData((prev) => ({
         ...prev,
         fromBuilding: newBuilding._id || newBuilding.id,
       }));
-      setFromBuildingSearchTerm(newBuilding.buildingName); // FIX: Set building name
     } else {
       setFormData((prev) => ({
         ...prev,
         toBuilding: newBuilding._id || newBuilding.id
       }));
-      setToBuildingSearchTerm(newBuilding.buildingName); // FIX: Set building name
     }
     showAlert('Building added successfully!', 'success');
   };
@@ -2097,13 +1937,11 @@ const AddStockUsage = () => {
 
   const handleControlRoomAdded = (newControlRoom) => {
     setControlRooms((prev) => [...prev, newControlRoom]);
-    setFilteredControlRooms((prev) => [...prev, newControlRoom]);
 
     setFormData((prev) => ({
       ...prev,
       controlRoom: newControlRoom._id || newControlRoom.id,
     }));
-    setControlRoomSearchTerm(newControlRoom.buildingName);
     showAlert('Control room added successfully!', 'success');
   };
 
@@ -2132,50 +1970,51 @@ const AddStockUsage = () => {
         return (
           <>
             <div className="form-row">
-              <div className="form-group select-dropdown-container">
+              <div className="form-group">
                 <label className={`form-label ${errors.customer ? 'error-label' : formData.customer ? 'valid-label' : ''}`}>
                   Customer <span className="required">*</span>
                 </label>
                 <div className="input-with-button">
-                  <div className="select-input-wrapper">
-                    <input
-                      type="text"
-                      name="customer"
-                      className={`form-input ${errors.customer ? 'error-input' : formData.customer ? 'valid-input' : ''}`}
-                      value={customerSearchTerm}
-                      onChange={handleCustomerSearchChange}
-                      onFocus={handleCustomerInputFocus}
-                      onBlur={handleCustomerInputBlur}
-                      placeholder="Search User"
-                    />
-                    <CIcon icon={cilSearch} className="search-icon" />
+                <div className="select-input-wrapper">
+                  <Select
+                    id="customer"
+                    name="customer"
+                    placeholder="Search..."
+                    value={
+                      formData.customer
+                        ? {
+                            value: formData.customer,
+                            label: customers.find((c) => c._id === formData.customer)
+                              ? `${customers.find((c) => c._id === formData.customer).username} - ${customers.find((c) => c._id === formData.customer).mobile}`
+                              : "",
+                          }
+                        : null
+                    }
+                    onChange={(selected) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        customer: selected ? selected.value : "",
+                      }))
+                    }
+                    options={customers.map((customer) => ({
+                      value: customer._id,
+                      label: `${customer.username} - ${customer.mobile}`,
+                    }))}
+                    isClearable
+                    classNamePrefix="react-select"
+                    className={`no-radius-input ${
+                      errors.customer ? "error-input" : formData.customer ? "valid-input" : ""
+                    }`}
+                  />
                   </div>
-                  <button type="button" className="add-btn" onClick={handleAddCustomer}>
-                    <CIcon icon={cilPlus} className='icon'/> ADD
+                  <button
+                    type="button"
+                    className="add-btn"
+                    onClick={handleAddCustomer}
+                  >
+                    <CIcon icon={cilPlus} className="icon" /> ADD
                   </button>
                 </div>
-                {showCustomerDropdown && (
-                  <div className="select-dropdown">
-                    <div className="select-dropdown-header">
-                      <span>Select Customer</span>
-                    </div>
-                    <div className="select-list">
-                      {filteredCustomers.length > 0 ? (
-                        filteredCustomers.map((customer) => (
-                          <div
-                            key={customer._id}
-                            className="select-item"
-                            onClick={() => handleCustomerSelect(customer)}
-                          >
-                            <div className="select-name">{customer.username}-{customer.mobile}</div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="no-select">No customers found</div>
-                      )}
-                    </div>
-                  </div>
-                )}
                 {errors.customer && <span className="error">{errors.customer}</span>}
               </div>
               <div className="form-group"></div>
@@ -2325,50 +2164,50 @@ const AddStockUsage = () => {
       case 'Building':
         return (
           <div className="form-row">
-            <div className="form-group select-dropdown-container">
+            <div className="form-group">
               <label className={`form-label ${errors.fromBuilding ? 'error-label' : formData.fromBuilding ? 'valid-label' : ''}`}>
                 From Building <span className="required">*</span>
               </label>
               <div className="input-with-button">
-                <div className="select-input-wrapper">
-                  <input
-                    type="text"
-                    name="fromBuilding"
-                    className={`form-input ${errors.fromBuilding ? 'error-input' : formData.fromBuilding ? 'valid-input' : ''}`}
-                    value={fromBuildingSearchTerm} // FIX: Use fromBuildingSearchTerm
-                    onChange={handleFromBuildingSearchChange}
-                    onFocus={() => handleBuildingInputFocus('from')}
-                    onBlur={handleBuildingInputBlur}
-                    placeholder="Search Building"
-                  />
-                  <CIcon icon={cilSearch} className="search-icon" />
+              <div className="select-input-wrapper">
+                <Select
+                  id="fromBuilding"
+                  name="fromBuilding"
+                  placeholder="Search..."
+                  value={
+                    formData.fromBuilding
+                      ? {
+                          value: formData.fromBuilding,
+                          label: buildings.find((b) => b._id === formData.fromBuilding)
+                            ?.buildingName || "",
+                        }
+                      : null
+                  }
+                  onChange={(selected) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      fromBuilding: selected ? selected.value : "",
+                    }))
+                  }
+                  options={buildings.map((building) => ({
+                    value: building._id,
+                    label: building.buildingName,
+                  }))}
+                  isClearable
+                  classNamePrefix="react-select"
+                  className={`no-radius-input ${
+                    errors.fromBuilding ? "error-input" : formData.fromBuilding ? "valid-input" : ""
+                  }`}
+                />
                 </div>
-                <button type="button" className="add-btn" onClick={() => { setCurrentBuildingType('from'); handleAddBuilding(); }}>
-                  <CIcon icon={cilPlus} className='icon'/> ADD
+                <button
+                  type="button"
+                  className="add-btn"
+                  onClick={() => { setCurrentBuildingType('from'); handleAddBuilding(); }}
+                >
+                  <CIcon icon={cilPlus} className="icon" /> ADD
                 </button>
               </div>
-              {showBuildingDropdown && currentBuildingType === 'from' && (
-                <div className="select-dropdown">
-                  <div className="select-dropdown-header">
-                    <span>Select Building</span>
-                  </div>
-                  <div className="select-list">
-                    {filteredBuildings.length > 0 ? (
-                      filteredBuildings.map((building) => (
-                        <div
-                          key={building.id}
-                          className="select-item"
-                          onClick={() => handleBuildingSelect(building, 'from')}
-                        >
-                          <div className="select-name">{building.buildingName}</div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="no-select">No buildings found</div>
-                    )}
-                  </div>
-                </div>
-              )}
               {errors.fromBuilding && <span className="error">{errors.fromBuilding}</span>}
             </div>
             <div className="form-group"></div>
@@ -2380,97 +2219,97 @@ const AddStockUsage = () => {
       case 'Building to Building':
         return (
           <div className="form-row">
-            <div className="form-group select-dropdown-container">
+            <div className="form-group">
               <label className={`form-label ${errors.fromBuilding ? 'error-label' : formData.fromBuilding ? 'valid-label' : ''}`}>
                 From Building <span className="required">*</span>
               </label>
               <div className="input-with-button">
-                <div className="select-input-wrapper">
-                  <input
-                    type="text"
-                    name="fromBuilding"
-                    className={`form-input ${errors.fromBuilding ? 'error-input' : formData.fromBuilding ? 'valid-input' : ''}`}
-                    value={fromBuildingSearchTerm} // FIX: Use fromBuildingSearchTerm
-                    onChange={handleFromBuildingSearchChange}
-                    onFocus={() => handleBuildingInputFocus('from')}
-                    onBlur={handleBuildingInputBlur}
-                    placeholder="Search Building"
-                  />
-                  <CIcon icon={cilSearch} className="search-icon" />
+              <div className="select-input-wrapper">
+                <Select
+                  id="fromBuilding"
+                  name="fromBuilding"
+                  placeholder="Search..."
+                  value={
+                    formData.fromBuilding
+                      ? {
+                          value: formData.fromBuilding,
+                          label: buildings.find((b) => b._id === formData.fromBuilding)
+                            ?.buildingName || "",
+                        }
+                      : null
+                  }
+                  onChange={(selected) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      fromBuilding: selected ? selected.value : "",
+                    }))
+                  }
+                  options={buildings.map((building) => ({
+                    value: building._id,
+                    label: building.buildingName,
+                  }))}
+                  isClearable
+                  classNamePrefix="react-select"
+                  className={`no-radius-input ${
+                    errors.fromBuilding ? "error-input" : formData.fromBuilding ? "valid-input" : ""
+                  }`}
+                />
                 </div>
-                <button type="button" className="add-btn" onClick={() => { setCurrentBuildingType('from'); handleAddBuilding(); }}>
-                  <CIcon icon={cilPlus} className='icon'/> ADD
+                <button
+                  type="button"
+                  className="add-btn"
+                  onClick={() => { setCurrentBuildingType('from'); handleAddBuilding(); }}
+                >
+                  <CIcon icon={cilPlus} className="icon" /> ADD
                 </button>
               </div>
-              {showBuildingDropdown && currentBuildingType === 'from' && (
-                <div className="select-dropdown">
-                  <div className="select-dropdown-header">
-                    <span>Select Building</span>
-                  </div>
-                  <div className="select-list">
-                    {filteredBuildings.length > 0 ? (
-                      filteredBuildings.map((building) => (
-                        <div
-                          key={building.id}
-                          className="select-item"
-                          onClick={() => handleBuildingSelect(building, 'from')}
-                        >
-                          <div className="select-name">{building.buildingName}</div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="no-select">No buildings found</div>
-                    )}
-                  </div>
-                </div>
-              )}
               {errors.fromBuilding && <span className="error">{errors.fromBuilding}</span>}
             </div>
 
-            <div className="form-group select-dropdown-container">
+            <div className="form-group">
               <label className={`form-label ${errors.toBuilding ? 'error-label' : formData.toBuilding ? 'valid-label' : ''}`}>
                 To Building <span className="required">*</span>
               </label>
               <div className="input-with-button">
-                <div className="select-input-wrapper">
-                  <input
-                    type="text"
-                    name="toBuilding"
-                    className={`form-input ${errors.toBuilding ? 'error-input' : formData.toBuilding ? 'valid-input' : ''}`}
-                    value={toBuildingSearchTerm} // FIX: Use toBuildingSearchTerm
-                    onChange={handleToBuildingSearchChange}
-                    onFocus={() => handleBuildingInputFocus('to')}
-                    onBlur={handleBuildingInputBlur}
-                    placeholder="Search Building"
-                  />
-                  <CIcon icon={cilSearch} className="search-icon" />
+              <div className="select-input-wrapper">
+                <Select
+                  id="toBuilding"
+                  name="toBuilding"
+                  placeholder="Search..."
+                  value={
+                    formData.toBuilding
+                      ? {
+                          value: formData.toBuilding,
+                          label: buildings.find((b) => b._id === formData.toBuilding)
+                            ?.buildingName || "",
+                        }
+                      : null
+                  }
+                  onChange={(selected) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      toBuilding: selected ? selected.value : "",
+                    }))
+                  }
+                  options={buildings.map((building) => ({
+                    value: building._id,
+                    label: building.buildingName,
+                  }))}
+                  isClearable
+                  classNamePrefix="react-select"
+                  className={`no-radius-input ${
+                    errors.toBuilding ? "error-input" : formData.toBuilding ? "valid-input" : ""
+                  }`}
+                />
                 </div>
-                <button type="button" className="add-btn" onClick={() => { setCurrentBuildingType('to'); handleAddBuilding(); }}>
-                  <CIcon icon={cilPlus} className='icon'/> ADD
+                <button
+                  type="button"
+                  className="add-btn"
+                  onClick={() => { setCurrentBuildingType('to'); handleAddBuilding(); }}
+                >
+                  <CIcon icon={cilPlus} className="icon" /> ADD
                 </button>
               </div>
-              {showBuildingDropdown && currentBuildingType === 'to' && (
-                <div className="select-dropdown">
-                  <div className="select-dropdown-header">
-                    <span>Select Building</span>
-                  </div>
-                  <div className="select-list">
-                    {filteredBuildings.length > 0 ? (
-                      filteredBuildings.map((building) => (
-                        <div
-                          key={building.id}
-                          className="select-item"
-                          onClick={() => handleBuildingSelect(building, 'to')}
-                        >
-                          <div className="select-name">{building.buildingName}</div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="no-select">No buildings found</div>
-                    )}
-                  </div>
-                </div>
-              )}
               {errors.toBuilding && <span className="error">{errors.toBuilding}</span>}
             </div>
             <div className="form-group"></div>
@@ -2478,54 +2317,53 @@ const AddStockUsage = () => {
           </div>
         );
 
-      // ... rest of the component remains the same
       case 'Control Room':
         return (
           <div className="form-row">
-            <div className="form-group select-dropdown-container">
+            <div className="form-group">
               <label className={`form-label ${errors.controlRoom ? 'error-label' : formData.controlRoom ? 'valid-label' : ''}`}>
                 Control Room <span className="required">*</span>
               </label>
               <div className="input-with-button">
-                <div className="select-input-wrapper">
-                  <input
-                    type="text"
-                    name="controlRoom"
-                    className={`form-input ${errors.controlRoom ? 'error-input' : formData.controlRoom ? 'valid-input' : ''}`}
-                    value={controlRoomSearchTerm}
-                    onChange={handleControlRoomSearchChange}
-                    onFocus={handleControlRoomInputFocus}
-                    onBlur={handleControlRoomInputBlur}
-                    placeholder="Search Control Room"
-                  />
-                  <CIcon icon={cilSearch} className="search-icon" />
+              <div className="select-input-wrapper">
+                <Select
+                  id="controlRoom"
+                  name="controlRoom"
+                  placeholder="Search..."
+                  value={
+                    formData.controlRoom
+                      ? {
+                          value: formData.controlRoom,
+                          label: controlRooms.find((cr) => cr._id === formData.controlRoom)
+                            ?.buildingName || "",
+                        }
+                      : null
+                  }
+                  onChange={(selected) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      controlRoom: selected ? selected.value : "",
+                    }))
+                  }
+                  options={controlRooms.map((controlRoom) => ({
+                    value: controlRoom._id,
+                    label: controlRoom.buildingName,
+                  }))}
+                  isClearable
+                  classNamePrefix="react-select"
+                  className={`no-radius-input ${
+                    errors.controlRoom ? "error-input" : formData.controlRoom ? "valid-input" : ""
+                  }`}
+                />
                 </div>
-                <button type="button" className="add-btn" onClick={handleAddControlRoom}>
-                  <CIcon icon={cilPlus} className='icon'/> ADD
+                <button
+                  type="button"
+                  className="add-btn"
+                  onClick={handleAddControlRoom}
+                >
+                  <CIcon icon={cilPlus} className="icon" /> ADD
                 </button>
               </div>
-              {showControlRoomDropdown && (
-                <div className="select-dropdown">
-                  <div className="select-dropdown-header">
-                    <span>Select Control Room</span>
-                  </div>
-                  <div className="select-list">
-                    {filteredControlRooms.length > 0 ? (
-                      filteredControlRooms.map((controlRoom) => (
-                        <div
-                          key={controlRoom.id}
-                          className="select-item"
-                          onClick={() => handleControlRoomSelect(controlRoom)}
-                        >
-                          <div className="select-name">{controlRoom.buildingName}</div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="no-select">No control rooms found</div>
-                    )}
-                  </div>
-                </div>
-              )}
               {errors.controlRoom && <span className="error">{errors.controlRoom}</span>}
             </div>
             <div className="form-group"></div>
@@ -2556,154 +2394,153 @@ const AddStockUsage = () => {
               </select>
               {errors.stolenFrom && <span className="error">{errors.stolenFrom}</span>}
             </div>
+            
             {formData.stolenFrom === 'Building' && (
-                  <div className="form-group select-dropdown-container">
-                  <label className={`form-label ${errors.fromBuilding ? 'error-label' : formData.fromBuilding ? 'valid-label' : ''}`}>
-                    From Building <span className="required">*</span>
-                  </label>
-                  <div className="input-with-button">
-                    <div className="select-input-wrapper">
-                      <input
-                        type="text"
-                        name="fromBuilding"
-                        className={`form-input ${errors.fromBuilding ? 'error-input' : formData.fromBuilding ? 'valid-input' : ''}`}
-                        value={fromBuildingSearchTerm} // FIX: Use fromBuildingSearchTerm
-                        onChange={handleFromBuildingSearchChange}
-                        onFocus={() => handleBuildingInputFocus('from')}
-                        onBlur={handleBuildingInputBlur}
-                        placeholder="Search Building"
-                      />
-                      <CIcon icon={cilSearch} className="search-icon" />
-                    </div>
-                    <button type="button" className="add-btn" onClick={() => { setCurrentBuildingType('from'); handleAddBuilding(); }}>
-                      <CIcon icon={cilPlus} className='icon'/> ADD
-                    </button>
+              <div className="form-group">
+                <label className={`form-label ${errors.fromBuilding ? 'error-label' : formData.fromBuilding ? 'valid-label' : ''}`}>
+                  From Building <span className="required">*</span>
+                </label>
+                <div className="input-with-button">
+                <div className="select-input-wrapper">
+                  <Select
+                    id="fromBuilding"
+                    name="fromBuilding"
+                    placeholder="Search..."
+                    value={
+                      formData.fromBuilding
+                        ? {
+                            value: formData.fromBuilding,
+                            label: buildings.find((b) => b._id === formData.fromBuilding)
+                              ?.buildingName || "",
+                          }
+                        : null
+                    }
+                    onChange={(selected) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        fromBuilding: selected ? selected.value : "",
+                      }))
+                    }
+                    options={buildings.map((building) => ({
+                      value: building._id,
+                      label: building.buildingName,
+                    }))}
+                    isClearable
+                    classNamePrefix="react-select"
+                    className={`no-radius-input ${
+                      errors.fromBuilding ? "error-input" : formData.fromBuilding ? "valid-input" : ""
+                    }`}
+                  />
                   </div>
-                  {showBuildingDropdown && currentBuildingType === 'from' && (
-                    <div className="select-dropdown">
-                      <div className="select-dropdown-header">
-                        <span>Select Building</span>
-                      </div>
-                      <div className="select-list">
-                        {filteredBuildings.length > 0 ? (
-                          filteredBuildings.map((building) => (
-                            <div
-                              key={building.id}
-                              className="select-item"
-                              onClick={() => handleBuildingSelect(building, 'from')}
-                            >
-                              <div className="select-name">{building.buildingName}</div>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="no-select">No buildings found</div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  {errors.fromBuilding && <span className="error">{errors.fromBuilding}</span>}
+                  <button
+                    type="button"
+                    className="add-btn"
+                    onClick={() => { setCurrentBuildingType('from'); handleAddBuilding(); }}
+                  >
+                    <CIcon icon={cilPlus} className="icon" /> ADD
+                  </button>
                 </div>
+                {errors.fromBuilding && <span className="error">{errors.fromBuilding}</span>}
+              </div>
             )}
-            { formData.stolenFrom === 'Customer' && (
-                <>
-                  <div className="form-group select-dropdown-container">
+            
+            {formData.stolenFrom === 'Customer' && (
+              <div className="form-group">
                 <label className={`form-label ${errors.customer ? 'error-label' : formData.customer ? 'valid-label' : ''}`}>
                   Customer <span className="required">*</span>
                 </label>
                 <div className="input-with-button">
-                  <div className="select-input-wrapper">
-                    <input
-                      type="text"
-                      name="customer"
-                      className={`form-input ${errors.customer ? 'error-input' : formData.customer ? 'valid-input' : ''}`}
-                      value={customerSearchTerm}
-                      onChange={handleCustomerSearchChange}
-                      onFocus={handleCustomerInputFocus}
-                      onBlur={handleCustomerInputBlur}
-                      placeholder="Search User"
-                    />
-                    <CIcon icon={cilSearch} className="search-icon" />
+                <div className="select-input-wrapper">
+                  <Select
+                    id="customer"
+                    name="customer"
+                    placeholder="Search..."
+                    value={
+                      formData.customer
+                        ? {
+                            value: formData.customer,
+                            label: customers.find((c) => c._id === formData.customer)
+                              ? `${customers.find((c) => c._id === formData.customer).username} - ${customers.find((c) => c._id === formData.customer).mobile}`
+                              : "",
+                          }
+                        : null
+                    }
+                    onChange={(selected) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        customer: selected ? selected.value : "",
+                      }))
+                    }
+                    options={customers.map((customer) => ({
+                      value: customer._id,
+                      label: `${customer.username} - ${customer.mobile}`,
+                    }))}
+                    isClearable
+                    classNamePrefix="react-select"
+                    className={`no-radius-input ${
+                      errors.customer ? "error-input" : formData.customer ? "valid-input" : ""
+                    }`}
+                  />
                   </div>
-                  <button type="button" className="add-btn" onClick={handleAddCustomer}>
-                    <CIcon icon={cilPlus} className='icon'/> ADD
+                  <button
+                    type="button"
+                    className="add-btn"
+                    onClick={handleAddCustomer}
+                  >
+                    <CIcon icon={cilPlus} className="icon" /> ADD
                   </button>
                 </div>
-                {showCustomerDropdown && (
-                  <div className="select-dropdown">
-                    <div className="select-dropdown-header">
-                      <span>Select Customer</span>
-                    </div>
-                    <div className="select-list">
-                      {filteredCustomers.length > 0 ? (
-                        filteredCustomers.map((customer) => (
-                          <div
-                            key={customer._id}
-                            className="select-item"
-                            onClick={() => handleCustomerSelect(customer)}
-                          >
-                            <div className="select-name">{customer.username}-{customer.mobile}</div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="no-select">No customers found</div>
-                      )}
-                    </div>
-                  </div>
-                )}
                 {errors.customer && <span className="error">{errors.customer}</span>}
               </div>
-                </>
             )}
 
             {formData.stolenFrom === 'Control Room' && (
-              <>
-                   <div className="form-group select-dropdown-container">
-              <label className={`form-label ${errors.controlRoom ? 'error-label' : formData.controlRoom ? 'valid-label' : ''}`}>
-                Control Room <span className="required">*</span>
-              </label>
-              <div className="input-with-button">
+              <div className="form-group">
+                <label className={`form-label ${errors.controlRoom ? 'error-label' : formData.controlRoom ? 'valid-label' : ''}`}>
+                  Control Room <span className="required">*</span>
+                </label>
+                <div className="input-with-button">
                 <div className="select-input-wrapper">
-                  <input
-                    type="text"
+                  <Select
+                    id="controlRoom"
                     name="controlRoom"
-                    className={`form-input ${errors.controlRoom ? 'error-input' : formData.controlRoom ? 'valid-input' : ''}`}
-                    value={controlRoomSearchTerm}
-                    onChange={handleControlRoomSearchChange}
-                    onFocus={handleControlRoomInputFocus}
-                    onBlur={handleControlRoomInputBlur}
-                    placeholder="Search Control Room"
+                    placeholder="Search..."
+                    value={
+                      formData.controlRoom
+                        ? {
+                            value: formData.controlRoom,
+                            label: controlRooms.find((cr) => cr._id === formData.controlRoom)
+                              ?.buildingName || "",
+                          }
+                        : null
+                    }
+                    onChange={(selected) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        controlRoom: selected ? selected.value : "",
+                      }))
+                    }
+                    options={controlRooms.map((controlRoom) => ({
+                      value: controlRoom._id,
+                      label: controlRoom.buildingName,
+                    }))}
+                    isClearable
+                    classNamePrefix="react-select"
+                    className={`no-radius-input ${
+                      errors.controlRoom ? "error-input" : formData.controlRoom ? "valid-input" : ""
+                    }`}
                   />
-                  <CIcon icon={cilSearch} className="search-icon" />
+                  </div>
+                  <button
+                    type="button"
+                    className="add-btn"
+                    onClick={handleAddControlRoom}
+                  >
+                    <CIcon icon={cilPlus} className="icon" /> ADD
+                  </button>
                 </div>
-                <button type="button" className="add-btn" onClick={handleAddControlRoom}>
-                  <CIcon icon={cilPlus} className='icon'/> ADD
-                </button>
+                {errors.controlRoom && <span className="error">{errors.controlRoom}</span>}
               </div>
-              {showControlRoomDropdown && (
-                <div className="select-dropdown">
-                  <div className="select-dropdown-header">
-                    <span>Select Control Room</span>
-                  </div>
-                  <div className="select-list">
-                    {filteredControlRooms.length > 0 ? (
-                      filteredControlRooms.map((controlRoom) => (
-                        <div
-                          key={controlRoom.id}
-                          className="select-item"
-                          onClick={() => handleControlRoomSelect(controlRoom)}
-                        >
-                          <div className="select-name">{controlRoom.buildingName}</div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="no-select">No control rooms found</div>
-                    )}
-                  </div>
-                </div>
-              )}
-              {errors.controlRoom && <span className="error">{errors.controlRoom}</span>}
-            </div>
-              </>
             )}
             <div className="form-group"></div>
             <div className="form-group"></div>

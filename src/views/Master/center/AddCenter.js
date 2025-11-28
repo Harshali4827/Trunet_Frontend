@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../../css/form.css';
 import { CAlert } from '@coreui/react'
+import Select from "react-select";
 
 const AddCenter = () => {
   const navigate = useNavigate();
@@ -221,21 +222,36 @@ const AddCenter = () => {
                   htmlFor="resellerId">
                   Reseller Name <span className="required">*</span>
                   </label>
-                  <select
-                    className={`form-input 
-                      ${errors.resellerId ? 'error-input' : formData.resellerId ? 'valid-input' : ''}`}
-                    id="resellerId"
-                    name="resellerId"
-                    value={formData.resellerId}
-                    onChange={handleChange}
-                  >
-                    <option value="">SELECT RESELLER</option>
-                    {resellers.map(reseller => (
-                      <option key={reseller.id} value={reseller._id}>
-                        {reseller.businessName}
-                      </option>
-                    ))}
-                  </select>
+                  <Select
+    id="resellerId"
+    name="resellerId"
+    placeholder="Select Reseller..."
+    value={
+      formData.resellerId
+        ? {
+            value: formData.resellerId,
+            label:
+              resellers.find((r) => r._id === formData.resellerId)
+                ?.businessName || "",
+          }
+        : null
+    }
+    onChange={(selected) =>
+      setFormData((prev) => ({
+        ...prev,
+        resellerId: selected ? selected.value : "",
+      }))
+    }
+    options={resellers.map((reseller) => ({
+      value: reseller._id,
+      label: reseller.businessName,
+    }))}
+    isClearable
+    classNamePrefix="react-select"
+    className={`no-radius-input ${
+      errors.resellerId ? "error-input" : formData.resellerId ? "valid-input" : ""
+    }`}
+  />
                   {errors.resellerId && <span className="error">{errors.resellerId}</span>}
                 </div>
                 <div className="form-group">
@@ -416,24 +432,29 @@ const AddCenter = () => {
                 htmlFor="areaId">
                 Area Name <span className="required">*</span>
                 </label>
-                <select
-                  className={`form-input 
-                    ${errors.areaId ? 'error-input' : formData.areaId ? 'valid-input' : ''}`}
-                  id="areaId"
-                  name="areaId"
-                  value={formData.areaId}
-                  onChange={handleChange}
-                  disabled={!formData.resellerId} 
-                >
-                   <option value="">
-                    {formData.resellerId ? 'SELECT AREA' : 'SELECT RESELLER FIRST'}
-                  </option>
-                  {areas.map(area => (
-                    <option key={area.id} value={area._id}>
-                      {area.areaName}
-                    </option>
-                  ))}
-                </select>
+                <Select
+    id="areaId"
+    name="areaId"
+    value={
+      areas.find(a => a._id === formData.areaId)
+        ? { label: areas.find(a => a._id === formData.areaId).areaName, value: formData.areaId }
+        : null
+    }
+    onChange={(selected) => {
+      handleChange({
+        target: { name: "areaId", value: selected ? selected.value : "" }
+      });
+    }}
+    options={areas.map(area => ({
+      label: area.areaName,
+      value: area._id,
+    }))}
+    isDisabled={!formData.resellerId}
+    placeholder={formData.resellerId ? "Select Area" : "Select Reseller First"}
+    classNamePrefix={`react-select ${
+      errors.areaId ? "error-input" : formData.areaId ? "valid-input" : ""
+    }`}
+  />
                 {errors.areaId && <span className="error">{errors.areaId}</span>}
               </div>
               <div className="form-group"></div>

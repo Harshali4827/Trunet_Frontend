@@ -11,6 +11,7 @@ import {
 import PropTypes from 'prop-types'
 import '../../css/form.css'
 import DatePicker from 'src/utils/DatePicker'
+import Select from "react-select";
 
 const SearchUsageDetail = ({ visible, onClose, onSearch, centers, products, customers }) => {
   const [searchData, setSearchData] = useState({
@@ -101,20 +102,34 @@ const SearchUsageDetail = ({ visible, onClose, onSearch, centers, products, cust
             <label className="form-label" htmlFor="center">
               Branch
             </label>
-            <CFormSelect
-              id="center"
-              name="center"
-              value={searchData.center}
-              onChange={handleChange}
-              className="form-input no-radius-input"
-            >
-              <option value="">SELECT</option>
-              {centers.map((center) => (
-                <option key={center._id} value={center._id}>
-                  {center.centerName}
-                </option>
-              ))}
-            </CFormSelect>
+            <Select
+    id="center"
+    name="center"
+    placeholder="Select Branch..."
+    value={
+      searchData.center
+        ? {
+            value: searchData.center,
+            label: centers.find((c) => c._id === searchData.center)
+              ? centers.find((c) => c._id === searchData.center).centerName
+              : "",
+          }
+        : null
+    }
+    onChange={(selected) =>
+      setSearchData((prev) => ({
+        ...prev,
+        center: selected ? selected.value : "",
+      }))
+    }
+    options={centers.map((center) => ({
+      value: center._id,
+      label: center.centerName,
+    }))}
+    isClearable
+    classNamePrefix="react-select"
+    className="no-radius-input"
+  />
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="usageType">
@@ -145,7 +160,7 @@ const SearchUsageDetail = ({ visible, onClose, onSearch, centers, products, cust
             <label className="form-label" htmlFor="customer">
               User
             </label>
-            <CFormSelect
+            {/* <CFormSelect
               id="customer"
               name="customer"
               value={searchData.customer}
@@ -158,13 +173,38 @@ const SearchUsageDetail = ({ visible, onClose, onSearch, centers, products, cust
                   {customer.username}-{customer.mobile}
                 </option>
               ))}
-            </CFormSelect>
+            </CFormSelect> */}
+            <Select
+  id="customer"
+  name="customer"
+  value={
+    searchData.customer
+      ? {
+          value: searchData.customer,
+          label: customers.find((c) => c._id === searchData.customer)
+            ? `${customers.find((c) => c._id === searchData.customer).username} - ${customers.find((c) => c._id === searchData.customer).mobile}`
+            : ""
+        }
+      : null
+  }
+  onChange={(selected) =>
+    setSearchData((prev) => ({ ...prev, customer: selected ? selected.value : "" }))
+  }
+  options={customers.map((customer) => ({
+    value: customer._id,
+    label: `${customer.username} - ${customer.mobile}`,
+  }))}
+  isClearable
+  classNamePrefix="react-select"
+  className="no-radius-input"
+/>
+
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="product">
               Product
             </label>
-            <CFormSelect
+            {/* <CFormSelect
               id="product"
               name="product"
               value={searchData.product}
@@ -177,7 +217,31 @@ const SearchUsageDetail = ({ visible, onClose, onSearch, centers, products, cust
                   {product.productTitle}
                 </option>
               ))}
-            </CFormSelect>
+            </CFormSelect> */}
+            <Select
+  id="product"
+  name="product"
+  placeholder="Search Product..."
+  value={
+    searchData.product
+      ? {
+          value: searchData.product,
+          label: products.find((p) => p._id === searchData.product)?.productTitle
+        }
+      : null
+  }
+  onChange={(selected) =>
+    setSearchData((prev) => ({ ...prev, product: selected ? selected.value : "" }))
+  }
+  options={products.map((product) => ({
+    value: product._id,
+    label: product.productTitle,
+  }))}
+  isClearable
+  classNamePrefix="react-select"
+  className="no-radius-input"
+/>
+
           </div>
         </div>
         

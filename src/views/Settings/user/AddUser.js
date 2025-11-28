@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../../css/form.css';
 import { CAlert } from '@coreui/react';
+import Select from 'react-select';
 
 const AddUser = () => {
   const navigate = useNavigate();
@@ -240,24 +241,29 @@ const AddUser = () => {
                   htmlFor="role">
                   Role <span className="required">*</span>
                 </label>
-                <select
-                  type="text"
-                  id="role"
-                  name="role"
-                  className={`form-input 
-                    ${errors.role ? 'error-input' : formData.role ? 'valid-input' : ''}`}
-                  value={formData.role}
-                  onChange={handleChange}
-                >
-                  <option value="">SELECT</option>
-                  {
-                    roles.map((role) =>(
-                      <option key={role._id} value={role._id}>
-                        {role.roleTitle}
-                      </option>
-                    ))
-                  }
-                </select>
+                <Select
+    id="role"
+    name="role"
+    value={
+      roles.find(r => r._id === formData.role)
+        ? { label: roles.find(r => r._id === formData.role).roleTitle, value: formData.role }
+        : null
+    }
+    onChange={(selected) =>
+      handleChange({
+        target: { name: "role", value: selected ? selected.value : "" },
+      })
+    }
+    options={roles.map(role => ({
+      label: role.roleTitle,
+      value: role._id,
+    }))}
+    placeholder="Select Role"
+    classNamePrefix={`react-select ${
+      errors.role ? "error-input" : formData.role ? "valid-input" : ""
+    }`}
+  />
+
                 {errors.role && <span className="error">{errors.role}</span>}
               </div>
               <div className="form-group">
@@ -266,21 +272,28 @@ const AddUser = () => {
                   htmlFor="center">
                   Branch <span className="required">*</span>
                 </label>
-                <select
-                  id="center"
-                  name="center"
-                  className={`form-input 
-                    ${errors.center ? 'error-input' : formData.center ? 'valid-input' : ''}`}
-                  value={formData.center}
-                  onChange={handleChange}
-                >
-                  <option value="">SELECT</option>
-                  {centers.map((c) => (
-                    <option key={c._id} value={c._id}>
-                      {c.centerName}
-                    </option>
-                  ))}
-                </select>
+                <Select
+    id="center"
+    name="center"
+    value={
+      centers.find(c => c._id === formData.center)
+        ? { label: centers.find(c => c._id === formData.center).centerName, value: formData.center }
+        : null
+    }
+    onChange={(selected) =>
+      handleChange({
+        target: { name: "center", value: selected ? selected.value : "" },
+      })
+    }
+    options={centers.map(center => ({
+      label: center.centerName,
+      value: center._id,
+    }))}
+    placeholder="Select Branch"
+    classNamePrefix={`react-select ${
+      errors.center ? "error-input" : formData.center ? "valid-input" : ""
+    }`}
+  />
                 {errors.center && <span className="error">{errors.center}</span>}
               </div>
               <div className="form-group">

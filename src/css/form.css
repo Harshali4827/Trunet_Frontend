@@ -221,21 +221,26 @@
   align-items: center;
   width: 100%;  
 }
+.input-with-button {
+  display: flex;
+}
 
-/* .add-btn {
-  height: 38px; 
-  background-color: #2759a2;
-  color: #fff;
+.add-btn {
+  flex-shrink: 0;  
+  height: 38px;     
+  background: #2759a2;
+  color: white;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
+  white-space: nowrap;
+  border-color: #2759a2;
 }
 
 .add-btn:hover {
-  background-color: #1e447d;
-} */
-
+  background: #0056b3;
+}
 
 .select-dropdown-container {
   position: relative;
@@ -321,23 +326,14 @@
   font-style: italic;
 }
 
-.input-with-button {
-  display: flex;
+
+/**************    new filter options     ***************/
+
+.react-select__control {
+  border-radius: 0 !important;
+  min-height: 38px;
 }
 
-.add-btn {
-  flex-shrink: 0;  
-  height: 38px;     
-  background: #2759a2;
-  color: white;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-  border-color: #2759a2;
-}
-
-.add-btn:hover {
-  background: #0056b3;
+.react-select__menu {
+  z-index: 9999 !important;
 }

@@ -121,12 +121,12 @@ import {
   CModalTitle,
   CModalBody,
   CModalFooter,
-  CFormSelect,
   CButton
 } from '@coreui/react'
 import PropTypes from 'prop-types'
 import '../../css/form.css'
 import DatePicker from 'src/utils/DatePicker'
+import Select from 'react-select'
 
 const ReportSearchmodel = ({ visible, onClose, onSearch, centers, initialSearchData }) => {
   const [searchData, setSearchData] = useState({
@@ -156,10 +156,6 @@ const ReportSearchmodel = ({ visible, onClose, onSearch, centers, initialSearchD
     }
   }, [visible, initialSearchData])
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setSearchData(prev => ({ ...prev, [name]: value }))
-  }
 
   const handleDateChange = (dateValue) => {
     setSearchData(prev => ({ ...prev, date: dateValue }))
@@ -208,20 +204,34 @@ const ReportSearchmodel = ({ visible, onClose, onSearch, centers, initialSearchD
             <label className="form-label" htmlFor="center">
               Branch
             </label>
-            <CFormSelect
-              id="center"
-              name="center"
-              value={searchData.center}
-              onChange={handleChange}
-              className="form-input no-radius-input"
-            >
-              <option value="">SELECT</option>
-              {centers.map((center) => (
-                <option key={center._id} value={center._id}>
-                  {center.centerName}
-                </option>
-              ))}
-            </CFormSelect>
+            <Select
+    id="center"
+    name="center"
+    placeholder="Select Branch..."
+    value={
+      searchData.center
+        ? {
+            value: searchData.center,
+            label: centers.find((c) => c._id === searchData.center)
+              ? centers.find((c) => c._id === searchData.center).centerName
+              : "",
+          }
+        : null
+    }
+    onChange={(selected) =>
+      setSearchData((prev) => ({
+        ...prev,
+        center: selected ? selected.value : "",
+      }))
+    }
+    options={centers.map((center) => ({
+      value: center._id,
+      label: center.centerName,
+    }))}
+    isClearable
+    classNamePrefix="react-select"
+    className="no-radius-input"
+  />
           </div>
         </div>
       </CModalBody>
@@ -235,14 +245,7 @@ const ReportSearchmodel = ({ visible, onClose, onSearch, centers, initialSearchD
           Clear
         </CButton>
         <CButton 
-          color="secondary" 
-          className="me-2" 
-          onClick={handleClose}
-        >
-          Close
-        </CButton>
-        <CButton 
-          color="primary" 
+          className='reset-button'
           onClick={handleSearch}
         >
           Search

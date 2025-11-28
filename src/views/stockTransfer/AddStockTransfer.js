@@ -506,9 +506,10 @@ import {
   CTableDataCell,
   CFormInput,
   CSpinner,
-  CFormSelect,
   CAlert,
+  CFormSelect,
 } from '@coreui/react';
+import Select from 'react-select';
 
 const AddStockTransfer = () => {
   const navigate = useNavigate();
@@ -831,6 +832,36 @@ const AddStockTransfer = () => {
                     </option>
                   ))}
                 </CFormSelect>
+                {/* <Select
+    id="fromCenter"
+    name="fromCenter"
+    isDisabled={centerLoading}
+    value={
+      centers.find(c => c._id === formData.fromCenter)
+        ? {
+            label: centers.find(c => c._id === formData.fromCenter).centerName,
+            value: formData.fromCenter
+          }
+        : null
+    }
+    onChange={(selected) =>
+      handleChange({
+        target: { name: "fromCenter", value: selected ? selected.value : "" },
+      })
+    }
+    options={centers.map((center) => ({
+      label: center.centerName,
+      value: center._id,
+    }))}
+    placeholder="Select Center"
+    classNamePrefix={`react-select ${
+      errors.fromCenter
+        ? "error-input"
+        : formData.fromCenter
+        ? "valid-input"
+        : ""
+    }`}
+  /> */}
                 {errors.fromCenter && <span className="error-text">{errors.fromCenter}</span>}
               </div>
 

@@ -6,13 +6,13 @@ import {
   CModalBody,
   CModalFooter,
   CFormInput,
-  CFormSelect,
   CButton,
   CAlert
 } from '@coreui/react'
 import PropTypes from 'prop-types'
 import axiosInstance from 'src/axiosInstance'
 import '../../../css/form.css'
+import Select from 'react-select'
 
 const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
   const [resellers, setResellers] = useState([])
@@ -121,7 +121,7 @@ const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
             >
               Reseller Name <span className="required">*</span>
             </label>
-            <CFormSelect
+            {/* <CFormSelect
               id="resellerId"
               name="resellerId"
               value={formData.resellerId}
@@ -140,7 +140,38 @@ const AddArea = ({ visible, onClose, onAreaAdded, area }) => {
                   {p.businessName}
                 </option>
               ))}
-            </CFormSelect>
+            </CFormSelect> */}
+
+<Select
+    id="resellerId"
+    name="resellerId"
+    placeholder="Select Reseller..."
+    value={
+      formData.resellerId
+        ? {
+            value: formData.resellerId,
+            label:
+              resellers.find((r) => r._id === formData.resellerId)
+                ?.businessName || "",
+          }
+        : null
+    }
+    onChange={(selected) =>
+      setFormData((prev) => ({
+        ...prev,
+        resellerId: selected ? selected.value : "",
+      }))
+    }
+    options={resellers.map((reseller) => ({
+      value: reseller._id,
+      label: reseller.businessName,
+    }))}
+    isClearable
+    classNamePrefix="react-select"
+    className={`no-radius-input ${
+      errors.resellerId ? "error-input" : formData.resellerId ? "valid-input" : ""
+    }`}
+  />
             {errors.resellerId && <span className="error">{errors.resellerId}</span>}
           </div>
 

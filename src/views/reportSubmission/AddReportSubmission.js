@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../css/form.css';
 import { CButton, CFormInput, CSpinner, CTable, CTableBody, CTableDataCell, CTableHead, CTableHeaderCell, CTableRow } from '@coreui/react';
+import Select from 'react-select';
 
 const AddReportSubmission = () => {
   const [productSearchTerm, setProductSearchTerm] = useState('');
@@ -244,7 +245,7 @@ const userCenterType = (userCenter.centerType || 'Outlet').toLowerCase();
                   >
                     Branch <span className="required">*</span>
                   </label>
-                  <select
+                  {/* <select
                     id="centerId"
                     name="centerId"
                     className={`form-input ${errors.centerId ? 'error-input' : centerId ? 'valid-input' : ''}`}
@@ -257,7 +258,38 @@ const userCenterType = (userCenter.centerType || 'Outlet').toLowerCase();
                         {c.centerName}
                       </option>
                     ))}
-                  </select>
+                  </select> */}
+
+<Select
+    id="centerId"
+    name="centerId"
+    value={
+      centers.find((c) => c._id === centerId)
+        ? {
+            label: centers.find((c) => c._id === centerId).centerName,
+            value: centerId,
+          }
+        : null
+    }
+    onChange={(selected) =>
+      handleCenterChange({
+        target: {
+          name: "centerId",
+          value: selected ? selected.value : "",
+        },
+      })
+    }
+    options={centers.map((center) => ({
+      label: center.centerName,
+      value: center._id,
+    }))}
+    placeholder="Search Branch"
+    classNamePrefix="react-select"
+    className={`react-select-container ${
+      errors.centerId ? "error-input" : centerId ? "valid-input" : ""
+    }`}
+  />
+
                   {errors.centerId && <span className="error-text">{errors.centerId}</span>}
                 </div>
               )}

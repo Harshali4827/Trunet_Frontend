@@ -4,6 +4,7 @@ import axiosInstance from 'src/axiosInstance';
 import '../../css/form.css';
 import { CButton } from '@coreui/react';
 import { CAlert } from '@coreui/react';
+import Select from 'react-select';
 
 const AddShiftingRequest = () => {
   const navigate = useNavigate();
@@ -21,9 +22,6 @@ const AddShiftingRequest = () => {
 
   const [customers, setCustomers] = useState([]);
   const [centers, setCenters] = useState([]);
-  const [filteredCustomers, setFilteredCustomers] = useState([]);
-  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
-  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [errors, setErrors] = useState({});
   const [alert, setAlert] = useState({ type: '', message: '' })
   const [loading, setLoading] = useState(false);
@@ -40,7 +38,6 @@ const AddShiftingRequest = () => {
     try {
       const res = await axiosInstance.get('/customers');
       setCustomers(res.data.data || []);
-      setFilteredCustomers(res.data.data || []);
     } catch (error) {
       console.error('Error fetching customers:', error);
     }
@@ -72,9 +69,6 @@ const AddShiftingRequest = () => {
           city: data.city || '',
           remark: data.remark || '',
         });
-        if (data.customer) {
-          setCustomerSearchTerm(data.customer.name || data.customer.username || '');
-        }
       }
     } catch (error) {
       console.error('Error fetching shifting request:', error);
@@ -83,59 +77,10 @@ const AddShiftingRequest = () => {
     }
   };
 
-  useEffect(() => {
-    if (customerSearchTerm) {
-      const filtered = customers.filter(customer =>
-        customer.name?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-        customer.username?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-        customer.mobile?.toString().includes(customerSearchTerm)
-      );
-      setFilteredCustomers(filtered);
-    } else {
-      setFilteredCustomers(customers);
-    }
-  }, [customerSearchTerm, customers]);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: '' }));
-  };
-
-  const handleCustomerSearchChange = (e) => {
-    const value = e.target.value;
-    setCustomerSearchTerm(value);
-  
-    if (!value.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        customer: ''
-      }));
-    }
-    
-    setShowCustomerDropdown(true);
-  };
-
-  const handleCustomerSelect = (customer) => {
-    setFormData(prev => ({
-      ...prev,
-      customer: customer._id,
-      address1: customer.address1 || customer.address || '',
-      address2: customer.address2 || '',
-      city: customer.city || ''
-    }));
-    setCustomerSearchTerm(customer.name || customer.username);
-    setShowCustomerDropdown(false);
-  };
-
-  const handleCustomerInputFocus = () => {
-    setShowCustomerDropdown(true);
-  };
-
-  const handleCustomerInputBlur = () => {
-    setTimeout(() => {
-      setShowCustomerDropdown(false);
-    }, 200);
   };
 
   const handleSubmit = async (e) => {
@@ -198,7 +143,6 @@ const AddShiftingRequest = () => {
       city: '',
       remark: '',
     });
-    setCustomerSearchTerm('');
     setErrors({});
   };
 
@@ -269,45 +213,39 @@ const AddShiftingRequest = () => {
                     ${errors.customer ? 'error-label' : formData.customer ? 'valid-label' : ''}`}>
                   Customer <span className="required">*</span>
                 </label>
-                <div className="select-input-wrapper">
-                  <input
-                    type="text"
-                    className={`form-input 
-                      ${errors.customer ? 'error-input' : formData.customer ? 'valid-input' : ''}`}
-                    value={customerSearchTerm}
-                    onChange={handleCustomerSearchChange}
-                    onFocus={handleCustomerInputFocus}
-                    onBlur={handleCustomerInputBlur}
-                    placeholder="Search User"
-                    disabled={!!id} 
-                    
-                  />
-                </div>
-                {showCustomerDropdown && !id && (
-                  
-                  <div className="select-dropdown">
-                    <div className="select-dropdown-header">
-                      <span>Select Customer</span>
-                    </div>
-                    <div className="select-list">
-                      {filteredCustomers.length > 0 ? (
-                        filteredCustomers.map((customer) => (
-                          <div
-                            key={customer._id}
-                            className="select-item"
-                            onClick={() => handleCustomerSelect(customer)}
-                          >
-                            <div className="select-name">
-                              {customer.name || customer.username} - {customer.mobile}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="no-select">No customers found</div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                <Select
+    id="customer"
+    name="customer"
+    isDisabled={!!id}       
+    value={
+      customers.find((c) => c._id === formData.customer)
+        ? {
+            label: `${customers.find((c) => c._id === formData.customer).name || 
+                     customers.find((c) => c._id === formData.customer).username
+                    } - ${
+                     customers.find((c) => c._id === formData.customer).mobile
+                    }`,
+            value: formData.customer,
+          }
+        : null
+    }
+    onChange={(selected) =>
+      handleChange({
+        target: {
+          name: "customer",
+          value: selected ? selected.value : "",
+        },
+      })
+    }
+    options={customers.map((customer) => ({
+      label: `${customer.name || customer.username} - ${customer.mobile}`,
+      value: customer._id,
+    }))}
+    placeholder="Search Customer"
+    classNamePrefix={`react-select ${
+      errors.customer ? "error-input" : formData.customer ? "valid-input" : ""
+    }`}
+  />
                 {errors.customer && <span className="error-text">{errors.customer}</span>}
               </div>
 
@@ -317,7 +255,7 @@ const AddShiftingRequest = () => {
                   htmlFor="toCenter">
                   To Branch <span className="required">*</span>
                 </label>
-                <select
+                {/* <select
                   id="toCenter"
                   name="toCenter"
                   className={`form-input 
@@ -331,7 +269,32 @@ const AddShiftingRequest = () => {
                       {c.centerName}
                     </option>
                   ))}
-                </select>
+                </select> */}
+                <Select
+    id="toCenter"
+    name="toCenter"
+    value={
+      centers.find(c => c._id === formData.toCenter)
+        ? {
+            label: centers.find(c => c._id === formData.toCenter).centerName,
+            value: formData.toCenter
+          }
+        : null
+    }
+    onChange={(selected) =>
+      handleChange({
+        target: { name: "toCenter", value: selected ? selected.value : "" }
+      })
+    }
+    options={centers.map((c) => ({
+      label: c.centerName,
+      value: c._id,
+    }))}
+    placeholder="Select Branch"
+    classNamePrefix={`react-select ${
+      errors.toCenter ? "error-input" : formData.toCenter ? "valid-input" : ""
+    }`}
+  />
                 {errors.toCenter && <span className="error-text">{errors.toCenter}</span>}
               </div>
             </div>

@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../../css/form.css';
-import { useAlert } from 'src/context/AlertContext';
 import { CAlert } from '@coreui/react';
+import Select from 'react-select';
 
 const AddProducts = () => {
   const navigate = useNavigate();
@@ -28,10 +28,7 @@ const AddProducts = () => {
   
   const [errors, setErrors] = useState({});
   const [categories, setCategories] = useState([]);
-  const [filteredCategories, setFilteredCategories] = useState([]);
   const [alert, setAlert] = useState({ type: '', message: '' })
-  const [showDropdown, setShowDropdown] = useState(false);
-  const { showAlert } = useAlert();
 
   useEffect(() => {
     fetchCategories();
@@ -44,7 +41,6 @@ const AddProducts = () => {
     try {
       const res = await axiosInstance.get('/product-category');
       setCategories(res.data.data);
-      setFilteredCategories(res.data.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
@@ -68,23 +64,6 @@ const AddProducts = () => {
     } catch (error) {
       console.error('Error fetching products:', error);
     }
-  };
-  
-  const handleCategoryChange = (e) => {
-    const value = e.target.value;
-    setFormData((prev) => ({ ...prev, productCategory: value }));
-
-    const filtered = categories.filter((cat) =>
-      cat.productCategory.toLowerCase().includes(value.toLowerCase())
-    );
-    setFilteredCategories(filtered);
-    setShowDropdown(true);
-  };
-
-  const selectCategory = (category) => {
-    setFormData((prev) => ({ ...prev, productCategory: category._id }));
-    setFilteredCategories(categories);
-    setShowDropdown(false);
   };
 
   const handleChange = (e) => {
@@ -177,44 +156,7 @@ const AddProducts = () => {
 )}
           <form onSubmit={handleSubmit}>
             <div className="form-row">
-              {/* <div className="form-group">
-                <label 
-                className={`form-label 
-                  ${errors.productCategory ? 'error-label' : formData.productCategory ? 'valid-label' : ''}`}
-                 htmlFor="productCategory">
-                Product Category<span className="required">*</span>
-                </label>
-
-                 <input
-                  type="text"
-                  id="productCategory"
-                  name="productCategory"
-                  className={`form-input 
-                    ${errors.productCategory ? 'error-input' : formData.productCategory ? 'valid-input' : ''}`}
-                  value={
-                    categories.find((c) => c._id === formData.productCategory)?.productCategory ||
-                    formData.productCategory
-                  }
-                  onChange={handleCategoryChange}
-                  onFocus={() => setShowDropdown(true)}
-                />
-                {showDropdown && filteredCategories.length > 0 && (
-                  <ul className="dropdown-list">
-                    {filteredCategories.map((cat) => (
-                      <li
-                        key={cat._id}
-                        className="dropdown-item"
-                        onClick={() => selectCategory(cat)}
-                      >
-                        {cat.productCategory}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                {errors.productCategory && <span className="error">{errors.productCategory}</span>}
-              </div> */}
-               
-               <div className="form-group select-dropdown-container">
+               <div className="form-group">
   <label
     className={`form-label ${
       errors.productCategory
@@ -226,54 +168,36 @@ const AddProducts = () => {
   >
     Product Category <span className="required">*</span>
   </label>
-
-  <div className="select-input-wrapper">
-    <input
-      type="text"
-      id="productCategory"
-      name="productCategory"
-      className={`form-input ${
-        errors.productCategory
-          ? 'error-input'
-          : formData.productCategory
-          ? 'valid-input'
-          : ''
-      }`}
-      value={
-        categories.find((c) => c._id === formData.productCategory)?.productCategory ||
-        formData.productCategory
-      }
-      onChange={handleCategoryChange}
-      onFocus={() => setShowDropdown(true)}
-      onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-      placeholder="Search Product Category"
-    />
-    <i className="fa fa-search search-icon"></i>
-  </div>
-
-  {showDropdown && (
-    <div className="select-dropdown">
-      <div className="select-dropdown-header">
-        <span>Select Category</span>
-      </div>
-      <div className="select-list">
-        {filteredCategories.length > 0 ? (
-          filteredCategories.map((cat) => (
-            <div
-              key={cat._id}
-              className="select-item"
-              onClick={() => selectCategory(cat)}
-            >
-              <div className="select-name">{cat.productCategory}</div>
-            </div>
-          ))
-        ) : (
-          <div className="no-select">No categories found</div>
-        )}
-      </div>
-    </div>
-  )}
-
+  <Select
+    id="productCategory"
+    name="productCategory"
+    placeholder="Search Product Category..."
+    value={
+      formData.productCategory
+        ? {
+            value: formData.productCategory,
+            label:
+              categories.find((c) => c._id === formData.productCategory)
+                ?.productCategory || "",
+          }
+        : null
+    }
+    onChange={(selected) =>
+      setFormData((prev) => ({
+        ...prev,
+        productCategory: selected ? selected.value : "",
+      }))
+    }
+    options={categories.map((cat) => ({
+      value: cat._id,
+      label: cat.productCategory,
+    }))}
+    isClearable
+    classNamePrefix="react-select"
+    className={`no-radius-input ${
+      errors.productCategory ? "error-input" : formData.productCategory ? "valid-input" : ""
+    }`}
+  />
   {errors.productCategory && (
     <span className="error">{errors.productCategory}</span>
   )}

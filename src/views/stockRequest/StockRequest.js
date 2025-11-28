@@ -36,6 +36,7 @@ import usePermission from 'src/utils/usePermission';
 const StockRequest = () => {
   const [customers, setCustomers] = useState([]);
   const [centers, setCenters] = useState([]);
+  const [resellers,setResellers] = useState([]);
   const [outlets, setOutlets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -139,9 +140,21 @@ const StockRequest = () => {
     }
   };
 
+  const fetchResellers = async () => {
+    try {
+      const response = await axiosInstance.get('/resellers');
+      if (response.data.success) {
+        setResellers(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching resellers:', error);
+    }
+  };
+
   useEffect(() => {
     fetchData();
     fetchCenters();
+    fetchResellers();
   }, []);
   
   const handlePageChange = (page) => {
@@ -555,6 +568,7 @@ const StockRequest = () => {
         onSearch={handleSearch}
         centers={centers}
         outlets={outlets}
+        resellers={resellers}
       />
       
       <CCard className='table-container mt-4'>

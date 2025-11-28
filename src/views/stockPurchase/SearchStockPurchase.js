@@ -316,7 +316,7 @@ const SearchStockPurchase = ({ visible, onClose, onSearch, centers }) => {
             />
           </div>
 
-          <div className="form-group">
+          {/* <div className="form-group">
             <label className="form-label" htmlFor="outlet">
               Outlet
             </label>
@@ -334,23 +334,33 @@ const SearchStockPurchase = ({ visible, onClose, onSearch, centers }) => {
                 </option>
               ))}
             </CFormSelect>
-          </div>
-        </div>
-        
-        <div className="form-row">
+          </div> */}
           <div className="form-group">
             <label className="form-label" htmlFor="date">
               Date Range
             </label>
-            {/* Pass the formatted date value to DatePicker */}
             <DatePicker
-              value={getDatePickerValue()} // This is the key fix
+              value={getDatePickerValue()}
               onChange={handleDateChange}
               placeholder="Date"
               className="no-radius-input date-input"
             />
           </div>
         </div>
+{/*         
+        <div className="form-row">
+          <div className="form-group">
+            <label className="form-label" htmlFor="date">
+              Date Range
+            </label>
+            <DatePicker
+              value={getDatePickerValue()}
+              onChange={handleDateChange}
+              placeholder="Date"
+              className="no-radius-input date-input"
+            />
+          </div>
+        </div> */}
       </CModalBody>
 
       <CModalFooter>

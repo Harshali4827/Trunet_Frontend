@@ -11,7 +11,7 @@ import {
 } from '@coreui/react'
 import PropTypes from 'prop-types'
 import '../../css/form.css'
-
+import Select from 'react-select'
 const IndentUsageSummarySearch = ({ visible, onClose, onSearch, centers, products }) => {
   const [searchData, setSearchData] = useState({
     product: '',
@@ -53,7 +53,7 @@ const IndentUsageSummarySearch = ({ visible, onClose, onSearch, centers, product
             <label className="form-label" htmlFor="center">
               Branch
             </label>
-            <CFormSelect
+            {/* <CFormSelect
               id="center"
               name="center"
               value={searchData.center}
@@ -67,7 +67,41 @@ const IndentUsageSummarySearch = ({ visible, onClose, onSearch, centers, product
                   {center.centerName}
                 </option>
               ))}
-            </CFormSelect>
+            </CFormSelect> */}
+            <Select
+              id="center"
+              name="center"
+               placeholder="Search"
+              value={
+                searchData.center
+                  ? {
+                      value: searchData.center,
+                      label:
+                        searchData.center === "all"
+                          ? "All Centers"
+                          : centers.find((c) => c._id === searchData.center)
+                          ? centers.find((c) => c._id === searchData.center).centerName
+                          : ""
+                    }
+                  : null
+              }
+              onChange={(selected) =>
+                setSearchData((prev) => ({
+                  ...prev,
+                  center: selected ? selected.value : ""
+                }))
+              }
+              options={[
+                { value: "all", label: "All Centers" },
+                ...centers.map((center) => ({
+                  value: center._id,
+                  label: center.centerName
+                }))
+              ]}
+              isClearable
+              classNamePrefix="react-select"
+              className="no-radius-input"
+            />
           </div>
           <div className="form-group">
             <label className="form-label" htmlFor="month">
@@ -88,7 +122,7 @@ const IndentUsageSummarySearch = ({ visible, onClose, onSearch, centers, product
             <label className="form-label" htmlFor="product">
               Product
             </label>
-            <CFormSelect
+            {/* <CFormSelect
               id="product"
               name="product"
               value={searchData.product}
@@ -101,10 +135,38 @@ const IndentUsageSummarySearch = ({ visible, onClose, onSearch, centers, product
                   {product.productTitle}
                 </option>
               ))}
-            </CFormSelect>
+            </CFormSelect> */}
+             <Select
+              id="product"
+              name="product"
+              placeholder="Search"
+              value={
+                searchData.product
+                  ? {
+                      value: searchData.product,
+                      label: products.find((p) => p._id === searchData.product)
+                        ? products.find((p) => p._id === searchData.product).productTitle
+                        : ""
+                    }
+                  : null
+              }
+              onChange={(selected) =>
+                setSearchData((prev) => ({
+                  ...prev,
+                  product: selected ? selected.value : ""
+                }))
+              }
+              options={products.map((product) => ({
+                value: product._id,
+                label: product.productTitle
+              }))}
+              isClearable
+              classNamePrefix="react-select"
+              className="no-radius-input"
+            />
           </div>
           <div className="form-group">
-            {/* Empty for alignment */}
+
           </div>
         </div>
       </CModalBody>

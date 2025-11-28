@@ -33,7 +33,7 @@ const OnuTrackReport = () => {
   const [data, setData] = useState([]);
   const [centers, setCenters] = useState([]);
   const [products, setProducts] = useState([]);
-  const [partners, setPartners] = useState([]);
+  const [resellers, setResellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
@@ -43,7 +43,7 @@ const OnuTrackReport = () => {
     product: '', 
     status: '', 
     keyword: '', 
-    partner: ''
+    reseller: ''
   });
   const [dropdownOpen, setDropdownOpen] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
@@ -68,14 +68,12 @@ const OnuTrackReport = () => {
       if (searchParams.keyword) {
         params.append('search', searchParams.keyword);
       }
-      if (searchParams.partner) {
-        params.append('partner', searchParams.partner);
+      if (searchParams.reseller) {
+        params.append('reseller', searchParams.reseller);
       }
 
       
       params.append('page', page);
-      params.append('limit', 10);
-      
       const url = `/reports/onu-report?${params.toString()}`;
       const response = await axiosInstance.get(url);
       
@@ -116,11 +114,11 @@ const OnuTrackReport = () => {
     }
   };
 
-  const fetchPartners = async () => {
+  const fetchResellers = async () => {
     try {
-      const response = await axiosInstance.get('/partners');
+      const response = await axiosInstance.get('/resellers');
       if (response.data.success) {
-        setPartners(response.data.data);
+        setResellers(response.data.data);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -131,7 +129,7 @@ const OnuTrackReport = () => {
     fetchData();
     fetchCenters();
     fetchProducts();
-    fetchPartners();
+    fetchResellers();
   }, []);
 
   const handlePageChange = (page) => {
@@ -190,7 +188,7 @@ const OnuTrackReport = () => {
       product: '', 
       status: '', 
       keyword: '', 
-      partner: ''
+      reseller: ''
     });
     setSearchTerm('');
     fetchData({}, 1);
@@ -200,7 +198,7 @@ const OnuTrackReport = () => {
     return activeSearch.product || 
            activeSearch.status || 
            activeSearch.keyword || 
-           activeSearch.partner ||
+           activeSearch.reseller ||
            activeSearch.usageType ||
            activeSearch.customer;
   };
@@ -293,8 +291,8 @@ const OnuTrackReport = () => {
       if (activeSearch.keyword) {
         params.append('search', activeSearch.keyword);
       }
-      if (activeSearch.partner) {
-        params.append('partner', activeSearch.partner);
+      if (activeSearch.reseller) {
+        params.append('reseller', activeSearch.reseller);
       }
       
       const apiUrl = `/reports/onu-report?${params.toString()}`;
@@ -316,7 +314,7 @@ const OnuTrackReport = () => {
         'Customer',
         'Serial Number',
         'Connection Type',
-        'Partner Name',
+        'Reseller Name',
         'Area',
         'ONU Amount',
       ];
@@ -328,7 +326,7 @@ const OnuTrackReport = () => {
             record.customer?.username || '',
             serial.serialNumber || serial,
             record.connectionType || '',
-            record.center?.partner?.partnerName || '',
+            record.center?.reseller?.businessName || '',
             record.center?.area?.areaName || '',
             record.onuCharges || 0,
           ])
@@ -376,7 +374,7 @@ const OnuTrackReport = () => {
         onSearch={handleSearch}
         centers={centers}
         products={products}
-        partners={partners}
+        resellers={resellers}
       />
       
       <CCard className='table-container mt-4'>
@@ -459,8 +457,8 @@ const OnuTrackReport = () => {
                   <CTableHeaderCell scope="col" onClick={() => handleSort('connectionType')} className="sortable-header">
                     Connection Type {getSortIcon('connectionType')}
                   </CTableHeaderCell>
-                  <CTableHeaderCell scope="col" onClick={() => handleSort('center.partner.partnerName')} className="sortable-header">
-                    Partner Name {getSortIcon('center.partner.partnerName')}
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('center.reseller.businessName')} className="sortable-header">
+                    Reseller Name {getSortIcon('center.reseller.businessName')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('center.area.areaName')} className="sortable-header">
                     Area {getSortIcon('center.area.areaName')}
@@ -500,7 +498,7 @@ const OnuTrackReport = () => {
                             </CTableDataCell>
                             <CTableDataCell>{serial.status || 'unknown'}</CTableDataCell>
                             <CTableDataCell>{record.connectionType || ''}</CTableDataCell>
-                            <CTableDataCell>{record.center?.partner?.partnerName || ''}</CTableDataCell>
+                            <CTableDataCell>{record.center?.reseller?.businessName || ''}</CTableDataCell>
                             <CTableDataCell>{record.center?.area?.areaName || ''}</CTableDataCell>
                             <CTableDataCell>{item.onuCharges || 0}</CTableDataCell>
                           </CTableRow>
