@@ -779,8 +779,11 @@ const IndentUsageSummary = () => {
       const itemClosing = 
         parseFloat(item.opening || 0) +
         parseFloat(item.purchase || 0) +
-        parseFloat(item.transferReceive || 0) +
-        itemUsage;
+        parseFloat(item.transferReceive || 0) -
+        itemUsage-
+        parseFloat(item.transferGiven || 0)-
+        parseFloat(item.damage)
+        ;
       
       totals.closing += itemClosing;
     });
@@ -940,8 +943,10 @@ const IndentUsageSummary = () => {
         const closing = 
           parseFloat(item.opening || 0) +
           parseFloat(item.purchase || 0) +
-          parseFloat(item.transferReceive || 0) +
-          usage;
+          parseFloat(item.transferReceive || 0) -
+          usage-
+          parseFloat(item.transferGiven || 0)-
+          parseFloat(item.damage);
 
         return [
           item.center?.name || '',
@@ -1189,7 +1194,7 @@ const IndentUsageSummary = () => {
                       const rowClosing = 
                         parseFloat(item.opening || 0) +
                         parseFloat(item.purchase || 0) +
-                        parseFloat(item.transferReceive || 0) +
+                        parseFloat(item.transferReceive || 0) -
                         rowUsage;
 
                       return (

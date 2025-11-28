@@ -23,6 +23,7 @@ import Pagination from 'src/utils/Pagination';
 import { showError } from 'src/utils/sweetAlerts';
 import { formatDisplayDate } from 'src/utils/FormatDateTime';
 import SearchIndentSummary from './SearchIndentSummary';
+import { useNavigate } from 'react-router-dom';
 
 const UsageSummary = () => {
   const [data, setData] = useState([]);
@@ -43,6 +44,8 @@ const UsageSummary = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const navigate = useNavigate();
+
 
   const fetchData = async (searchParams = {}, page = 1) => {
     try {
@@ -304,6 +307,20 @@ const UsageSummary = () => {
     ? new Date(`${summary.period.split('/')[1]}-${summary.period.split('/')[0]}-01`).toLocaleString('default', { month: 'long', year: 'numeric' })
     : 'N/A';
 
+
+    const handleProductQuantityClick = (item) => {
+      if (item && item.ProductId && item.CenterId) {
+        navigate('/usage-detail', { 
+          state: { 
+            productId: item.ProductId,
+            productName: item.Product,
+            centerId: item.CenterId,
+            centerName: item.Center
+          }
+        });
+      }
+    };
+
   return (
     <div>
       <div className='title'>Usage Summary Report</div>
@@ -397,7 +414,16 @@ const UsageSummary = () => {
                       <CTableRow key={idx}>
                         <CTableDataCell>{item.Center || 'N/A'}</CTableDataCell>
                         <CTableDataCell>{item.Product || 'N/A'}</CTableDataCell>
-                        <CTableDataCell>{item.TotalQuantity || 0}</CTableDataCell>
+                        {/* <CTableDataCell>{item.TotalQuantity || 0}</CTableDataCell> */}
+                        <CTableDataCell>
+                        <button 
+                            className="btn btn-link p-0 text-decoration-none"
+                            style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
+                            onClick={() => handleProductQuantityClick(item)}
+                          >
+                            {item.TotalQuantity || 0}
+                          </button>
+                        </CTableDataCell>
                       </CTableRow>
                     ))}
                     <CTableRow className='total-row'>

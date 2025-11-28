@@ -23,6 +23,7 @@ import Pagination from 'src/utils/Pagination';
 import { showError } from 'src/utils/sweetAlerts';
 import { formatDate } from 'src/utils/FormatDateTime';
 import SearchUsageDetail from './SearchUsageDetail';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const UsageDetail = () => {
   const [data, setData] = useState([]);
@@ -47,6 +48,31 @@ const UsageDetail = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const location = useLocation();
+  
+  useEffect(() => {
+    if (location.state?.productId && location.state?.centerId) {
+      const filteredSearch = {
+        product: location.state.productId,
+        center: location.state.centerId,
+        startDate: '',
+        endDate: '',
+        usageType: '',
+        connectionType: '',
+        customer: '',
+        keyword: '',
+        outlet: ''
+      };
+      
+      setActiveSearch(filteredSearch);
+      fetchData(filteredSearch, 1);
+      document.title = `Usage Details - ${location.state.productName || 'Product'} at ${location.state.centerName || 'Center'}`;
+    } else {
+      fetchData();
+    }
+  }, [location.state]);
+
+
 
   // const fetchData = async (searchParams = {}, page = 1) => {
   //   try {
@@ -594,6 +620,7 @@ const convertDateFormat = (dateStr) => {
       setLoading(false);
     }
   };
+
 
   return (
     <div>
