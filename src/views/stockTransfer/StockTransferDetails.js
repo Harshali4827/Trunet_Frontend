@@ -384,7 +384,7 @@ const handleCompleteIndent = async () => {
       visible: true,
     });
 
-    setTimeout(() => window.location.reload(), 1000);
+    // setTimeout(() => window.location.reload(), 1000);
   } catch (err) {
     console.error('Error in handleCompleteIndent:', err);
 

@@ -767,8 +767,17 @@ const handleIncomplete = async () => {
         <td className="profile-label-cell">Shipped at:</td>
         <td className="profile-value-cell">{formatDateTime(data.shippingInfo?.shippedAt || '')}</td>
 
-        <td className="profile-label-cell">Received at:</td>
-        <td className="profile-value-cell">{formatDateTime(data.receivingInfo?.receivedAt || '')}</td>
+        {/* <td className="profile-label-cell">Received at:</td>
+        <td className="profile-value-cell">{formatDateTime(data.receivingInfo?.receivedAt || '')}</td> */}
+
+        <td className="profile-label-cell">
+             {data.status === 'Completed' && 'Received at:'}
+             {data.status === 'Rejected' && 'Rejected at:'}
+         </td>
+         <td className="profile-value-cell">
+  {data.status === 'Completed' && formatDateTime(data.receivingInfo?.receivedAt || '')}
+  {data.status === 'Rejected' && formatDateTime(data.rejectionInfo?.rejectedAt || '')}
+</td>
       </tr>
 
       <tr className="table-row">
@@ -778,16 +787,29 @@ const handleIncomplete = async () => {
         <td className="profile-label-cell">Shipped by:</td>
         <td className="profile-value-cell">{data.shippingInfo?.shippedBy?.fullName || ''}</td>
 
-        <td className="profile-label-cell">Received by:</td>
-        <td className="profile-value-cell">{data.receivingInfo?.receivedBy?.fullName || ''}</td>
+        {/* <td className="profile-label-cell">Received by:</td>
+        <td className="profile-value-cell">{data.receivingInfo?.receivedBy?.fullName || ''}</td> */}
+            <td className="profile-label-cell">
+              {data.status === 'Completed' && 'Received by:'}
+              {data.status === 'Rejected' && 'Rejected by:'}
+            </td>
+            <td className="profile-value-cell">
+            {data.status === 'Completed' && (data.receivingInfo?.receivedBy?.fullName || '')}
+            {data.status === 'Rejected' && (data.rejectionInfo?.rejectedBy?.fullName || '')}
+           </td>
       </tr>
       <tr className="table-row">
-        <td className="profile-label-cell">Challan Approved at:</td>
-        <td className="profile-value-cell">{formatDateTime(data.approvalInfo?.challanApprovedAt || '')}</td>
-
-        <td className="profile-label-cell">Challan Approved by:</td>
-        <td className="profile-value-cell">{data.approvalInfo?.challanApprovedBy?.fullName || ''},<br></br>{data.approvalInfo?.challanApprovedBy?.email || ''}</td>
-      </tr>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td className="profile-label-cell">
+              {data.status === 'Rejected' && 'Rejected Remark:'}
+        </td>
+        <td className="profile-value-cell">
+            {data.status === 'Rejected' && (data.rejectionInfo?.rejectionReason || '')}
+           </td>
+        </tr>
     </tbody>
   </table>
 </CCardBody>
@@ -867,7 +889,7 @@ const handleIncomplete = async () => {
         </>
       )}
 
-        {data.status === 'Shipped' && userCenterType === 'center' && userRole === 'center' && isCenter &&(
+        {data.status === 'Shipped' && userCenterType === 'center' && isCenter &&(
         <>
           <CButton className="btn-action btn-update"
            onClick={() => setIncompleteModal(true)}
