@@ -5,7 +5,6 @@ import {
   CModalTitle,
   CModalBody,
   CModalFooter,
-  CFormSelect,
   CButton,
   CFormInput
 } from '@coreui/react'
