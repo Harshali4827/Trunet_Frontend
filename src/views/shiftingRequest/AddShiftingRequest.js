@@ -45,7 +45,7 @@ const AddShiftingRequest = () => {
 
   const fetchCenters = async () => {
     try {
-      const res = await axiosInstance.get('/centers');
+      const res = await axiosInstance.get('/centers/main-warehouse?centerType=Center');
       setCenters(res.data.data || []);
     } catch (error) {
       console.log(error);
