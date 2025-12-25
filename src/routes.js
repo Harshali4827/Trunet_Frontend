@@ -99,6 +99,7 @@ const TransferToReseller = React.lazy(() => import('./views/faultyStock/Transfer
 
 const ReturnStock = React.lazy(() => import('./views/return-stock/ReturnStock'))
 const RepairedCost = React.lazy(() => import('./views/Settings/repair-cost/RepairCostList'))
+const ResellerStock = React.lazy(() => import('./views/Report/ResellerStock'))
 const routes = [
 
   { path: '/', exact: true, name: <Translation>{(t) => t('home')}</Translation> },
@@ -632,6 +633,12 @@ const routes = [
     exact:true,
     name:<Translation>{(t) => t('Repaired Cost')}</Translation>,
     element: RepairedCost 
+  },
+  {
+    path:'/reseller-stock',
+    exact:true,
+    name:<Translation>{(t) => t('Reseller Stock')}</Translation>,
+    element: ResellerStock 
   }
 ]
 

@@ -80,13 +80,13 @@ const AddRepairedCost = ({ visible, onClose, onRepairCostAdded, repairCost }) =>
 
       let response
       if (repairCost) {
-        response = await axiosInstance.put(`/repair-costs/${repairCost._id}`, payload)
+        response = await axiosInstance.put(`/repaired-cost/${repairCost._id}`, payload)
         if (response.data.success) {
           setAlert({ type: 'success', message: 'Repair cost updated successfully!' })
           onRepairCostAdded(response.data.data, true)
         }
       } else {
-        response = await axiosInstance.post('/repair-costs', payload)
+        response = await axiosInstance.post('/repaired-cost', payload)
         if (response.data.success) {
           setAlert({ type: 'success', message: 'Repair cost added successfully!' })
           onRepairCostAdded(response.data.data, false)
@@ -162,10 +162,10 @@ const AddRepairedCost = ({ visible, onClose, onRepairCostAdded, repairCost }) =>
               }
               options={products.map((product) => ({
                 value: product._id,
-                label: `${product.productTitle} (${product.productCode})`
+                label: `${product.productTitle}`
               }))}
-              isDisabled={!!repairCost} // Disable product selection when editing
-              isClearable={!repairCost} // Allow clearing only when adding new
+              isDisabled={!!repairCost} 
+              isClearable={!repairCost}
               classNamePrefix="react-select"
               className={`no-radius-input ${
                 errors.product ? "error-input" : formData.product ? "valid-input" : ""
@@ -173,7 +173,7 @@ const AddRepairedCost = ({ visible, onClose, onRepairCostAdded, repairCost }) =>
             />
             {errors.product && <span className="error">{errors.product}</span>}
             {repairCost && (
-              <small className="text-muted">Product cannot be changed when editing</small>
+              <small className='required'>Product cannot be changed when editing</small>
             )}
           </div>
 
@@ -202,30 +202,6 @@ const AddRepairedCost = ({ visible, onClose, onRepairCostAdded, repairCost }) =>
             {errors.repairCost && <span className="error">{errors.repairCost}</span>}
           </div>
         </div>
-
-        {/* Product Details Preview */}
-        {formData.product && (
-          <div className="product-details-preview mt-3 p-3 border rounded">
-            <h6>Product Details:</h6>
-            {(() => {
-              const selectedProduct = products.find(p => p._id === formData.product)
-              if (!selectedProduct) return null
-              
-              return (
-                <div className="row">
-                  <div className="col-md-6">
-                    <p><strong>Product Code:</strong> {selectedProduct.productCode}</p>
-                    <p><strong>Product Name:</strong> {selectedProduct.productTitle}</p>
-                  </div>
-                  <div className="col-md-6">
-                    <p><strong>Sale Price:</strong> ₹ {selectedProduct.salePrice?.toFixed(2) || '0.00'}</p>
-                    <p><strong>HSN Code:</strong> {selectedProduct.hsnCode || 'N/A'}</p>
-                  </div>
-                </div>
-              )
-            })()}
-          </div>
-        )}
       </CModalBody>
 
       <CModalFooter>

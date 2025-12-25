@@ -48,7 +48,7 @@ const RepairedCostList = () => {
   const fetchRepairCosts = async (page = 1) => {
     try {
       setLoading(true)
-      const response = await axiosInstance.get(`/repair-costs?page=${page}`)
+      const response = await axiosInstance.get(`/repaired-cost?page=${page}`)
       if (response.data.success) {
         setRepairCosts(response.data.data)
         setCurrentPage(response.data.pagination.currentPage)
@@ -126,7 +126,7 @@ const RepairedCostList = () => {
     const result = await confirmDelete()
     if (result.isConfirmed) {
       try {
-        await axiosInstance.delete(`/repair-costs/${id}`)
+        await axiosInstance.delete(`/repaired-cost/${id}`)
         fetchRepairCosts(currentPage)
         showSuccess('Repair cost deleted successfully!')
       } catch (error) {
@@ -187,7 +187,7 @@ const RepairedCostList = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading repair costs: {error}
+       {error}
       </div>
     )
   }
@@ -199,7 +199,7 @@ const RepairedCostList = () => {
         <CCardHeader className="card-header d-flex justify-content-between align-items-center">
           <div>
             <CButton size="sm" className="action-btn me-1" onClick={() => setShowModal(true)}>
-              <CIcon icon={cilPlus} className="icon" /> Add Repair Cost
+              <CIcon icon={cilPlus} className="icon" /> Add
             </CButton>
           </div>
 
@@ -223,7 +223,6 @@ const RepairedCostList = () => {
                 className="d-inline-block square-search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by product name or code..."
               />
             </div>
           </div>
@@ -233,13 +232,6 @@ const RepairedCostList = () => {
                 <CTableRow>
                   <CTableHeaderCell scope="col" className="sortable-header">
                     SR.No.
-                  </CTableHeaderCell>
-                  <CTableHeaderCell
-                    scope="col"
-                    onClick={() => handleSort('product.productCode')}
-                    className="sortable-header"
-                  >
-                    Product Code {getSortIcon('product.productCode')}
                   </CTableHeaderCell>
                   <CTableHeaderCell
                     scope="col"
@@ -255,13 +247,6 @@ const RepairedCostList = () => {
                   >
                     Repair Cost (₹) {getSortIcon('repairCost')}
                   </CTableHeaderCell>
-                  <CTableHeaderCell
-                    scope="col"
-                    onClick={() => handleSort('product.salePrice')}
-                    className="sortable-header"
-                  >
-                    Sale Price (₹) {getSortIcon('product.salePrice')}
-                  </CTableHeaderCell>
                   <CTableHeaderCell scope="col">Action</CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
@@ -271,16 +256,10 @@ const RepairedCostList = () => {
                     <CTableRow key={repairCost._id}>
                       <CTableDataCell>{(currentPage - 1) * 100 + index + 1}</CTableDataCell>
                       <CTableDataCell>
-                        {repairCost.product?.productCode || 'N/A'}
-                      </CTableDataCell>
-                      <CTableDataCell>
                         {repairCost.product?.productTitle || 'N/A'}
                       </CTableDataCell>
-                      <CTableDataCell className="text-end">
+                      <CTableDataCell>
                         ₹ {repairCost.repairCost?.toFixed(2) || '0.00'}
-                      </CTableDataCell>
-                      <CTableDataCell className="text-end">
-                        ₹ {repairCost.product?.salePrice?.toFixed(2) || '0.00'}
                       </CTableDataCell>
                       <CTableDataCell>
                         <div

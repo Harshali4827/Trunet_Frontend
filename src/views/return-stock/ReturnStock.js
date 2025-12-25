@@ -180,7 +180,7 @@ const ReturnStock = () => {
       const response = await axiosInstance.post('/center-return', payload);
       setAlert({ show: true, message: 'Stock returned to reseller successfully!', type: 'success' });
       setTimeout(() => {
-        navigate('/stock-transfer');
+        navigate('/reseller-stock');
       }, 1500);
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Error processing return request. Please try again.';

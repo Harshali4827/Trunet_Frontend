@@ -413,6 +413,7 @@ const getNav = (permissions = []) => {
   if (hasPermission(permissions, 'Report', ['view_outlet_stock','view_all_report','view_own_report'])) {
     // reportItems.push({ component: CNavItem, name: 'Branch Stock', to: '/center-stock' })
     reportItems.push({ component: CNavItem, name: 'Available Stock', to: '/available-stock' })
+    reportItems.push({ component: CNavItem, name: 'Reseller Stock', to: '/reseller-stock' })
     reportItems.push({ component: CNavItem, name: 'Field Stock', to: '/filled-stock' })
     reportItems.push({ component: CNavItem, name: 'Transaction Report', to: '/transaction-report' })
     reportItems.push({ component: CNavItem, name: 'Purchase Detail', to: '/purchase-detail' })
@@ -478,7 +479,6 @@ const getNav = (permissions = []) => {
 
   if (hasPermission(permissions, 'Settings', ['manage_user', 'manage_masters_data', 'manage_vendors'])) {
     settingsItems.push({ component: CNavItem, name: 'Branch', to: '/center-list' })
-    // settingsItems.push({ component: CNavItem, name: 'Warehouse', to: '/warehouse-list' })
     settingsItems.push({ component: CNavItem, name: 'Products', to: '/product-list' })
     settingsItems.push({ component: CNavItem, name: 'Product Categories', to: '/product-category' })
     settingsItems.push({ component: CNavItem, name: 'Repaired Cost', to: '/repaired-cost' })

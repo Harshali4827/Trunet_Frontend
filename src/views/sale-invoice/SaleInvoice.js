@@ -126,6 +126,28 @@ const SaleInvoices = () => {
       console.error('Error fetching data:', error);
     }
   };
+
+  const fetchRepairCosts = async (productIds) => {
+    try {
+      const response = await axiosInstance.get('/repaired-cost');
+      
+      if (response.data.success) {
+        const repairCostMap = new Map();
+        response.data.data.forEach(item => {
+          if (item.product && item.product._id) {
+            repairCostMap.set(item.product._id, item.repairCost);
+          }
+        });
+        console.log('Repair cost map:', repairCostMap);
+        return repairCostMap;
+      }
+      return new Map();
+    } catch (error) {
+      console.error('Error fetching repair costs:', error);
+      return new Map();
+    }
+  };  
+  
  
   const handleSelectChallan = (id) => {
     setSelectedChallans((prev) =>
@@ -145,6 +167,7 @@ const SaleInvoices = () => {
     fetchData();
     fetchCenters();
     fetchResellers();
+    fetchRepairCosts();
   }, []);
   
   const handlePageChange = (page) => {
@@ -233,12 +256,26 @@ const SaleInvoices = () => {
     setSelectedChallan(item);
     setShowChallanModal(true);
   };
-  // const handleGenerateInvoice = (metaData) => {
+  
+  // const handleGenerateInvoice = async (metaData) => {
   //   setInvoiceMetaData(metaData);
   
   //   const selectedData = customers.filter(c => selectedChallans.includes(c._id));
   //   if (selectedData.length === 0) return;
   
+  //    // Collect all product IDs
+  // const allProductIds = [];
+  // selectedData.forEach(challan => {
+  //   challan.products.forEach(product => {
+  //     if (product.product?._id) {
+  //       allProductIds.push(product.product._id);
+  //     }
+  //   });
+  // });
+
+  // // Fetch repair costs for all products
+  // const repairCostMap = await fetchRepairCosts(allProductIds);
+
   //   const reseller = selectedData[0]?.center?.reseller;
   //   const invoiceNumber = `STEL/25-26/${Math.floor(Math.random() * 100)}`;
   //   const invoiceDate = '31-Jul-25';
@@ -249,49 +286,116 @@ const SaleInvoices = () => {
   //   const centersList = allCenters.join(', ');
   
   //   const productMap = new Map();
-  //   const repairCostPerUnit = 150; // Repair cost for reseller/repair stock
+  //   const repairCostPerUnit = repairCostMap.get(product.product?._id) || 150;
     
   //   selectedData.forEach(challan => {
   //     challan.products.forEach(product => {
   //       const productId = product.product?._id || product.product?.productTitle;
-  //       const sourceBreakdown = product.sourceBreakdown || {};
-  //       const fromResellerQty = sourceBreakdown.fromReseller?.quantity || 0;
-  //       const fromOutletQty = sourceBreakdown.fromOutlet?.quantity || 0;
-  //       const totalQty = product.receivedQuantity || product.approvedQuantity || 0;
-        
-  //       const salePrice = product.product?.salePrice || product.rate || 0;
   //       const productTitle = product.product?.productTitle || '';
   //       const hsnCode = product.product?.hsnCode || '85176990';
+  //       const salePrice = product.product?.salePrice || product.rate || 0;
         
+  //       // Get the source breakdown
+  //       const sourceBreakdown = product.sourceBreakdown || {};
+  //       const resellerQty = sourceBreakdown.fromReseller?.quantity || 0;
+  //       const outletQty = sourceBreakdown.fromOutlet?.quantity || 0;
+        
+  //       // Get reseller stock breakdown from API
+  //       const resellerStock = product.resellerStock || {};
+  //       const availableBreakdown = resellerStock.availableBreakdown || {};
+        
+  //       // Calculate damage repair vs center return allocation
+  //       // We need to split the resellerQty (4) into damage repair (2) and center return (2)
+  //       let damageRepairQty = 0;
+  //       let centerReturnQty = 0;
+        
+  //       if (resellerQty > 0) {
+  //         // Check if we have available breakdown data
+  //         const totalDamageRepairInStock = availableBreakdown.damageRepair || 0;
+  //         const totalCenterReturnInStock = availableBreakdown.centerReturn || 0;
+  //         const totalResellerStockAvailable = totalDamageRepairInStock + totalCenterReturnInStock;
+          
+  //         if (totalResellerStockAvailable > 0) {
+  //           // Calculate allocation based on proportions in available stock
+  //           const damageRepairRatio = totalDamageRepairInStock / totalResellerStockAvailable;
+  //           const centerReturnRatio = totalCenterReturnInStock / totalResellerStockAvailable;
+            
+  //           damageRepairQty = Math.min(
+  //             Math.round(resellerQty * damageRepairRatio),
+  //             totalDamageRepairInStock
+  //           );
+  //           centerReturnQty = Math.min(
+  //             resellerQty - damageRepairQty,
+  //             totalCenterReturnInStock
+  //           );
+            
+  //           // Adjust if rounding causes issues
+  //           if (damageRepairQty + centerReturnQty !== resellerQty) {
+  //             const remaining = resellerQty - damageRepairQty - centerReturnQty;
+  //             if (remaining > 0) {
+  //               // Add remaining to whichever has more stock available
+  //               if (totalDamageRepairInStock - damageRepairQty > totalCenterReturnInStock - centerReturnQty) {
+  //                 damageRepairQty += remaining;
+  //               } else {
+  //                 centerReturnQty += remaining;
+  //               }
+  //             }
+  //           }
+  //         } else {
+  //           // If no breakdown data, assume 50/50 split
+  //           damageRepairQty = Math.round(resellerQty / 2);
+  //           centerReturnQty = resellerQty - damageRepairQty;
+  //         }
+  //       }
+  
+  //       console.log(`Product ${productTitle}:`, {
+  //         resellerQty,
+  //         outletQty,
+  //         damageRepairQty,
+  //         centerReturnQty,
+  //         availableBreakdown
+  //       });
+  
   //       if (productMap.has(productId)) {
   //         const existing = productMap.get(productId);
           
   //         // Calculate amounts based on source
-  //         const outletAmount = fromOutletQty * salePrice;
-  //         const resellerAmount = fromResellerQty * repairCostPerUnit; // Repair cost only
+  //         const outletAmount = outletQty * salePrice;
+  //         const damageRepairAmount = damageRepairQty * repairCostPerUnit;
+  //         const centerReturnAmount = centerReturnQty * 0; // Center return items are free
           
-  //         existing.quantity += totalQty;
-  //         existing.outletQty += fromOutletQty;
-  //         existing.resellerQty += fromResellerQty;
+  //         existing.quantity += (resellerQty + outletQty);
+  //         existing.outletQty += outletQty;
+  //         existing.damageRepairQty += damageRepairQty;
+  //         existing.centerReturnQty += centerReturnQty;
+          
   //         existing.outletAmount += outletAmount;
-  //         existing.resellerAmount += resellerAmount;
-  //         existing.totalAmount += outletAmount + resellerAmount;
+  //         existing.damageRepairAmount += damageRepairAmount;
+  //         existing.centerReturnAmount += centerReturnAmount;
+  //         existing.totalAmount += outletAmount + damageRepairAmount + centerReturnAmount;
   //       } else {
-  //         // Calculate amounts based on source
-  //         const outletAmount = fromOutletQty * salePrice;
-  //         const resellerAmount = fromResellerQty * repairCostPerUnit; // Repair cost only
+  //         const outletAmount = outletQty * salePrice;
+  //         const damageRepairAmount = damageRepairQty * repairCostPerUnit;
+  //         const centerReturnAmount = centerReturnQty * 0;
           
   //         productMap.set(productId, {
   //           productTitle: productTitle,
   //           hsnCode: hsnCode,
-  //           quantity: totalQty,
-  //           outletQty: fromOutletQty, // New stock from outlet
-  //           resellerQty: fromResellerQty, // Repair stock from reseller
-  //           rate: salePrice,
-  //           repairRate: repairCostPerUnit, // Repair cost rate
+  //           quantity: resellerQty + outletQty,
+           
+  //           outletQty: outletQty, 
+  //           damageRepairQty: damageRepairQty,
+  //           centerReturnQty: centerReturnQty, 
+            
+  //           outletRate: salePrice,
+  //           repairRate: repairCostPerUnit,
+  //           centerReturnRate: 0, 
+
   //           outletAmount: outletAmount,
-  //           resellerAmount: resellerAmount,
-  //           totalAmount: outletAmount + resellerAmount,
+  //           damageRepairAmount: damageRepairAmount,
+  //           centerReturnAmount: centerReturnAmount,
+  //           totalAmount: outletAmount + damageRepairAmount + centerReturnAmount,
+            
   //           unit: 'Nos'
   //         });
   //       }
@@ -300,10 +404,12 @@ const SaleInvoices = () => {
   
   //   const combinedProducts = Array.from(productMap.values());
   
-  //   // Calculate totals
+  //   // Calculate totals by category
   //   const totalOutletAmount = combinedProducts.reduce((sum, p) => sum + p.outletAmount, 0);
-  //   const totalResellerAmount = combinedProducts.reduce((sum, p) => sum + p.resellerAmount, 0);
-  //   const totalBeforeTax = totalOutletAmount + totalResellerAmount;
+  //   const totalDamageRepairAmount = combinedProducts.reduce((sum, p) => sum + p.damageRepairAmount, 0);
+  //   const totalCenterReturnAmount = combinedProducts.reduce((sum, p) => sum + p.centerReturnAmount, 0);
+    
+  //   const totalBeforeTax = totalOutletAmount + totalDamageRepairAmount + totalCenterReturnAmount;
     
   //   const cgst = totalBeforeTax * 0.09;
   //   const sgst = totalBeforeTax * 0.09;
@@ -361,6 +467,7 @@ const SaleInvoices = () => {
   //         .bold { font-weight: bold; }
   //         .footer-note { font-style: italic; text-align: right; margin-top: 4px; }
   //         .repair-note { color: #666; font-size: 0.9em; }
+  //         .free-note { color: green; font-size: 0.9em; }
   //         @media print { .page-break { page-break-before: always; } }
   //       </style>
   //     </head>
@@ -442,67 +549,72 @@ const SaleInvoices = () => {
   //           <tbody>
   //             ${products.map((p, i) => {
   //               const productIndex = pageIndex * productsPerPage + i + 1;
-                
-  //               // If product has both outlet and reseller quantities, show separate rows
-  //               if (p.outletQty > 0 && p.resellerQty > 0) {
-  //                 return `
-  //                   <!-- New product row -->
+  //               let rows = [];
+  //               let rowCount = 0;
+  //               if (p.outletQty > 0) {
+  //                 rows.push(`
   //                   <tr>
-  //                     <td rowspan="2">${productIndex}</td>
-  //                     <td>${p.productTitle} (New)</td>
-  //                     <td>${p.hsnCode}</td>
-  //                     <td class="right">${p.outletQty}</td>
-  //                     <td class="right">${p.rate.toFixed(2)}</td>
-  //                     <td>${p.unit}</td>
-  //                     <td class="right">${p.outletAmount.toFixed(2)}</td>
-  //                   </tr>
-  //                   <!-- Repair product row -->
-  //                   <tr>
-  //                     <td>${p.productTitle} <span class="repair-note">(Repair Return)</span></td>
-  //                     <td>${p.hsnCode}</td>
-  //                     <td class="right">${p.resellerQty}</td>
-  //                     <td class="right">${p.repairRate.toFixed(2)}</td>
-  //                     <td>${p.unit}</td>
-  //                     <td class="right">${p.resellerAmount.toFixed(2)}</td>
-  //                   </tr>
-  //                 `;
-  //               } else if (p.resellerQty > 0) {
-  //                 // Only repair returns
-  //                 return `
-  //                   <tr>
-  //                     <td>${productIndex}</td>
-  //                     <td>${p.productTitle} <span class="repair-note">(Repair Return)</span></td>
-  //                     <td>${p.hsnCode}</td>
-  //                     <td class="right">${p.resellerQty}</td>
-  //                     <td class="right">${p.repairRate.toFixed(2)}</td>
-  //                     <td>${p.unit}</td>
-  //                     <td class="right">${p.resellerAmount.toFixed(2)}</td>
-  //                   </tr>
-  //                 `;
-  //               } else {
-  //                 // Only new products
-  //                 return `
-  //                   <tr>
-  //                     <td>${productIndex}</td>
+  //                     <td${rowCount > 0 ? ' rowspan="' + (rowCount) + '"' : ''}>${productIndex}</td>
   //                     <td>${p.productTitle}</td>
   //                     <td>${p.hsnCode}</td>
   //                     <td class="right">${p.outletQty}</td>
-  //                     <td class="right">${p.rate.toFixed(2)}</td>
+  //                     <td class="right">${p.outletRate.toFixed(2)}</td>
   //                     <td>${p.unit}</td>
   //                     <td class="right">${p.outletAmount.toFixed(2)}</td>
   //                   </tr>
-  //                 `;
+  //                 `);
+  //                 rowCount++;
   //               }
+                
+  //               if (p.damageRepairQty > 0) {
+  //                 rows.push(`
+  //                   <tr>
+  //                      <td></td>
+  //                     <td>${p.productTitle} <span class="repair-note">(Damage Repair - Charged)</span></td>
+  //                     <td>${p.hsnCode}</td>
+  //                     <td class="right">${p.damageRepairQty}</td>
+  //                     <td class="right">${p.repairRate.toFixed(2)}</td>
+  //                     <td>${p.unit}</td>
+  //                     <td class="right">${p.damageRepairAmount.toFixed(2)}</td>
+  //                   </tr>
+  //                 `);
+  //                 rowCount++;
+  //               }
+                
+  //               if (p.centerReturnQty > 0) {
+  //                 rows.push(`
+  //                   <tr>
+  //                   <td></td>
+  //                     <td>${p.productTitle} <span class="free-note">(Center Return)</span></td>
+  //                     <td>${p.hsnCode}</td>
+  //                     <td class="right">${p.centerReturnQty}</td>
+  //                     <td class="right">${p.centerReturnRate.toFixed(2)}</td>
+  //                     <td>${p.unit}</td>
+  //                     <td class="right">${p.centerReturnAmount.toFixed(2)}</td>
+  //                   </tr>
+  //                 `);
+  //                 rowCount++;
+  //               }
+                
+  //               // Update first row's rowspan
+  //               if (rows.length > 0 && rowCount > 1) {
+  //                 rows[0] = rows[0].replace(
+  //                   'rowspan="' + (rowCount) + '"',
+  //                   'rowspan="' + rowCount + '"'
+  //                 );
+  //               }
+                
+  //               return rows.join('');
   //             }).join('')}
   //             ${pageIndex === pages.length - 1 ? `
   //             <tr>
   //               <td colspan="4" rowspan="7"></td>
-  //               <td colspan="2"><b>Subtotal (New Products)</b></td>
+  //               <td colspan="2"><b>Subtotal (New Stock from Outlet)</b></td>
   //               <td class="right">${totalOutletAmount.toFixed(2)}</td>
   //             </tr>
   //             <tr>
-  //               <td colspan="2"><b>Subtotal (Repair Returns)</b></td>
-  //               <td class="right">${totalResellerAmount.toFixed(2)}</td>
+  //               <td colspan="2"><b>Subtotal (Damage Repair @₹${repairCostPerUnit}/unit)</b></td>
+  //               <td class="right">${totalDamageRepairAmount.toFixed(2)}</td>
   //             </tr>
   //             <tr>
   //               <td colspan="2"><b>Total Before Tax</b></td>
@@ -511,7 +623,7 @@ const SaleInvoices = () => {
   //             <tr><td colspan="2"><b>Output CGST @9%</b></td><td class="right">${cgst.toFixed(2)}</td></tr>
   //             <tr><td colspan="2"><b>Output SGST @9%</b></td><td class="right">${sgst.toFixed(2)}</td></tr>
   //             <tr><td colspan="2"><b>Round Off</b></td><td class="right">${roundOff.toFixed(2)}</td></tr>
-  //             <tr><td colspan="2"><b>Total</b></td><td class="right">${total.toFixed(2)}</td></tr>
+  //               <tr><td colspan="2"><b>Total</b></td><td class="right">${total.toFixed(2)}</td></tr>
   //             <tr><td colspan="7"><b>Amount Chargeable (in words):</b><i>${numToWords(total)}</i></td></tr>` : ''}
   //           </tbody>
   //         </table>
@@ -588,18 +700,22 @@ const SaleInvoices = () => {
         
   //       <!-- Summary Section -->
   //       <div style="margin-top: 20px; padding: 10px; border: 1px solid #000;">
-  //         <h4>Invoice Summary</h4>
+  //         <h4>Invoice Summary - Stock Source Analysis</h4>
   //         <table style="width: 100%; border-collapse: collapse;">
   //           <tr>
-  //             <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>New Products:</strong></td>
+  //             <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>New Stock (From Outlet):</strong></td>
   //             <td style="padding: 5px; border-bottom: 1px solid #ddd; text-align: right;">₹ ${totalOutletAmount.toFixed(2)}</td>
   //           </tr>
   //           <tr>
-  //             <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>Repair Returns (${repairCostPerUnit}/unit):</strong></td>
-  //             <td style="padding: 5px; border-bottom: 1px solid #ddd; text-align: right;">₹ ${totalResellerAmount.toFixed(2)}</td>
+  //             <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>Damage Repair Items (₹${repairCostPerUnit}/unit):</strong></td>
+  //             <td style="padding: 5px; border-bottom: 1px solid #ddd; text-align: right;">₹ ${totalDamageRepairAmount.toFixed(2)}</td>
   //           </tr>
   //           <tr>
-  //             <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>Subtotal:</strong></td>
+  //             <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>Center Return Items (Free):</strong></td>
+  //             <td style="padding: 5px; border-bottom: 1px solid #ddd; text-align: right;">₹ ${totalCenterReturnAmount.toFixed(2)}</td>
+  //           </tr>
+  //           <tr>
+  //             <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>Subtotal (Taxable Amount):</strong></td>
   //             <td style="padding: 5px; border-bottom: 1px solid #ddd; text-align: right;">₹ ${totalBeforeTax.toFixed(2)}</td>
   //           </tr>
   //           <tr>
@@ -611,6 +727,14 @@ const SaleInvoices = () => {
   //             <td style="padding: 5px; text-align: right;"><strong>₹ ${total.toFixed(2)}</strong></td>
   //           </tr>
   //         </table>
+          
+  //         <div style="margin-top: 10px; padding: 5px; background-color: #f8f9fa; border-radius: 4px;">
+  //           <small><strong>Note:</strong> 
+  //           <br/>1. Center return items are provided free of charge as they were previously returned from centers.
+  //           <br/>2. Damage repair items incur a repair charge of ₹${repairCostPerUnit} per unit.
+  //           <br/>3. New stock from outlet is charged at regular sale price.
+  //           </small>
+  //         </div>
   //       </div>
   
   //       <script>window.onload = () => window.print();</script>
@@ -620,11 +744,29 @@ const SaleInvoices = () => {
   
   //   invoiceWindow.document.close();
   // };
-  const handleGenerateInvoice = (metaData) => {
+
+
+
+  const handleGenerateInvoice = async (metaData) => {
     setInvoiceMetaData(metaData);
   
     const selectedData = customers.filter(c => selectedChallans.includes(c._id));
     if (selectedData.length === 0) return;
+    const allProductIds = [];
+    selectedData.forEach(challan => {
+      challan.products.forEach(product => {
+        if (product.product?._id) {
+          allProductIds.push(product.product._id.toString());
+        }
+      });
+    });
+  
+    // Fetch repair costs for all products
+    const repairCostMap = await fetchRepairCosts(allProductIds);
+    
+    // Log for debugging
+    console.log('Product IDs:', allProductIds);
+    console.log('Repair cost map size:', repairCostMap.size);
   
     const reseller = selectedData[0]?.center?.reseller;
     const invoiceNumber = `STEL/25-26/${Math.floor(Math.random() * 100)}`;
@@ -636,7 +778,6 @@ const SaleInvoices = () => {
     const centersList = allCenters.join(', ');
   
     const productMap = new Map();
-    const repairCostPerUnit = 150; // Repair cost for damage repair items
     
     selectedData.forEach(challan => {
       challan.products.forEach(product => {
@@ -645,28 +786,25 @@ const SaleInvoices = () => {
         const hsnCode = product.product?.hsnCode || '85176990';
         const salePrice = product.product?.salePrice || product.rate || 0;
         
-        // Get the source breakdown
+  
+        const repairCostPerUnit = repairCostMap.get(product.product?._id?.toString()) || 150;
+        
         const sourceBreakdown = product.sourceBreakdown || {};
         const resellerQty = sourceBreakdown.fromReseller?.quantity || 0;
         const outletQty = sourceBreakdown.fromOutlet?.quantity || 0;
         
-        // Get reseller stock breakdown from API
         const resellerStock = product.resellerStock || {};
         const availableBreakdown = resellerStock.availableBreakdown || {};
         
-        // Calculate damage repair vs center return allocation
-        // We need to split the resellerQty (4) into damage repair (2) and center return (2)
         let damageRepairQty = 0;
         let centerReturnQty = 0;
         
         if (resellerQty > 0) {
-          // Check if we have available breakdown data
           const totalDamageRepairInStock = availableBreakdown.damageRepair || 0;
           const totalCenterReturnInStock = availableBreakdown.centerReturn || 0;
           const totalResellerStockAvailable = totalDamageRepairInStock + totalCenterReturnInStock;
           
           if (totalResellerStockAvailable > 0) {
-            // Calculate allocation based on proportions in available stock
             const damageRepairRatio = totalDamageRepairInStock / totalResellerStockAvailable;
             const centerReturnRatio = totalCenterReturnInStock / totalResellerStockAvailable;
             
@@ -679,11 +817,9 @@ const SaleInvoices = () => {
               totalCenterReturnInStock
             );
             
-            // Adjust if rounding causes issues
             if (damageRepairQty + centerReturnQty !== resellerQty) {
               const remaining = resellerQty - damageRepairQty - centerReturnQty;
               if (remaining > 0) {
-                // Add remaining to whichever has more stock available
                 if (totalDamageRepairInStock - damageRepairQty > totalCenterReturnInStock - centerReturnQty) {
                   damageRepairQty += remaining;
                 } else {
@@ -703,16 +839,16 @@ const SaleInvoices = () => {
           outletQty,
           damageRepairQty,
           centerReturnQty,
+          repairCost: repairCostPerUnit,
           availableBreakdown
         });
   
         if (productMap.has(productId)) {
           const existing = productMap.get(productId);
-          
-          // Calculate amounts based on source
+         
           const outletAmount = outletQty * salePrice;
           const damageRepairAmount = damageRepairQty * repairCostPerUnit;
-          const centerReturnAmount = centerReturnQty * 0; // Center return items are free
+          const centerReturnAmount = centerReturnQty * 0;
           
           existing.quantity += (resellerQty + outletQty);
           existing.outletQty += outletQty;
@@ -724,27 +860,24 @@ const SaleInvoices = () => {
           existing.centerReturnAmount += centerReturnAmount;
           existing.totalAmount += outletAmount + damageRepairAmount + centerReturnAmount;
         } else {
-          // Calculate amounts based on source
+          
           const outletAmount = outletQty * salePrice;
           const damageRepairAmount = damageRepairQty * repairCostPerUnit;
-          const centerReturnAmount = centerReturnQty * 0; // Center return items are free
+          const centerReturnAmount = centerReturnQty * 0;
           
           productMap.set(productId, {
             productTitle: productTitle,
             hsnCode: hsnCode,
             quantity: resellerQty + outletQty,
+           
+            outletQty: outletQty, 
+            damageRepairQty: damageRepairQty,
+            centerReturnQty: centerReturnQty, 
             
-            // Quantity breakdown
-            outletQty: outletQty, // New stock from outlet
-            damageRepairQty: damageRepairQty, // Repair stock from reseller (charged)
-            centerReturnQty: centerReturnQty, // Center return stock (free)
-            
-            // Rates
             outletRate: salePrice,
-            repairRate: repairCostPerUnit, // Repair cost rate
-            centerReturnRate: 0, // Free
-            
-            // Amounts
+            repairRate: repairCostPerUnit,
+            centerReturnRate: 0, 
+  
             outletAmount: outletAmount,
             damageRepairAmount: damageRepairAmount,
             centerReturnAmount: centerReturnAmount,
@@ -758,7 +891,6 @@ const SaleInvoices = () => {
   
     const combinedProducts = Array.from(productMap.values());
   
-    // Calculate totals by category
     const totalOutletAmount = combinedProducts.reduce((sum, p) => sum + p.outletAmount, 0);
     const totalDamageRepairAmount = combinedProducts.reduce((sum, p) => sum + p.damageRepairAmount, 0);
     const totalCenterReturnAmount = combinedProducts.reduce((sum, p) => sum + p.centerReturnAmount, 0);
@@ -905,10 +1037,11 @@ const SaleInvoices = () => {
                 const productIndex = pageIndex * productsPerPage + i + 1;
                 let rows = [];
                 let rowCount = 0;
+                
                 if (p.outletQty > 0) {
                   rows.push(`
                     <tr>
-                      <td${rowCount > 0 ? ' rowspan="' + (rowCount) + '"' : ''}>${productIndex}</td>
+                      <td${rowCount > 0 ? ' rowspan="' + rowCount + '"' : ''}>${productIndex}</td>
                       <td>${p.productTitle}</td>
                       <td>${p.hsnCode}</td>
                       <td class="right">${p.outletQty}</td>
@@ -923,8 +1056,8 @@ const SaleInvoices = () => {
                 if (p.damageRepairQty > 0) {
                   rows.push(`
                     <tr>
-                       <td></td>
-                      <td>${p.productTitle} <span class="repair-note">(Damage Repair - Charged)</span></td>
+                      <td${rowCount === 0 ? ' rowspan="' + (rowCount + 1) + '"' : ''}></td>
+                      <td>${p.productTitle} <span class="repair-note">(Damage Repair - Charged @₹${p.repairRate}/unit)</span></td>
                       <td>${p.hsnCode}</td>
                       <td class="right">${p.damageRepairQty}</td>
                       <td class="right">${p.repairRate.toFixed(2)}</td>
@@ -938,8 +1071,8 @@ const SaleInvoices = () => {
                 if (p.centerReturnQty > 0) {
                   rows.push(`
                     <tr>
-                    <td></td>
-                      <td>${p.productTitle} <span class="free-note">(Center Return)</span></td>
+                      <td${rowCount === 0 ? ' rowspan="' + (rowCount + 1) + '"' : ''}></td>
+                      <td>${p.productTitle} <span class="free-note">(Center Return - Free)</span></td>
                       <td>${p.hsnCode}</td>
                       <td class="right">${p.centerReturnQty}</td>
                       <td class="right">${p.centerReturnRate.toFixed(2)}</td>
@@ -948,14 +1081,6 @@ const SaleInvoices = () => {
                     </tr>
                   `);
                   rowCount++;
-                }
-                
-                // Update first row's rowspan
-                if (rows.length > 0 && rowCount > 1) {
-                  rows[0] = rows[0].replace(
-                    'rowspan="' + (rowCount) + '"',
-                    'rowspan="' + rowCount + '"'
-                  );
                 }
                 
                 return rows.join('');
@@ -967,7 +1092,7 @@ const SaleInvoices = () => {
                 <td class="right">${totalOutletAmount.toFixed(2)}</td>
               </tr>
               <tr>
-                <td colspan="2"><b>Subtotal (Damage Repair @₹${repairCostPerUnit}/unit)</b></td>
+                <td colspan="2"><b>Subtotal (Damage Repair)</b></td>
                 <td class="right">${totalDamageRepairAmount.toFixed(2)}</td>
               </tr>
               <tr>
@@ -977,7 +1102,7 @@ const SaleInvoices = () => {
               <tr><td colspan="2"><b>Output CGST @9%</b></td><td class="right">${cgst.toFixed(2)}</td></tr>
               <tr><td colspan="2"><b>Output SGST @9%</b></td><td class="right">${sgst.toFixed(2)}</td></tr>
               <tr><td colspan="2"><b>Round Off</b></td><td class="right">${roundOff.toFixed(2)}</td></tr>
-                <tr><td colspan="2"><b>Total</b></td><td class="right">${total.toFixed(2)}</td></tr>
+              <tr><td colspan="2"><b>Total</b></td><td class="right">${total.toFixed(2)}</td></tr>
               <tr><td colspan="7"><b>Amount Chargeable (in words):</b><i>${numToWords(total)}</i></td></tr>` : ''}
             </tbody>
           </table>
@@ -1051,46 +1176,6 @@ const SaleInvoices = () => {
            </tr>
           </tbody>
         </table>
-        
-        <!-- Summary Section -->
-        <div style="margin-top: 20px; padding: 10px; border: 1px solid #000;">
-          <h4>Invoice Summary - Stock Source Analysis</h4>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>New Stock (From Outlet):</strong></td>
-              <td style="padding: 5px; border-bottom: 1px solid #ddd; text-align: right;">₹ ${totalOutletAmount.toFixed(2)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>Damage Repair Items (₹${repairCostPerUnit}/unit):</strong></td>
-              <td style="padding: 5px; border-bottom: 1px solid #ddd; text-align: right;">₹ ${totalDamageRepairAmount.toFixed(2)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>Center Return Items (Free):</strong></td>
-              <td style="padding: 5px; border-bottom: 1px solid #ddd; text-align: right;">₹ ${totalCenterReturnAmount.toFixed(2)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>Subtotal (Taxable Amount):</strong></td>
-              <td style="padding: 5px; border-bottom: 1px solid #ddd; text-align: right;">₹ ${totalBeforeTax.toFixed(2)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 5px; border-bottom: 1px solid #ddd;"><strong>GST (18%):</strong></td>
-              <td style="padding: 5px; border-bottom: 1px solid #ddd; text-align: right;">₹ ${(cgst + sgst).toFixed(2)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 5px;"><strong>Total Invoice Amount:</strong></td>
-              <td style="padding: 5px; text-align: right;"><strong>₹ ${total.toFixed(2)}</strong></td>
-            </tr>
-          </table>
-          
-          <div style="margin-top: 10px; padding: 5px; background-color: #f8f9fa; border-radius: 4px;">
-            <small><strong>Note:</strong> 
-            <br/>1. Center return items are provided free of charge as they were previously returned from centers.
-            <br/>2. Damage repair items incur a repair charge of ₹${repairCostPerUnit} per unit.
-            <br/>3. New stock from outlet is charged at regular sale price.
-            </small>
-          </div>
-        </div>
-  
         <script>window.onload = () => window.print();</script>
       </body>
       </html>

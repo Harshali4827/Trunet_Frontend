@@ -428,7 +428,7 @@ const renderStatusBadge = (status) => {
                     </CTableDataCell>
                     <CTableDataCell>{customer.center?.centerName || 'N/A'}</CTableDataCell>
                     <CTableDataCell>{customer.product?.productTitle || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{customer.damagedQty || ''}</CTableDataCell>
+                    <CTableDataCell>{customer.quantity || ''}</CTableDataCell>
                     <CTableDataCell>{renderStatusBadge(customer.overallStatus || '')}</CTableDataCell>
                   </CTableRow>
                 ))

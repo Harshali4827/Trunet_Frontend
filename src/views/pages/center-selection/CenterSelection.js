@@ -65,64 +65,170 @@ const CenterSelection = () => {
     }
   };
 
+  // const loadCentersFromRegularToken = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const response = await axiosInstance.get('/auth/me');
+      
+  //     if (response.data.success) {
+  //       const user = response.data.data.user;
+  //       setUserInfo(user);
+  //       setCenters(user.accessibleCenters || []);
+  //       if (user.center && user.center._id) {
+  //         setSelectedCenter(user.center._id);
+  //       }
+  //     } else {
+  //       setError('Failed to load centers. Please try again.');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error loading user info:', error);
+      
+  //     if (error.response?.status === 401) {
+  //       setError('Session expired. Please login again.');
+  //       localStorage.clear();
+  //       setTimeout(() => navigate('/login'), 2000);
+  //     } else {
+  //       setError(error.response?.data?.message || 'Error loading centers. Please try again.');
+  //     }
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
   const loadCentersFromRegularToken = async () => {
     try {
       setLoading(true);
-      // Fetch current user info to get accessible centers
-      const response = await axiosInstance.get('/auth/me');
-      
-      if (response.data.success) {
-        const user = response.data.data.user;
-        setUserInfo(user);
-        setCenters(user.accessibleCenters || []);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+      try {
+        const response = await axiosInstance.get('/auth/me');
         
-        // Preselect current center if switching
-        if (user.center && user.center._id) {
-          setSelectedCenter(user.center._id);
+        if (response.data.success) {
+          const user = response.data.data.user;
+          setUserInfo(user);
+          setCenters(user.accessibleCenters || []);
+          if (user.center && user.center._id) {
+            setSelectedCenter(user.center._id);
+          }
         }
-      } else {
-        setError('Failed to load centers. Please try again.');
+      } catch (fetchError) {
+        if (fetchError.response?.status === 401) {
+          localStorage.clear();
+          navigate('/login');
+          return;
+        }
+        throw fetchError;
       }
     } catch (error) {
       console.error('Error loading user info:', error);
-      
-      if (error.response?.status === 401) {
-        setError('Session expired. Please login again.');
-        localStorage.clear();
-        setTimeout(() => navigate('/login'), 2000);
-      } else {
-        setError(error.response?.data?.message || 'Error loading centers. Please try again.');
-      }
+      setError('Failed to load centers. Please try logging in again.');
     } finally {
       setLoading(false);
     }
   };
 
+  // const handleCenterSelect = async (centerId) => {
+  //   setSelectedCenter(centerId);
+  //   setError('');
+  //   setLoading(true);
+
+  //   try {
+  //     let token;
+  //     let isTempToken = false;
+      
+  //     if (isSwitching) {
+  //       token = localStorage.getItem('token');
+  //     } else {
+  //       token = localStorage.getItem('tempToken');
+  //       isTempToken = true;
+  //     }
+
+  //     if (!token) {
+  //       setError('Session expired. Please login again.');
+  //       navigate('/login');
+  //       return;
+  //     }
+
+  //     const response = await axiosInstance.post('/auth/select-center', 
+  //       { centerId },
+  //       {
+  //         headers: {
+  //           'Authorization': `Bearer ${token}`
+  //         }
+  //       }
+  //     );
+
+  //     if (response.data.success) {
+  //       if (isSwitching) {
+  //         // For switching, just update the token
+  //         localStorage.setItem('token', response.data.token);
+  //       } else {
+  //         // For initial login, replace temp token with regular token
+  //         localStorage.setItem('token', response.data.token);
+  //         localStorage.removeItem('tempToken');
+  //         localStorage.removeItem('userTemp');
+  //       }
+  //       if (response.data.data && response.data.data.user) {
+  //         localStorage.setItem('user', JSON.stringify(response.data.data.user));
+          
+  //         if (response.data.data.user.center) {
+  //           localStorage.setItem('userCenter', JSON.stringify(response.data.data.user.center));
+  //         }
+  //       }
+  //       await refreshPermissions();
+  //       navigate('/');
+  //     } else {
+  //       setError(response.data.message || 'Failed to select center');
+  //     }
+  //   } catch (error) {
+  //     console.error('Center selection error:', error);
+      
+  //     if (error.response?.status === 401) {
+  //       setError('Session expired. Please login again.');
+  //       localStorage.clear();
+  //       setTimeout(() => navigate('/login'), 2000);
+  //     } else if (error.response?.status === 403) {
+  //       setError('You do not have access to this center');
+  //     } else {
+  //       setError(error.response?.data?.message || 'Error selecting center. Please try again.');
+  //     }
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
+
   const handleCenterSelect = async (centerId) => {
     setSelectedCenter(centerId);
     setError('');
     setLoading(true);
-
+  
     try {
       let token;
-      let isTempToken = false;
+      let endpoint = '/auth/select-center';
       
       if (isSwitching) {
-        // Center switching - use regular token
+        // Center switching - use switch-center endpoint
+        endpoint = '/auth/switch-center';
         token = localStorage.getItem('token');
       } else {
-        // Initial login - use temp token
+        // Initial login - use select-center endpoint
+        endpoint = '/auth/select-center';
         token = localStorage.getItem('tempToken');
-        isTempToken = true;
       }
-
+  
       if (!token) {
         setError('Session expired. Please login again.');
         navigate('/login');
         return;
       }
-
-      const response = await axiosInstance.post('/auth/select-center', 
+  
+      const response = await axiosInstance.post(endpoint, 
         { centerId },
         {
           headers: {
@@ -130,22 +236,26 @@ const CenterSelection = () => {
           }
         }
       );
-
+  
       if (response.data.success) {
-        if (isSwitching) {
-          // For switching, just update the token
-          localStorage.setItem('token', response.data.token);
-        } else {
-          // For initial login, replace temp token with regular token
-          localStorage.setItem('token', response.data.token);
+        localStorage.setItem('token', response.data.token);
+
+        if (!isSwitching) {
           localStorage.removeItem('tempToken');
           localStorage.removeItem('userTemp');
         }
+        
         if (response.data.data && response.data.data.user) {
-          localStorage.setItem('user', JSON.stringify(response.data.data.user));
+          const userData = response.data.data.user;
+          localStorage.setItem('user', JSON.stringify(userData));
           
-          if (response.data.data.user.center) {
-            localStorage.setItem('userCenter', JSON.stringify(response.data.data.user.center));
+          if (userData.center) {
+            localStorage.setItem('userCenter', JSON.stringify(userData.center));
+          }
+          if (userData.accessibleCenters) {
+            const updatedUser = JSON.parse(localStorage.getItem('user') || '{}');
+            updatedUser.accessibleCenters = userData.accessibleCenters;
+            localStorage.setItem('user', JSON.stringify(updatedUser));
           }
         }
         await refreshPermissions();

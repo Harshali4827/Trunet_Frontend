@@ -1,6 +1,3 @@
-
-
-
 import React, { useContext, useState } from 'react'
 import {
   CButton,
@@ -23,7 +20,7 @@ import {
   CTabPane,
 } from '@coreui/react-pro'
 import CIcon from '@coreui/icons-react'
-import { cilEnvelopeClosed, cilFolderOpen, cilLockLocked, cilUser } from '@coreui/icons'
+import { cilEnvelopeClosed,cilLockLocked, cilUser } from '@coreui/icons'
 import backgroundImage from '../../../assets/images/background.jpg'
 import logo from '../../../assets/images/logo.png'
 import axiosInstance from 'src/axiosInstance'
@@ -48,85 +45,6 @@ const Login = () => {
     if (error) setError('')
   }
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault()
-    
-  //   setError('')
-  //   setSuccess('')
-    
-  //   if (!formData.username || (activeTab === 1 && !formData.password)) {
-  //     setError('Please fill in all fields')
-  //     return
-  //   }
-  //   if (activeTab === 1) {
-  //     setLoading(true)
-  
-  //     try {
-  //       const response = await axiosInstance.post('/auth/login', {
-  //         username: formData.username,
-  //         password: formData.password,
-  //       })
-  
-  //       if (response.data.success) {
-  //         setSuccess('Login successful!')
-
-  //         if (response.data.token) {
-  //           localStorage.setItem('token', response.data.token)
-  //         }
-        
-  //         if (response.data.data && response.data.data.user) {
-  //           localStorage.setItem('user', JSON.stringify(response.data.data.user))
-            
-  //           if (response.data.data.user.center) {
-  //             localStorage.setItem('userCenter', JSON.stringify(response.data.data.user.center))
-  //           }
-  //         }
-  //         await refreshPermissions()
-  //         navigate('/');
-  //       } else {
-  //         setError(response.data.message || 'Login failed')
-  //       }
-        
-  //     } catch (error) {
-  //       setSuccess('')
-  //       const backendMessage =
-  //         error?.response?.data?.message ||
-  //         error?.response?.data?.error ||
-  //         null;
-      
-  //       if (backendMessage) {
-  //         setError(backendMessage);
-  //         return;
-  //       }
-  //       if (error.response) {
-  //         const status = error.response.status;
-      
-  //         if (status === 401) {
-  //           setError("Unauthorized. Please check your login details.");
-  //           return;
-  //         }
-  //         if (status === 500) {
-  //           setError("Server error. Please try again later.");
-  //           return;
-  //         }
-      
-  //         setError("Login failed. Please try again.");
-  //       } 
-  //       else if (error.request) {
-  //         setError("Network error. Please check your connection.");
-  //       } 
-  //       else {
-  //         setError("An unexpected error occurred.");
-  //       }
-  //     } finally {
-  //       setLoading(false)
-  //     }
-  //   } else {
-  //     setSuccess('OTP has been sent to your email.')
-  //   }
-  // }
-
-
   const handleSubmit = async (e) => {
     e.preventDefault()
     
@@ -149,13 +67,10 @@ const Login = () => {
   
         if (response.data.success) {
           if (response.data.requiresCenterSelection) {
-            // Store temp token and accessible centers
             localStorage.setItem('tempToken', response.data.token)
             localStorage.setItem('userTemp', JSON.stringify(response.data.data.user))
-            // Navigate to center selection page
             navigate('/select-center')
           } else {
-            // Single center - proceed normally
             if (response.data.token) {
               localStorage.setItem('token', response.data.token)
             }
