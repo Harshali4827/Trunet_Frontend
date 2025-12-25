@@ -427,13 +427,13 @@ const StockRequest = () => {
     });
   };
   
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
-        <CSpinner color="primary" />
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
+  //       <CSpinner color="primary" />
+  //     </div>
+  //   );
+  // }
 
   if (error) {
     return (

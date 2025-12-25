@@ -205,13 +205,13 @@ const CustomersList = () => {
     };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
-        <CSpinner color="primary" />
-      </div>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
+  //       <CSpinner color="primary" />
+  //     </div>
+  //   );
+  // }
 
   if (error) {
     return (
@@ -286,7 +286,7 @@ const CustomersList = () => {
           </div>
           
           <div className="responsive-table-wrapper">
-          <CTable striped bordered hover responsive className='responsive-table'>
+          <CTable striped bordered hover className='responsive-table'>
             <CTableHead>
               <CTableRow>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('username')} className="sortable-header">

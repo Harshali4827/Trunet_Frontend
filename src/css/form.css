@@ -337,3 +337,117 @@
 .react-select__menu {
   z-index: 9999 !important;
 }
+
+
+
+/*************************   Multiple branch selection *********
+
+/* Center Selection Styles */
+.center-order-info {
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.center-order-list {
+  max-height: 150px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.order-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #6c757d;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.order-badge.active {
+  background-color: #198754;
+}
+
+/* React-Select Custom Styling */
+.react-select__control {
+  border: 1px solid #ced4da !important;
+  min-height: 38px !important;
+  border-radius: 4px !important;
+}
+
+.react-select__control--is-focused {
+  border-color: #86b7fe !important;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+}
+
+.react-select__multi-value {
+  background-color: #e7f1ff !important;
+  border-radius: 16px !important;
+  margin: 2px !important;
+}
+
+.react-select__multi-value__label {
+  color: #084298 !important;
+  font-size: 14px !important;
+  padding: 2px 8px !important;
+}
+
+.react-select__multi-value__remove {
+  color: #084298 !important;
+  border-radius: 0 16px 16px 0 !important;
+  padding: 4px 8px !important;
+}
+
+.react-select__multi-value__remove:hover {
+  background-color: #084298 !important;
+  color: white !important;
+}
+
+/* For error state */
+.error-border .react-select__control {
+  border-color: #dc3545 !important;
+}
+
+/* For success state */
+.valid-border .react-select__control {
+  border-color: #198754 !important;
+}
+
+/* Dropdown menu */
+.react-select__menu {
+  z-index: 9999 !important;
+}
+
+/* Clear indicator */
+.react-select__clear-indicator {
+  color: #6c757d !important;
+  padding: 6px !important;
+}
+
+.react-select__clear-indicator:hover {
+  color: #dc3545 !important;
+}
+
+/* Scrollbar styling for dropdown */
+.react-select__menu-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.react-select__menu-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.react-select__menu-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.react-select__menu-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

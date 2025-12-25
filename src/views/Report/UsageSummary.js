@@ -308,19 +308,25 @@ const UsageSummary = () => {
     : 'N/A';
 
 
-    const handleProductQuantityClick = (item) => {
-      if (item && item.ProductId && item.CenterId) {
-        navigate('/usage-detail', { 
-          state: { 
-            productId: item.ProductId,
-            productName: item.Product,
-            centerId: item.CenterId,
-            centerName: item.Center
-          }
-        });
-      }
-    };
+    // const handleProductQuantityClick = (item) => {
+    //   if (item && item.ProductId && item.CenterId) {
+    //     navigate('/usage-detail', { 
+    //       state: { 
+    //         productId: item.ProductId,
+    //         productName: item.Product,
+    //         centerId: item.CenterId,
+    //         centerName: item.Center,
+    //         fromSummary: true
+    //       }
+    //     });
+    //   }
+    // };
 
+const handleProductQuantityClick = (item) => {
+  if (item && item.ProductId && item.CenterId) {
+    navigate(`/usage-detail?product=${item.ProductId}&center=${item.CenterId}`);
+  }
+};
   return (
     <div>
       <div className='title'>Usage Summary Report</div>

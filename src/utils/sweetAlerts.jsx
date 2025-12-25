@@ -112,7 +112,7 @@ export const showAppError = (error, defaultMessage = 'Something went wrong') => 
       confirmButtonColor: '#d33',
       confirmButtonText: 'Login',
     }).then(() => {
-      window.location.href = '/tvs/auth/signin-1'
+      window.location.href = '/login'
     })
   }
 

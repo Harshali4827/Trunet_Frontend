@@ -334,6 +334,17 @@ const getNav = (permissions = []) => {
     })
   }
 
+
+  // if (userCenterType == 'outlet') {
+    _nav.push({
+      component: CNavItem,
+      name: <Translation>{(t) => t('Return Stock')}</Translation>,
+      to: '/return-stock',
+      icon: <i className="fa fa-reply fa-margin nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px'}} />,
+    })
+  // }
+
+
   if (hasPermission(permissions, 'Shifting', ['view_shifting_own_center', 'view_shifting_all_center'])) {
     _nav.push({
       component: CNavItem,
@@ -434,23 +445,32 @@ const getNav = (permissions = []) => {
   // ==== FAULTY STOCK === 
 
 
-//   if (userCenterType == 'outlet'){
-//     _nav.push({
-//       component: CNavItem,
-//       name: <Translation>{(t) => t('Faulty Stock')}</Translation>,
-//       to: '/faulty-stock',
-//       icon: <i className="fa fa-shopping-cart nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px' }} />,
-//     })
-//   }
+  if (userCenterType == 'outlet'){
+    _nav.push({
+      component: CNavItem,
+      name: <Translation>{(t) => t('Faulty Stock')}</Translation>,
+      to: '/faulty-stock',
+      icon: <i className="fa fa-shopping-cart nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px' }} />,
+    })
+  }
+
+  if (userCenterType == 'outlet'){
+    _nav.push({
+      component: CNavItem,
+      name: <Translation>{(t) => t('Transfer to Reseller')}</Translation>,
+      to: '/transfer-reseller',
+      icon: <i className="fa fa-shopping-cart nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px' }} />,
+    })
+  }
   
-//   if (userCenterType == 'center'){
-//     _nav.push({
-//       component: CNavItem,
-//       name: <Translation>{(t) => t('Repaired Faulty Stock')}</Translation>,
-//       to: '/repair-faulty-stock',
-//       icon: <i className="fa fa-shopping-cart nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px' }} />,
-//     })
-// }
+  if (userCenterType == 'center'){
+    _nav.push({
+      component: CNavItem,
+      name: <Translation>{(t) => t('Repaired Faulty Stock')}</Translation>,
+      to: '/repair-faulty-stock',
+      icon: <i className="fa fa-shopping-cart nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px' }} />,
+    })
+}
 
 
     // ===== SETTINGS =====
@@ -461,6 +481,7 @@ const getNav = (permissions = []) => {
     // settingsItems.push({ component: CNavItem, name: 'Warehouse', to: '/warehouse-list' })
     settingsItems.push({ component: CNavItem, name: 'Products', to: '/product-list' })
     settingsItems.push({ component: CNavItem, name: 'Product Categories', to: '/product-category' })
+    settingsItems.push({ component: CNavItem, name: 'Repaired Cost', to: '/repaired-cost' })
     settingsItems.push({ component: CNavItem, name: 'Tax', to: '/tax' })
     settingsItems.push({ component: CNavItem, name: 'Vendor', to: '/vendor-list' })
     settingsItems.push({ component: CNavItem, name: 'Package Duration', to: '/package-duration-list' })

@@ -39,7 +39,7 @@
 //     if (visible && product?.product?._id && warehouseId) {
 //       const prevSerials = {};
 //       if (product.approvedSerials?.length > 0) {
-//         product.approvedSerials.forEach((sn, index) => {
+//         product.approvedSerials.slice(0, approvedQty).forEach((sn, index) => {
 //           prevSerials[index + 1] = sn;
 //         });
 //       }
@@ -47,7 +47,19 @@
   
 //       fetchAvailableSerials();
 //     }
-//   }, [visible, product, warehouseId]);
+//   }, [visible, product, warehouseId, approvedQty]);
+
+//   useEffect(() => {
+//     if (Object.keys(selectedSerials).length > approvedQty) {
+//       const cleanedSerials = {};
+//       Object.entries(selectedSerials).forEach(([srNumber, serial]) => {
+//         if (parseInt(srNumber) <= approvedQty) {
+//           cleanedSerials[srNumber] = serial;
+//         }
+//       });
+//       setSelectedSerials(cleanedSerials);
+//     }
+//   }, [approvedQty]);
   
 //   useEffect(() => {
 //     if (!visible) {
@@ -148,29 +160,33 @@
 //   };
 
 //   const handleSave = () => {
-//     const missingSerials = srNumbers.filter(srNum => !selectedSerials[srNum]);
+//     const requiredSerials = Array.from({ length: approvedQty }, (_, i) => i + 1);
+//     const missingSerials = requiredSerials.filter(srNum => !selectedSerials[srNum]);
     
 //     if (missingSerials.length > 0) {
-//       setError(`Please select serial numbers for all items (SR ${missingSerials.join(', ')})`);
+//       setError(`Please select serial numbers for all approved items (SR ${missingSerials.join(', ')})`);
 //       return;
 //     }
-  
-//     const serialsArray = Object.entries(selectedSerials).map(([srNumber, serialNumber]) => ({
-//       srNumber: parseInt(srNumber),
-//       serialNumber
-//     }));
-  
+
+//     // Filter out any serial numbers beyond the approved quantity
+//     const serialsArray = Object.entries(selectedSerials)
+//       .filter(([srNumber]) => parseInt(srNumber) <= approvedQty)
+//       .map(([srNumber, serialNumber]) => ({
+//         srNumber: parseInt(srNumber),
+//         serialNumber
+//       }));
+
 //     if (onSerialNumbersUpdate) {
 //       onSerialNumbersUpdate(product.product._id, serialsArray);
 //     }
 //     onClose();
-//   };  
+//   };
 
 //   return (
 //     <CModal visible={visible} onClose={onClose} size="lg">
 //       <CModalHeader>
 //         <CModalTitle>
-//           Serial Number for {product?.product?.productTitle}
+//           Serial Number for {product?.product?.productTitle} (Approved Qty: {approvedQty})
 //         </CModalTitle>
 //       </CModalHeader>
 //       <CModalBody>
@@ -187,7 +203,6 @@
 //           </div>
 //         ) : (
 //           <>
-
 //             <CTable bordered striped responsive>
 //               <CTableHead>
 //                 <CTableRow>
@@ -386,7 +401,8 @@ import {
   CTableBody, 
   CTableDataCell,
   CSpinner,
-  CAlert
+  CAlert,
+  CBadge
 } from '@coreui/react';
 import PropTypes from 'prop-types';
 import axiosInstance from 'src/axiosInstance';
@@ -397,7 +413,10 @@ const SerialNumbers = ({
   product, 
   approvedQty,
   onSerialNumbersUpdate,
-  warehouseId
+  warehouseId,
+  resellerId,
+  resellerName,
+  data
 }) => {
   const [availableSerials, setAvailableSerials] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -405,6 +424,7 @@ const SerialNumbers = ({
   const [selectedSerials, setSelectedSerials] = useState({});
   const [searchTerms, setSearchTerms] = useState({});
   const [showDropdowns, setShowDropdowns] = useState({});
+  const [sourceFilter, setSourceFilter] = useState('all'); // 'all', 'reseller', 'outlet'
 
   const srNumbers = Array.from({ length: approvedQty }, (_, i) => i + 1);
 
@@ -420,7 +440,7 @@ const SerialNumbers = ({
   
       fetchAvailableSerials();
     }
-  }, [visible, product, warehouseId, approvedQty]);
+  }, [visible, product, warehouseId, approvedQty, resellerId]);
 
   useEffect(() => {
     if (Object.keys(selectedSerials).length > approvedQty) {
@@ -440,6 +460,7 @@ const SerialNumbers = ({
       setSearchTerms({});
       setShowDropdowns({});
       setError(null);
+      setSourceFilter('all');
     }
   }, [visible]);
 
@@ -455,10 +476,33 @@ const SerialNumbers = ({
         throw new Error('Product ID is required');
       }
 
-      const response = await axiosInstance.get(`/stockpurchase/serial-numbers/product/${warehouseId}/${productId}`);
+      // Build URL with query parameters
+      let url = `/stockpurchase/serial-numbers/product/${warehouseId}/${productId}`;
+      
+      // Add resellerId as query parameter if available
+      const params = new URLSearchParams();
+      if (resellerId) {
+        params.append('resellerId', resellerId);
+      }
+      
+      const queryString = params.toString();
+      if (queryString) {
+        url += `?${queryString}`;
+      }
+
+      console.log('Fetching serials from:', url);
+      
+      const response = await axiosInstance.get(url);
       
       if (response.data.success) {
-        setAvailableSerials(response.data.data.availableSerials || []);
+        const serials = response.data.data.availableSerials || [];
+        setAvailableSerials(serials);
+        
+        // Count by source
+        const resellerCount = serials.filter(s => s.source === 'reseller').length;
+        const outletCount = serials.filter(s => s.source === 'outlet').length;
+        
+        console.log(`Available: ${resellerCount} from reseller, ${outletCount} from outlet`);
       } else {
         throw new Error(response.data.message || 'Failed to fetch serial numbers');
       }
@@ -528,8 +572,13 @@ const SerialNumbers = ({
     return availableSerials.filter(serial => {
       const matchesSearch = serial.serialNumber.toLowerCase().includes(searchTerm.toLowerCase());
       const isAvailable = !currentlySelected.includes(serial.serialNumber) || selectedSerials[srNumber] === serial.serialNumber;
-      return matchesSearch && isAvailable;
+      const matchesSource = sourceFilter === 'all' || serial.source === sourceFilter;
+      return matchesSearch && isAvailable && matchesSource;
     });
+  };
+
+  const handleSourceFilterChange = (source) => {
+    setSourceFilter(source);
   };
 
   const handleSave = () => {
@@ -555,6 +604,11 @@ const SerialNumbers = ({
     onClose();
   };
 
+  // Count serials by source
+  const resellerSerials = availableSerials.filter(s => s.source === 'reseller');
+  const outletSerials = availableSerials.filter(s => s.source === 'outlet');
+  const totalSerials = availableSerials.length;
+
   return (
     <CModal visible={visible} onClose={onClose} size="lg">
       <CModalHeader>
@@ -569,6 +623,51 @@ const SerialNumbers = ({
           </CAlert>
         )}
 
+        {/* Source filter buttons */}
+        {resellerId && (
+          <div className="mb-3">
+            <div className="d-flex align-items-center mb-2">
+              <strong className="me-2">Filter by source:</strong>
+              <div className="btn-group" role="group">
+                <CButton 
+                  color={sourceFilter === 'all' ? 'primary' : 'secondary'} 
+                  size="sm"
+                  onClick={() => handleSourceFilterChange('all')}
+                >
+                  All ({totalSerials})
+                </CButton>
+                {resellerSerials.length > 0 && (
+                  <CButton 
+                    color={sourceFilter === 'reseller' ? 'primary' : 'secondary'} 
+                    size="sm"
+                    onClick={() => handleSourceFilterChange('reseller')}
+                  >
+                    Reseller ({resellerSerials.length})
+                  </CButton>
+                )}
+                {outletSerials.length > 0 && (
+                  <CButton 
+                    color={sourceFilter === 'outlet' ? 'primary' : 'secondary'} 
+                    size="sm"
+                    onClick={() => handleSourceFilterChange('outlet')}
+                  >
+                    Outlet ({outletSerials.length})
+                  </CButton>
+                )}
+              </div>
+            </div>
+            
+            {/* Source info */}
+            {resellerSerials.length > 0 && (
+              <div className="text-muted small">
+                <i className="fa fa-info-circle me-1"></i>
+                Reseller: {data?.center?.reseller?.businessName || 'Unknown'} 
+                ({resellerSerials.length} serials available)
+              </div>
+            )}
+          </div>
+        )}
+
         {loading ? (
           <div className="text-center py-4">
             <CSpinner color="primary" />
@@ -579,8 +678,9 @@ const SerialNumbers = ({
             <CTable bordered striped responsive>
               <CTableHead>
                 <CTableRow>
-                  <CTableHeaderCell width="15%">SR.</CTableHeaderCell>
-                  <CTableHeaderCell width="85%">New Serial No.</CTableHeaderCell>
+                  <CTableHeaderCell width="10%">SR.</CTableHeaderCell>
+                  <CTableHeaderCell width="80%">New Serial No.</CTableHeaderCell>
+                  <CTableHeaderCell width="10%">Source</CTableHeaderCell>
                 </CTableRow>
               </CTableHead>
               <CTableBody>
@@ -588,6 +688,7 @@ const SerialNumbers = ({
                   const selectedSerial = selectedSerials[srNumber];
                   const filteredOptions = getFilteredOptions(srNumber);
                   const showDropdown = showDropdowns[srNumber];
+                  const selectedSerialInfo = availableSerials.find(s => s.serialNumber === selectedSerial);
                   
                   return (
                     <CTableRow key={srNumber}>
@@ -658,7 +759,7 @@ const SerialNumbers = ({
                                       fontSize: '14px'
                                     }}
                                   >
-                                    <span>Select Serial Number</span>
+                                    <span>Select Serial Number ({filteredOptions.length} available)</span>
                                   </div>
                                   <div className="select-list">
                                     {filteredOptions.length > 0 ? (
@@ -671,7 +772,10 @@ const SerialNumbers = ({
                                             padding: '8px 12px',
                                             cursor: 'pointer',
                                             borderBottom: '1px solid #f0f0f0',
-                                            fontSize: '14px'
+                                            fontSize: '14px',
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center'
                                           }}
                                           onMouseEnter={(e) => {
                                             e.target.style.backgroundColor = '#f8f9fa';
@@ -682,6 +786,11 @@ const SerialNumbers = ({
                                         >
                                           <div className="select-name">
                                             {serial.serialNumber}
+                                          </div>
+                                          <div>
+                                            <CBadge color={serial.source === 'reseller' ? 'info' : 'success'}>
+                                              {serial.source === 'reseller' ? 'R' : 'O'}
+                                            </CBadge>
                                           </div>
                                         </div>
                                       ))
@@ -704,6 +813,15 @@ const SerialNumbers = ({
                             </div>
                           )}
                         </div>
+                      </CTableDataCell>
+                      <CTableDataCell>
+                        {selectedSerialInfo ? (
+                          <CBadge color={selectedSerialInfo.source === 'reseller' ? 'info' : 'success'}>
+                            {selectedSerialInfo.source === 'reseller' ? 'Reseller' : 'Outlet'}
+                          </CBadge>
+                        ) : (
+                          <span className="text-muted">-</span>
+                        )}
                       </CTableDataCell>
                     </CTableRow>
                   );
@@ -741,7 +859,10 @@ SerialNumbers.propTypes = {
   }),
   approvedQty: PropTypes.number.isRequired,
   onSerialNumbersUpdate: PropTypes.func.isRequired,
-  warehouseId: PropTypes.string.isRequired
+  warehouseId: PropTypes.string.isRequired,
+    resellerId: PropTypes.string, 
+  resellerName: PropTypes.string,
+  data: PropTypes.object 
 };
 
 SerialNumbers.defaultProps = {
@@ -751,7 +872,10 @@ SerialNumbers.defaultProps = {
       productTitle: ''
     }
   },
-  warehouseId: ''
+  warehouseId: '',
+  resellerId: '',
+  resellerName: '',
+  data: {}
 };
 
 export default SerialNumbers;

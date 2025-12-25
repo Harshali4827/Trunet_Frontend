@@ -24,7 +24,7 @@ import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
 import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
 import ReportSearchmodel from '../reportSubmission/ReportSearchModel';
-
+import { CBadge } from '@coreui/react';
 const FaultyStock = () => {
   const [data, setData] = useState([]);
   const [centers, setCenters] = useState([]);
@@ -81,7 +81,7 @@ const FaultyStock = () => {
         params.append('endDate', convertDateFormat(endDateStr));
       }
 
-      const url = params.toString() ? `/stockusage/faulty-stock?${params.toString()}` : '/stockusage/faulty-stock';
+      const url = params.toString() ? `/faulty-stock/product-status?${params.toString()}` : '/faulty-stock/product-status';
       
       const response = await axiosInstance.get(url);
       
@@ -282,10 +282,38 @@ const FaultyStock = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading data: {error}
+       {error}
       </div>
     );
   }
+
+const renderStatusBadge = (status) => {
+  if (!status) return 'N/A';
+  
+  const statusText = status.toLowerCase().replace(' ', '_');
+  
+  let color = '';
+  switch(statusText) {
+    case 'damaged':
+      color = 'danger';
+      break;
+    case 'under_repair':
+    case 'under repair':
+      color = 'warning';
+      break;
+    case 'repaired':
+      color = 'success';
+      break;
+    default:
+      color = 'secondary';
+  }
+  
+  return (
+    <CBadge color={color} shape="rounded-pill">
+      {status}
+    </CBadge>
+  );
+};
   
   return (
     <div>
@@ -382,7 +410,7 @@ const FaultyStock = () => {
                  Product {getSortIcon('center.centerName')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('remark')} className="sortable-header">
-                  Quantity {getSortIcon('remark')}
+                 Quantity {getSortIcon('remark')}
                 </CTableHeaderCell>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('createdAt')} className="sortable-header">
                  Status {getSortIcon('createdAt')}
@@ -400,8 +428,8 @@ const FaultyStock = () => {
                     </CTableDataCell>
                     <CTableDataCell>{customer.center?.centerName || 'N/A'}</CTableDataCell>
                     <CTableDataCell>{customer.product?.productTitle || 'N/A'}</CTableDataCell>
-                    <CTableDataCell>{customer.quantity || ''}</CTableDataCell>
-                    <CTableDataCell>{customer.overallStatus || ''}</CTableDataCell>
+                    <CTableDataCell>{customer.damagedQty || ''}</CTableDataCell>
+                    <CTableDataCell>{renderStatusBadge(customer.overallStatus || '')}</CTableDataCell>
                   </CTableRow>
                 ))
               ) : (

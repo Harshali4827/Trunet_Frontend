@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
-import { generateOrderNumber } from 'src/utils/orderNumberGenerator';
 import '../../css/form.css';
 import '../../css/table.css'
 import {
@@ -15,74 +14,31 @@ import {
   CFormInput,
   CSpinner,
   CAlert,
-  CFormSelect,
 } from '@coreui/react';
-import Select from 'react-select';
+import ReturnSerialNumber from './ReturnSerialNumber';
 
-const AddStockTransfer = () => {
+const ReturnStock = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
 
   const [formData, setFormData] = useState({
-    fromCenter: '',
-    remark: '',
     date: new Date().toISOString().split('T')[0],
-    transferNumber: '',
+    remark: '',
   });
-  const [centers, setCenters] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [centerLoading, setCenterLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRows, setSelectedRows] = useState({});
   const [errors, setErrors] = useState({});
-  const [generatingOrderNo, setGeneratingOrderNo] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: '', type: '' });
-
+  const [serialModalVisible, setSerialModalVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectionOrder, setSelectionOrder] = useState([]);
+  const [assignedSerials, setAssignedSerials] = useState({});
   const selectionCounter = useRef(0);
 
   useEffect(() => {
-    fetchCenters();
     fetchProducts();
-    if (!id) {
-      generateAutoOrderNumber();
-    }
   }, []);
-
-  useEffect(() => {
-    if (id) {
-      fetchStockRequest(id);
-    }
-  }, [id]);
-
-  const generateAutoOrderNumber = async () => {
-    setGeneratingOrderNo(true);
-    try {
-      const transferNumber = await generateOrderNumber(axiosInstance);
-      setFormData(prev => ({
-        ...prev,
-        transferNumber: transferNumber
-      }));
-    } catch (error) {
-      console.error('Error generating order number:', error);
-    } finally {
-      setGeneratingOrderNo(false);
-    }
-  };
-
-  const fetchCenters = async () => {
-    try {
-      const res = await axiosInstance.get('/centers/resellers/center');
-      if (res.data.success) {
-        setCenters(res.data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching centers:', error);
-    } finally {
-      setCenterLoading(false);
-    }
-  };
 
   const fetchProducts = async () => {
     try {
@@ -97,38 +53,17 @@ const AddStockTransfer = () => {
     }
   };
 
-  const fetchStockRequest = async (requestId) => {
-    try {
-      const res = await axiosInstance.get(`/stocktransfer/${requestId}`);
-      const data = res.data.data;
-
-      setFormData({
-        fromCenter: data.fromCenter?._id || '',
-        remark: data.remark || '',
-        date: data.date ? data.date.split('T')[0] : new Date().toISOString().split('T')[0],
-        transferNumber: data.transferNumber || '',
-      });
-
-      const selectedProducts = {};
-      const order = [];
-      
-      data.products.forEach((p, index) => {
-        selectedProducts[p.product._id] = { 
-          quantity: p.quantity,
-          productRemark: p.productRemark || '',
-          productInStock: p.productInStock || 0,
-        };
-        order.push({ productId: p.product._id, order: index });
-      });
-      
-      setSelectedRows(selectedProducts);
-      setSelectionOrder(order);
-      selectionCounter.current = data.products.length;
-    } catch (error) {
-      console.error('Error fetching stock transfer request:', error);
-    }
+  const handleSerialNumbersUpdate = (productId, serialsArray) => {
+    setAssignedSerials(prev => ({
+      ...prev,
+      [productId]: serialsArray
+    }));
   };
 
+  const handleOpenSerialModal = (product) => {
+    setSelectedProduct(product);
+    setSerialModalVisible(true);
+  };
   const handleRowSelect = (productId, productStock) => {
     setSelectedRows((prev) => {
       const updated = { ...prev };
@@ -148,13 +83,29 @@ const AddStockTransfer = () => {
   };
   
   const handleRowInputChange = (productId, field, value) => {
-    setSelectedRows((prev) => ({
-      ...prev,
-      [productId]: {
-        ...prev[productId],
-        [field]: value,
-      },
-    }));
+    setSelectedRows((prev) => {
+      const newRows = {
+        ...prev,
+        [productId]: {
+          ...prev[productId],
+          [field]: value,
+        },
+      };
+  
+      // If quantity changes and product requires serial numbers, clear existing serials
+      if (field === 'quantity') {
+        const product = products.find(p => p._id === productId);
+        if (product?.trackSerialNumber === "Yes") {
+          setAssignedSerials(prevSerials => {
+            const newSerials = { ...prevSerials };
+            delete newSerials[productId];
+            return newSerials;
+          });
+        }
+      }
+  
+      return newRows;
+    });
   };
 
   const handleChange = (e) => {
@@ -165,101 +116,77 @@ const AddStockTransfer = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.fromCenter) newErrors.fromCenter = 'This is a required field';
     if (!formData.date) newErrors.date = 'This is a required field';
-
+  
     const selectedProducts = Object.keys(selectedRows).filter(id => selectedRows[id]);
     if (selectedProducts.length === 0) {
       newErrors.products = 'At least one product must be selected';
     }
-
+  
     selectedProducts.forEach(productId => {
       const product = selectedRows[productId];
+      const productInfo = products.find(p => p._id === productId);
+      
       if (!product.quantity || product.quantity <= 0) {
         newErrors[`quantity_${productId}`] = 'Quantity must be greater than 0';
       }
+      if (productInfo?.trackSerialNumber === "Yes") {
+        const assignedSerialsForProduct = assignedSerials[productId];
+        
+        if (!assignedSerialsForProduct || assignedSerialsForProduct.length === 0) {
+          newErrors[`serials_${productId}`] = 'Serial numbers are required for this product';
+        } else if (assignedSerialsForProduct.length !== parseInt(product.quantity)) {
+          newErrors[`serials_${productId}`] = `Please assign exactly ${product.quantity} serial number(s)`;
+        }
+      }
     });
-
+  
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
-
-    const productsData = Object.keys(selectedRows)
-    .filter((productId) => selectedRows[productId]) 
-    .map((productId) => ({
-      product: productId,
-      quantity: parseInt(selectedRows[productId].quantity),
-      productRemark: selectedRows[productId].productRemark,
-    }));
-
-    const payload = {
-      fromCenter: formData.fromCenter,
-      remark: formData.remark,
-      date: formData.date,
-      transferNumber: formData.transferNumber,
-      products: productsData,
-      status: 'Submitted' 
-    };
-
-    try {
-      if (id) {
-        await axiosInstance.put(`/stocktransfer/${id}`, payload);
-        setAlert({ show: true, message: 'Data updated successfully!', type: 'success' });
-      } else {
-        await axiosInstance.post('/stocktransfer', payload);
-        setAlert({ show: true, message: 'Data added successfully!', type: 'success' });
-      }
-      setTimeout(() => {
-        navigate('/stock-transfer');
-      }, 1500);
-    } catch (error) {
-      console.error('Error saving stock transfer request:', error);
-    const errorMessage = error.response?.data?.message || 'Error saving stock transfer request. Please try again.';
-    setAlert({ show: true, message: errorMessage, type: 'danger' });
+    const isValid = validateForm();
+    if (!isValid) {
+      console.log('Form validation failed');
+      return;
     }
-  };
-
-  const handleSaveDraft = async () => {
     const productsData = Object.keys(selectedRows)
-    .filter((productId) => selectedRows[productId]) 
-    .map((productId) => ({
-      product: productId,
-      quantity: parseInt(selectedRows[productId].quantity) || 0,
-      productRemark: selectedRows[productId].productRemark,
-    }));
-
+      .filter((productId) => selectedRows[productId])
+      .map((productId) => {
+        const productInfo = products.find(p => p._id === productId);
+        const productData = {
+          product: productId,
+          quantity: parseInt(selectedRows[productId].quantity),
+        };
+        if (productInfo?.trackSerialNumber === "Yes" && assignedSerials[productId]) {
+          productData.serialNumbers = assignedSerials[productId];
+        }
+  
+        return productData;
+      });
+  
+    console.log('Products data to submit:', productsData);
+  
     const payload = {
-      fromCenter: formData.fromCenter,
-      remark: formData.remark,
       date: formData.date,
-      transferNumber: formData.transferNumber,
-      products: productsData,
-      status: 'Draft' 
+      remark: formData.remark || '',
+      products: productsData
     };
-
+  
+    console.log('Payload to send:', payload);
+  
     try {
-      if (id) {
-        await axiosInstance.put(`/stocktransfer/${id}`, payload);
-        setAlert({ show: true, message: 'Data updated successfully!', type: 'success' });
-      } else {
-        await axiosInstance.post('/stocktransfer', payload);
-        setAlert({ show: true, message: 'Data saved successfully!', type: 'success' });
-      }
-      
+      const response = await axiosInstance.post('/center-return', payload);
+      setAlert({ show: true, message: 'Stock returned to reseller successfully!', type: 'success' });
       setTimeout(() => {
         navigate('/stock-transfer');
       }, 1500);
     } catch (error) {
-      console.error('Error saving draft:', error);
-      const errorMessage = error.response?.data?.message || 'Error saving draft. Please try again.';
+      const errorMessage = error.response?.data?.message || 'Error processing return request. Please try again.';
       setAlert({ show: true, message: errorMessage, type: 'danger' });
     }
   };
-
   const handleBack = () => {
     navigate(-1);
   };
@@ -291,18 +218,9 @@ const AddStockTransfer = () => {
         >
           <i className="fa fa-fw fa-arrow-left"></i>Back
         </CButton>
-        {id ? 'Edit' : 'Add'} Transfer Request 
+       Return Products
       </div>
       <div className="form-card">
-        <div className="form-header header-button">
-          <button type="button" className="reset-button" onClick={handleSaveDraft}>
-            Save As Draft
-          </button>
-          <button type="button" className="submit-button" onClick={handleSubmit}>
-            Submit Transfer
-          </button>
-        </div>
-
         <div className="form-body">
         {alert.show && (
       <CAlert 
@@ -316,63 +234,6 @@ const AddStockTransfer = () => {
     )}
           <form onSubmit={handleSubmit}>
             <div className="form-row">
-              <div className="form-group">
-                <label 
-                  className={`form-label 
-                    ${errors.fromCenter ? 'error-label' : formData.fromCenter ? 'valid-label' : ''}`} 
-                  htmlFor="fromCenter"
-                >
-                  Branch <span className="required">*</span>
-                </label>
-                <CFormSelect
-                  id="fromCenter"
-                  name="fromCenter"
-                  value={formData.fromCenter}
-                  onChange={handleChange}
-                  className={`form-input 
-                    ${errors.fromCenter ? 'error-input' : formData.fromCenter ? 'valid-input' : ''}`}
-                  disabled={centerLoading}
-                >
-                  <option value="">Select Center</option>
-                  {centers.map(center => (
-                    <option key={center._id} value={center._id}>
-                      {center.centerName}
-                    </option>
-                  ))}
-                </CFormSelect>
-                {/* <Select
-    id="fromCenter"
-    name="fromCenter"
-    isDisabled={centerLoading}
-    value={
-      centers.find(c => c._id === formData.fromCenter)
-        ? {
-            label: centers.find(c => c._id === formData.fromCenter).centerName,
-            value: formData.fromCenter
-          }
-        : null
-    }
-    onChange={(selected) =>
-      handleChange({
-        target: { name: "fromCenter", value: selected ? selected.value : "" },
-      })
-    }
-    options={centers.map((center) => ({
-      label: center.centerName,
-      value: center._id,
-    }))}
-    placeholder="Select Center"
-    classNamePrefix={`react-select ${
-      errors.fromCenter
-        ? "error-input"
-        : formData.fromCenter
-        ? "valid-input"
-        : ""
-    }`}
-  /> */}
-                {errors.fromCenter && <span className="error-text">{errors.fromCenter}</span>}
-              </div>
-
               <div className="form-group">
                 <label 
                   className={`form-label 
@@ -396,23 +257,6 @@ const AddStockTransfer = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label" htmlFor="transferNumber">
-                  Transfer Number
-                </label>
-                  <input
-                    type="text"
-                    id="transferNumber"
-                    name="transferNumber" 
-                    className="form-input"
-                    value={formData.transferNumber}
-                    onChange={handleChange}
-                    disabled
-                  />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
                 <label className="form-label" htmlFor="remark">
                   Remark
                 </label>
@@ -426,8 +270,9 @@ const AddStockTransfer = () => {
                   rows="3"
                 />
               </div>
-              <div className="form-group"></div>
-              <div className="form-group"></div>
+              <div className="form-group">
+              </div>
+
             </div>
 
             <div className="mt-4">
@@ -441,7 +286,6 @@ const AddStockTransfer = () => {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     style={{ maxWidth: '250px' }}
-                    placeholder="Search products..."
                   />
                 </div>
               </div>
@@ -477,29 +321,39 @@ const AddStockTransfer = () => {
                           <CTableDataCell>{p.productTitle}</CTableDataCell>
                           <CTableDataCell>{p.stock?.currentStock || 0}</CTableDataCell>
                           <CTableDataCell>
-                            {selectedRows[p._id] && (
-                              <>
-                                <input
-                                  type="number"
-                                  value={selectedRows[p._id].quantity}
-                                  onChange={(e) =>
-                                    handleRowInputChange(
-                                      p._id,
-                                      'quantity',
-                                      e.target.value
-                                    )
-                                  }
-                                  className={`form-input ${errors[`quantity_${p._id}`] ? 'error' : ''}`}
-                                  style={{ width: '100px',height:'32px' }}
-                                  min="1"
-                                  placeholder='Quantity'
-                                />
-                                {errors[`quantity_${p._id}`] && (
-                                  <div className="error-text small">Quantity required</div>
-                                )}
-                              </>
-                            )}
-                          </CTableDataCell>
+  {selectedRows[p._id] && (
+    <>
+      <input
+        type="number"
+        value={selectedRows[p._id].quantity}
+        onChange={(e) =>
+          handleRowInputChange(p._id, 'quantity', e.target.value)
+        }
+        className={`form-input ${errors[`quantity_${p._id}`] ? 'error' : ''}`}
+        style={{ width: '100px', height: '32px' }}
+        min="1"
+        placeholder='Quantity'
+      />
+      {errors[`quantity_${p._id}`] && (
+        <div className="error-text small">Quantity required</div>
+      )}
+      {errors[`serials_${p._id}`] && (
+        <div className="error-text small" style={{ color: '#dc3545' }}>
+          {errors[`serials_${p._id}`]}
+        </div>
+      )}
+      {p.trackSerialNumber === "Yes" && (
+        <span
+          style={{ fontSize: '18px', cursor: 'pointer', color: '#337ab7' }}
+          onClick={() => handleOpenSerialModal(p)}
+          title="Add Serial Numbers"
+        >
+          ☰
+        </span>
+      )}
+    </>
+  )}
+</CTableDataCell>
                           <CTableDataCell>
                             {selectedRows[p._id] && (
                               <input
@@ -533,9 +387,6 @@ const AddStockTransfer = () => {
             </div>
 
             <div className="form-footer mt-3">
-              <button type="button" className="reset-button" onClick={handleSaveDraft}>
-                Save As Draft
-              </button>
               <button type="button" className="submit-button" onClick={handleSubmit}>
                 Submit Transfer
               </button>
@@ -543,8 +394,16 @@ const AddStockTransfer = () => {
           </form>
         </div>
       </div>
+
+      <ReturnSerialNumber
+        visible={serialModalVisible}
+        onClose={() => setSerialModalVisible(false)}
+        product={selectedProduct}
+        quantity={selectedRows[selectedProduct?._id]?.quantity || 0}
+        onSerialNumbersUpdate={handleSerialNumbersUpdate}
+      />
     </div>
   );
 };
 
-export default AddStockTransfer;
+export default ReturnStock;

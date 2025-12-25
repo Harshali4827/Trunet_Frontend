@@ -928,6 +928,7 @@ const handleIncomplete = async () => {
                 <CTableHeaderCell>Center Stock</CTableHeaderCell>
                 <CTableHeaderCell>Requested Qty</CTableHeaderCell>
                 <CTableHeaderCell>Stock Qty</CTableHeaderCell>
+                <CTableHeaderCell>Reseller Qty</CTableHeaderCell>
                 <CTableHeaderCell>Product Remark</CTableHeaderCell>
                 <CTableHeaderCell>Approved Qty</CTableHeaderCell>
                 <CTableHeaderCell>Approved Remark</CTableHeaderCell>
@@ -946,6 +947,7 @@ const handleIncomplete = async () => {
                       <CTableDataCell>{item.centerStockQuantity || 0}</CTableDataCell>
                       <CTableDataCell>{item.quantity || 0}</CTableDataCell>
                       <CTableDataCell>{item.outletStock.availableQuantity || 0}</CTableDataCell>
+                      <CTableDataCell>{item.resellerStock.availableQuantity || 0}</CTableDataCell>
                       <CTableDataCell>{item.productRemark || ''}</CTableDataCell>
                       <CTableDataCell>
   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1044,11 +1046,13 @@ const handleIncomplete = async () => {
   visible={serialModalVisible}
   onClose={() => setSerialModalVisible(false)}
   product={selectedProduct}
-  //approvedQty={approvedProducts.find(p => p._id === selectedProduct?._id)?.approvedQty || 0}
   approvedQty={Number(approvedProducts.find(p => p._id === selectedProduct?._id)?.approvedQty) || 0}
   initialSerials={assignedSerials[selectedProduct?.product?._id] || []} 
   onSerialNumbersUpdate={handleSerialNumbersUpdate}
   warehouseId={data?.warehouse?._id}
+  resellerId={data?.stockSummary?.resellerId}
+  resellerName={data?.stockSummary?.resellerName}
+  data={data}
 />
 
       <ChallanModal

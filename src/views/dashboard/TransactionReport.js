@@ -33,7 +33,7 @@ const TransactionReport = ({ onNotificationClick }) => {
 
     const fetchNotifications = async () => {
       try {
-        const res = await axiosInstance.get('/stockrequest/notification?limit=10');
+        const res = await axiosInstance.get('/stockrequest/notification');
         if (res.data.success) {
           setNotifications(res.data.data || []);
         } else {

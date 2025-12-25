@@ -9,6 +9,7 @@ import './scss/examples.scss'
 import ProtectedRoute from './utils/ProtectedRoutes';
 import { AlertProvider } from './context/AlertContext';
 import { AuthProvider } from './context/AuthContext';
+import CenterSelection from './views/pages/center-selection/CenterSelection';
 
 
 const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'))
@@ -31,6 +32,7 @@ const App = () => {
       >
         <Routes>
           <Route exact path="/login" name="Login Page" element={<Login />} />
+          <Route exact path="/select-center" name="Select Your Branch" element={<CenterSelection />} />
           <Route exact path="/404" name="Page 404" element={<Page404 />} />
           <Route path="*" element={<ProtectedRoute><DefaultLayout /></ProtectedRoute>} />
         </Routes>
