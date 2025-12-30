@@ -526,7 +526,7 @@ const ReportSubmissionList = () => {
                     <CTableDataCell>{customer.center?.centerName || 'N/A'}</CTableDataCell>
                     <CTableDataCell>{customer.remark || ''}</CTableDataCell>
                     <CTableDataCell>{formatDateTime(customer.createdAt || 'N/A')}</CTableDataCell>
-                    <CTableDataCell>{customer.createdBy.email || 'N/A'}</CTableDataCell>
+                    <CTableDataCell>{customer.createdBy?.email || 'N/A'}</CTableDataCell>
                     <CTableDataCell>{customer.approvedRemark || ''}</CTableDataCell>
                     {userRole === 'admin' &&  <CTableDataCell>
                     <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>

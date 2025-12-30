@@ -735,7 +735,7 @@ const TransferToReseller = () => {
       if (response.data.success) {
         showAlert('success', response.data.message || 'Repaired stock transferred to reseller successfully!');
         setTimeout(() => {
-          navigate('/faulty-stock');
+          navigate('/reseller-stock');
         }, 1500);
       } else {
         showAlert('danger', response.data.message || 'Failed to transfer repaired stock to reseller');
