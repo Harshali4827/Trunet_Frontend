@@ -15,16 +15,15 @@
 //   CFormInput,
 //   CPaginationItem,
 //   CPagination,
-//   CSpinner
+//   CSpinner,
+//   CBadge
 // } from '@coreui/react';
 // import CIcon from '@coreui/icons-react';
 // import { cilArrowTop, cilArrowBottom, cilSearch, cilZoomOut, cilSettings } from '@coreui/icons';
-// import { Link,} from 'react-router-dom';
+// import { Link } from 'react-router-dom';
 // import { CFormLabel } from '@coreui/react-pro';
 // import axiosInstance from 'src/axiosInstance';
 // import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
-
-// import Swal from 'sweetalert2';
 // import ReportSearchmodel from '../reportSubmission/ReportSearchModel';
 
 // const RepairTeamStock = () => {
@@ -36,13 +35,6 @@
 //   const [searchTerm, setSearchTerm] = useState('');
 //   const [searchModalVisible, setSearchModalVisible] = useState(false);
 //   const [dropdownOpen, setDropdownOpen] = useState({});
-
-//   const [selectedProduct, setSelectedProduct] = useState(null);
-//   const [modalVisible, setModalVisible] = useState(false);
-//   const [repairType, setRepairType] = useState('');
-//   const [nonSerialQty, setNonSerialQty] = useState(0);
-//   const [nonSerialModal, setNonSerialModal] = useState(false);
-
 
 //   const [activeSearch, setActiveSearch] = useState({ 
 //     center: '',
@@ -124,6 +116,55 @@
 //     fetchCenters();
 //   }, []);
 
+//   const getStatusBadge = (status) => {
+//     const statusColors = {
+//       'under_repair': 'warning',
+//       'repaired': 'success',
+//       'irreparable': 'danger',
+//       'damaged': 'secondary',
+//       'disposed': 'dark',
+//       'returned_to_vendor': 'info'
+//     };
+    
+//     return statusColors[status] || 'secondary';
+//   };
+//   const getFlattenedData = () => {
+//     const flattenedData = [];
+    
+//     data.forEach(repairTransfer => {
+//       const { serialNumbers, product, quantity, ...rest } = repairTransfer;
+      
+//       if (product?.trackSerialNumber === "Yes" && serialNumbers && serialNumbers.length > 0) {
+//         serialNumbers.forEach(serial => {
+//           flattenedData.push({
+//             ...rest,
+//             product,
+//             serialNumber: serial.serialNumber,
+//             serialStatus: serial.status,
+//             quantity: 1,
+//             isSerialized: true,
+//             originalQuantity: quantity,
+//             repairHistory: serial.repairHistory || []
+//           });
+//         });
+//       } else {
+
+//         flattenedData.push({
+//           ...rest,
+//           product,
+//           serialNumber: 'N/A',
+//           serialStatus: repairTransfer.status,
+//           quantity: quantity,
+//           isSerialized: false,
+//           originalQuantity: quantity,
+//           repairHistory: repairTransfer.repairUpdates || []
+//         });
+//       }
+//     });
+    
+//     return flattenedData;
+//   };
+
 //   const handleSort = (key) => {
 //     let direction = 'ascending';
 //     if (sortConfig.key === key && sortConfig.direction === 'ascending') {
@@ -131,7 +172,8 @@
 //     }
 //     setSortConfig({ key, direction });
 
-//     const sortedData = [...data].sort((a, b) => {
+//     const flattenedData = getFlattenedData();
+//     const sortedData = [...flattenedData].sort((a, b) => {
 //       let aValue = a;
 //       let bValue = b;
       
@@ -153,7 +195,6 @@
 //       return 0;
 //     });
 
-//     setData(sortedData);
 //   };
 
 //   const getSortIcon = (key) => {
@@ -179,89 +220,6 @@
 //     fetchData();
 //   };
 
-//   const handleRepairAction = async (item, type) => {
-//     setDropdownOpen(prev => ({ ...prev, [item._id]: false }));
-  
-//     try {
-//       const productId = item.product?._id;
-//       const response = await axiosInstance.get(`/faulty-stock/serials/${productId}`);
-  
-//       if (response.data.success) {
-//         const productData = response.data.data.product;
-//         const serialNumbers = response.data.data.serialNumbers || [];
-  
-//         setSelectedProduct({
-//           ...item,
-//           ...productData,
-//           serialNumbers
-//         });
-  
-//         setRepairType(type);
-  
-//         if (productData.trackSerialNumber === 'Yes') {
-//           setModalVisible(true);
-//         } else {
-//           setNonSerialModal(true);
-//         }
-//       }
-//     } catch (err) {
-//       console.error('Error fetching serial info:', err);
-//       Swal.fire('Error', 'Failed to fetch product serial information', 'error');
-//     }
-//   };
-  
-
-//   const handleSerialNumbersUpdate = async (productId, selectedSerials) => {
-//     try {
-//       const payload = {
-//         productId,
-//         repairType,
-//         serialNumbers: selectedSerials.map(s => s.serialNumber),
-//       };
-  
-//       const response = await axiosInstance.post('/faulty-stock/repair-update', payload);
-  
-//       if (response.data.success) {
-//         Swal.fire('Success', `Product marked as ${repairType}`, 'success');
-//         fetchData();
-//       } else {
-//         Swal.fire('Error', response.data.message || 'Update failed', 'error');
-//       }
-//     } catch (err) {
-//       console.error('Error updating repair status:', err);
-//       Swal.fire('Error', 'Failed to update repair status', 'error');
-//     }
-//   };
-  
-
-//   const handleNonSerialSubmit = async () => {
-//     if (nonSerialQty <= 0) {
-//       Swal.fire('Error', 'Please enter valid quantity', 'warning');
-//       return;
-//     }
-  
-//     try {
-//       const payload = {
-//         productId: selectedProduct.product?._id || selectedProduct.productId,
-//         repairType,
-//         quantity: nonSerialQty,
-//       };
-  
-//       const response = await axiosInstance.post('/faulty-stock/repair-update', payload);
-  
-//       if (response.data.success) {
-//         Swal.fire('Success', `Product marked as ${repairType}`, 'success');
-//         fetchData();
-//       } else {
-//         Swal.fire('Error', response.data.message || 'Update failed', 'error');
-//       }
-//     } catch (err) {
-//       console.error('Error updating non-serial repair status:', err);
-//       Swal.fire('Error', 'Failed to update repair status', 'error');
-//     } finally {
-//       setNonSerialModal(false);
-//     }
-//   };
   
 //   const generateCSVExport = async () => {
 //     try {
@@ -351,18 +309,48 @@
 //     }
 //   };
 
-//   const filteredData = data.filter(customer => {
+//   const flattenedData = getFlattenedData();
+
+//   const filteredData = flattenedData.filter(item => {
 //     if (activeSearch.center || activeSearch.date) {
 //       return true;
 //     }
-//     return Object.values(customer).some(value => {
-//       if (typeof value === 'object' && value !== null) {
-//         return Object.values(value).some(nestedValue => 
-//           nestedValue && nestedValue.toString().toLowerCase().includes(searchTerm.toLowerCase())
-//         );
-//       }
-//       return value && value.toString().toLowerCase().includes(searchTerm.toLowerCase());
-//     });
+    
+//     const searchFields = [
+//       item.product?.productTitle,
+//       item.fromCenter?.centerName,
+//       item.serialNumber,
+//       item.serialStatus,
+//       item.transferRemark
+//     ];
+    
+//     return searchFields.some(field => 
+//       field && field.toString().toLowerCase().includes(searchTerm.toLowerCase())
+//     );
+//   });
+
+//   const sortedData = [...filteredData].sort((a, b) => {
+//     if (!sortConfig.key) return 0;
+    
+//     let aValue = a;
+//     let bValue = b;
+    
+//     if (sortConfig.key.includes('.')) {
+//       const keys = sortConfig.key.split('.');
+//       aValue = keys.reduce((obj, k) => obj && obj[k], a);
+//       bValue = keys.reduce((obj, k) => obj && obj[k], b);
+//     } else {
+//       aValue = a[sortConfig.key];
+//       bValue = b[sortConfig.key];
+//     }
+    
+//     if (aValue < bValue) {
+//       return sortConfig.direction === 'ascending' ? -1 : 1;
+//     }
+//     if (aValue > bValue) {
+//       return sortConfig.direction === 'ascending' ? 1 : -1;
+//     }
+//     return 0;
 //   });
 
 //   if (loading) {
@@ -381,14 +369,6 @@
 //     );
 //   }
 
-//   const toggleDropdown = (id) => {
-//     setDropdownOpen(prev => ({
-//       ...prev,
-//       [id]: !prev[id]
-//     }));
-//   };
-
-
 //   return (
 //     <div>
 //       <div className='title'>Faulty Stock</div>
@@ -404,14 +384,14 @@
 //       <CCard className='table-container mt-4'>
 //         <CCardHeader className='card-header d-flex justify-content-between align-items-center'>
 //           <div>
-//               <Link to='/transfer-faulty-stock'>
+//               <Link to='/transfer-repaired-stock'>
 //                 <CButton size="sm" className="action-btn me-1">
 //                 <i className="fa fa-exchange fa-margin"></i> Transfer
 //                 </CButton>
 //               </Link>
 //               <Link to='/repaired-stock'>
 //                 <CButton size="sm" className="action-btn me-1">
-//                 <i className="fa fa-exchange fa-margin"></i> Repaired
+//                 <i className="fa fa-reply fa-margin"></i> Repaired
 //                 </CButton>
 //               </Link>
 //             <CButton 
@@ -461,8 +441,7 @@
         
 //         <CCardBody>
 //           <div className="d-flex justify-content-between mb-3">
-//             <div>
-//             </div>
+//             <div></div>
 //             <div className='d-flex'>
 //               <CFormLabel className='mt-1 m-1'>Search:</CFormLabel>
 //               <CFormInput
@@ -480,72 +459,62 @@
 //             <CTableHead>
 //               <CTableRow>
 //                 <CTableHeaderCell scope="col" onClick={() => handleSort('date')} className="sortable-header">
-//                    Date {getSortIcon('username')}
+//                    Date {getSortIcon('date')}
 //                 </CTableHeaderCell>
-//                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
-//                  Center {getSortIcon('center.centerName')}
+//                 <CTableHeaderCell scope="col" onClick={() => handleSort('fromCenter.centerName')} className="sortable-header">
+//                  Center {getSortIcon('fromCenter.centerName')}
 //                 </CTableHeaderCell>
-//                 <CTableHeaderCell scope="col" onClick={() => handleSort('center.centerName')} className="sortable-header">
-//                  Product {getSortIcon('center.centerName')}
+//                 <CTableHeaderCell scope="col" onClick={() => handleSort('product.productTitle')} className="sortable-header">
+//                  Product {getSortIcon('product.productTitle')}
 //                 </CTableHeaderCell>
-//                 <CTableHeaderCell scope="col" onClick={() => handleSort('remark')} className="sortable-header">
-//                   Quantity {getSortIcon('remark')}
+//                 <CTableHeaderCell scope="col" onClick={() => handleSort('serialNumber')} className="sortable-header">
+//                  Serial Number {getSortIcon('serialNumber')}
 //                 </CTableHeaderCell>
-//                 <CTableHeaderCell scope="col" onClick={() => handleSort('createdAt')} className="sortable-header">
-//                  Status {getSortIcon('createdAt')}
+//                 <CTableHeaderCell scope="col" onClick={() => handleSort('quantity')} className="sortable-header">
+//                   Quantity {getSortIcon('quantity')}
 //                 </CTableHeaderCell>
-              
-//                 <CTableHeaderCell>
-//                   Options
+//                 <CTableHeaderCell scope="col" onClick={() => handleSort('serialStatus')} className="sortable-header">
+//                  Status {getSortIcon('serialStatus')}
 //                 </CTableHeaderCell>
 //               </CTableRow>
 //             </CTableHead>
 //             <CTableBody>
-//               {filteredData.length > 0 ? (
-//                 filteredData.map((customer) => (
-//                   <CTableRow key={customer._id} className={customer.status === 'Approved' ? 'use-product-row' : 
-//                     customer.status === 'Duplicate' ? 'damage-product-row' : ''}>
+//               {sortedData.length > 0 ? (
+//                 sortedData.map((item, index) => (
+//                   <CTableRow key={`${item._id}-${item.serialNumber}-${index}`} 
+//                     className={
+//                       item.serialStatus === 'repaired' ? 'use-product-row' : 
+//                       item.serialStatus === 'irreparable' ? 'damage-product-row' : 
+//                       item.serialStatus === 'under_repair' ? 'warning-row' : ''
+//                     }>
 //                     <CTableDataCell>
-            
-//                         {formatDate(customer.date || '')}
+//                       {formatDate(item.date || '')}
 //                     </CTableDataCell>
-//                     <CTableDataCell>{customer.fromCenter?.centerName || 'N/A'}</CTableDataCell>
-//                     <CTableDataCell>{customer.product?.productTitle || 'N/A'}</CTableDataCell>
-//                     <CTableDataCell>{customer.quantity || ''}</CTableDataCell>
-//                     <CTableDataCell>{customer.overallStatus || ''}</CTableDataCell>
+//                     <CTableDataCell>{item.fromCenter?.centerName || ' '}</CTableDataCell>
 //                     <CTableDataCell>
-//                     <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
-//                         <CButton 
-//                           size="sm"
-//                           className='option-button btn-sm'
-//                           onClick={() => toggleDropdown(customer._id)}
-//                         >
-//                           <CIcon icon={cilSettings} />
-//                           Options
-//                         </CButton>
-//                         {dropdownOpen[customer._id] && (
-//                           <div className="dropdown-menu show">
-//                             <button 
-//                               className="dropdown-item"
-//                               onClick={() => handleRepairAction(customer, 'repaired')}
-//                             >
-//                            <i className="fa fa-reply fa-margin"></i> Repaired
-//                             </button>
-//                             <button 
-//                             className="dropdown-item"
-//                             onClick={() => handleRepairAction(customer, 'irreparable')}
-//                             >
-//                              <i className="fa fa-recycle fa-margin"></i>&nbsp; Irreparable
-//                           </button>
-//                           </div>
-//                         )}
-//                       </div>
+//                       {item.product?.productTitle || ' '}
+//                     </CTableDataCell>
+//                     <CTableDataCell>
+//                       {item.isSerialized ? item.serialNumber : ' '}
+//                     </CTableDataCell>
+//                     <CTableDataCell>
+//                       {item.quantity}
+//                       {item.isSerialized && item.originalQuantity > 1 && (
+//                         <small className="text-muted d-block">
+//                           of {item.originalQuantity}
+//                         </small>
+//                       )}
+//                     </CTableDataCell>
+//                     <CTableDataCell>
+//                       <CBadge color={getStatusBadge(item.serialStatus)}>
+//                         {item.serialStatus?.replace('_', ' ') || ' '}
+//                       </CBadge>
 //                     </CTableDataCell>
 //                   </CTableRow>
 //                 ))
 //               ) : (
 //                 <CTableRow>
-//                   <CTableDataCell colSpan="9" className="text-center">
+//                   <CTableDataCell colSpan="7" className="text-center">
 //                     No data found
 //                   </CTableDataCell>
 //                 </CTableRow>
@@ -554,13 +523,14 @@
 //           </CTable>
 //           </div>
 //         </CCardBody>
-
 //       </CCard>
 //     </div>
 //   );
 // };
 
 // export default RepairTeamStock;
+
+
 
 
 
@@ -583,15 +553,18 @@ import {
   CPaginationItem,
   CPagination,
   CSpinner,
-  CBadge
+  CBadge,
+  CFormCheck,
+  CAlert
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import { cilArrowTop, cilArrowBottom, cilSearch, cilZoomOut, cilSettings } from '@coreui/icons';
+import { cilArrowTop, cilArrowBottom, cilSearch, cilZoomOut, cilSettings, cilCheck } from '@coreui/icons';
 import { Link } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';
-import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
+import { formatDate } from 'src/utils/FormatDateTime';
 import ReportSearchmodel from '../reportSubmission/ReportSearchModel';
+import { confirmAction, showSuccess, showError, showToast } from 'src/utils/sweetAlerts';
 
 const RepairTeamStock = () => {
   const [data, setData] = useState([]);
@@ -602,12 +575,15 @@ const RepairTeamStock = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState({});
-
   const [activeSearch, setActiveSearch] = useState({ 
     center: '',
     date: ''
   });
   const [exportLoading, setExportLoading] = useState(false);
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [processing, setProcessing] = useState(false);
+  const [processError, setProcessError] = useState(null);
+  const [processSuccess, setProcessSuccess] = useState(null);
   const dropdownRefs = useRef({});
   
   useEffect(() => {
@@ -685,7 +661,8 @@ const RepairTeamStock = () => {
 
   const getStatusBadge = (status) => {
     const statusColors = {
-      'under_repair': 'warning',
+      'pending_under_repair': 'warning',
+      'under_repair': 'info',
       'repaired': 'success',
       'irreparable': 'danger',
       'damaged': 'secondary',
@@ -695,11 +672,13 @@ const RepairTeamStock = () => {
     
     return statusColors[status] || 'secondary';
   };
+
+  // Get flattened data with all items
   const getFlattenedData = () => {
     const flattenedData = [];
     
     data.forEach(repairTransfer => {
-      const { serialNumbers, product, quantity, ...rest } = repairTransfer;
+      const { serialNumbers, product, quantity, status, ...rest } = repairTransfer;
       
       if (product?.trackSerialNumber === "Yes" && serialNumbers && serialNumbers.length > 0) {
         serialNumbers.forEach(serial => {
@@ -711,25 +690,210 @@ const RepairTeamStock = () => {
             quantity: 1,
             isSerialized: true,
             originalQuantity: quantity,
+            transferStatus: status,
             repairHistory: serial.repairHistory || []
           });
         });
       } else {
-
         flattenedData.push({
           ...rest,
           product,
           serialNumber: 'N/A',
-          serialStatus: repairTransfer.status,
+          serialStatus: status,
           quantity: quantity,
           isSerialized: false,
           originalQuantity: quantity,
-          repairHistory: repairTransfer.repairUpdates || []
+          transferStatus: status,
+          repairHistory: rest.repairUpdates || []
         });
       }
     });
     
     return flattenedData;
+  };
+
+  // Get only pending_under_repair items
+  const getPendingUnderRepairItems = () => {
+    const flattenedData = getFlattenedData();
+    return flattenedData.filter(item => item.serialStatus === 'pending_under_repair');
+  };
+
+  // Handle checkbox selection
+  const handleSelectItem = (itemId, isSelected) => {
+    setSelectedItems(prev => {
+      if (isSelected) {
+        return [...prev, itemId];
+      } else {
+        return prev.filter(id => id !== itemId);
+      }
+    });
+  };
+
+  // Handle select all pending items
+  const handleSelectAll = () => {
+    const pendingItems = getPendingUnderRepairItems();
+    const pendingItemIds = pendingItems.map(item => getItemUniqueId(item));
+    
+    if (selectedItems.length === pendingItemIds.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(pendingItemIds);
+    }
+  };
+
+  // Get unique ID for item selection
+  const getItemUniqueId = (item) => {
+    return `${item._id}-${item.serialNumber || 'non-serial'}`;
+  };
+
+  // Get selected pending items
+  const getSelectedPendingItems = () => {
+    const flattenedData = getFlattenedData();
+    return flattenedData.filter(item => 
+      selectedItems.includes(getItemUniqueId(item)) && 
+      item.serialStatus === 'pending_under_repair'
+    );
+  };
+
+  // Check if any pending items are selected
+  const hasSelectedPendingItems = () => {
+    return getSelectedPendingItems().length > 0;
+  };
+
+  // Accept pending items
+  const acceptPendingItems = async () => {
+    if (!hasSelectedPendingItems()) {
+      showToast('Please select pending under repair items to accept', 'warning');
+      return;
+    }
+
+    const selectedItems = getSelectedPendingItems();
+    const itemCount = selectedItems.length;
+    
+    // Group by transfer ID
+    const transfersMap = {};
+    selectedItems.forEach(item => {
+      if (!transfersMap[item._id]) {
+        transfersMap[item._id] = {
+          transferId: item._id,
+          items: []
+        };
+      }
+      
+      transfersMap[item._id].items.push({
+        serialNumber: item.serialNumber !== 'N/A' ? item.serialNumber : null,
+        quantity: item.quantity
+      });
+    });
+
+    const transferList = Object.values(transfersMap);
+    
+    confirmAction(
+      'Accept Pending Under Repair Items',
+      `<p>You are about to accept <strong>${itemCount} pending under repair item(s)</strong>.</p>
+     `,
+      'question',
+      'Yes, Accept Items'
+    ).then(async (result) => {
+      if (result.isConfirmed) {
+        await processAcceptance(transferList);
+      }
+    });
+  };
+
+  // Process acceptance
+  const processAcceptance = async (transferList) => {
+    setProcessing(true);
+    setProcessError(null);
+    setProcessSuccess(null);
+
+    try {
+      const results = [];
+      
+      for (const transferData of transferList) {
+        try {
+          const { transferId, items } = transferData;
+          
+          // Prepare request body
+          const requestBody = {
+            transferId: transferId,
+            remark: 'Accepted by repair team'
+          };
+
+          // Add serial numbers if it's a serialized product
+          const serialNumbers = items
+            .filter(item => item.serialNumber)
+            .map(item => ({ 
+              serialNumber: item.serialNumber,
+              remark: 'Accepted at repair center'
+            }));
+
+          if (serialNumbers.length > 0) {
+            requestBody.acceptedQuantities = serialNumbers;
+          } else {
+            // For non-serialized products, send total quantity
+            const totalQty = items.reduce((sum, item) => sum + item.quantity, 0);
+            requestBody.acceptedQuantities = {
+              totalAcceptedQty: totalQty,
+              remark: `Accepted ${totalQty} items`
+            };
+          }
+
+          const response = await axiosInstance.post('/faulty-stock/accept-repair-transfer', requestBody);
+
+          if (response.data.success) {
+            results.push({
+              transferId: transferId,
+              success: true,
+              message: response.data.message
+            });
+          } else {
+            results.push({
+              transferId: transferId,
+              success: false,
+              message: response.data.message || 'Acceptance failed'
+            });
+          }
+        } catch (error) {
+          results.push({
+            transferId: transferData.transferId,
+            success: false,
+            message: error.response?.data?.message || error.message
+          });
+        }
+      }
+
+      // Show results
+      const successful = results.filter(r => r.success);
+      const failed = results.filter(r => !r.success);
+
+      if (failed.length === 0) {
+        setProcessSuccess(`Successfully accepted all ${successful.length} transfers`);
+        showSuccess(`Successfully accepted ${successful.length} transfer(s)`);
+      } else {
+        const errorMsg = `${successful.length} transfers accepted successfully, ` +
+          `${failed.length} transfers failed`;
+        setProcessError(errorMsg);
+        showError(errorMsg);
+      }
+
+      // Refresh data
+      await fetchData();
+
+      // Reset selections
+      setSelectedItems([]);
+
+    } catch (error) {
+      const errorMsg = `Error accepting items: ${error.message}`;
+      setProcessError(errorMsg);
+      showError(errorMsg);
+    } finally {
+      setProcessing(false);
+      setTimeout(() => {
+        setProcessSuccess(null);
+        setProcessError(null);
+      }, 5000);
+    }
   };
 
   const handleSort = (key) => {
@@ -738,30 +902,6 @@ const RepairTeamStock = () => {
       direction = 'descending';
     }
     setSortConfig({ key, direction });
-
-    const flattenedData = getFlattenedData();
-    const sortedData = [...flattenedData].sort((a, b) => {
-      let aValue = a;
-      let bValue = b;
-      
-      if (key.includes('.')) {
-        const keys = key.split('.');
-        aValue = keys.reduce((obj, k) => obj && obj[k], a);
-        bValue = keys.reduce((obj, k) => obj && obj[k], b);
-      } else {
-        aValue = a[key];
-        bValue = b[key];
-      }
-      
-      if (aValue < bValue) {
-        return direction === 'ascending' ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return direction === 'ascending' ? 1 : -1;
-      }
-      return 0;
-    });
-
   };
 
   const getSortIcon = (key) => {
@@ -787,7 +927,6 @@ const RepairTeamStock = () => {
     fetchData();
   };
 
-  
   const generateCSVExport = async () => {
     try {
       setExportLoading(true);
@@ -837,7 +976,7 @@ const RepairTeamStock = () => {
         formatDate(item.date || ''),
         item.center?.centerName || '',
         item.remark || '',
-        formatDateTime(item.createdAt || ''),
+        formatDate(item.createdAt || ''),
         item.createdBy?.email || '',
       ]);
       const csvContent = [
@@ -854,7 +993,7 @@ const RepairTeamStock = () => {
       const downloadUrl = URL.createObjectURL(blob);
       
       link.setAttribute('href', downloadUrl);
-      let fileName = 'Closing-stock-log';
+      let fileName = 'Repair-team-stock';
       if (activeSearch.center || activeSearch.date) {
         fileName += '_filtered';
       }
@@ -868,9 +1007,11 @@ const RepairTeamStock = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(downloadUrl);
       
+      showToast('Export completed successfully!', 'success');
+      
     } catch (error) {
       console.error('Error generating CSV export:', error);
-      alert('Error generating export file. Please try again.');
+      showError('Error generating export file. Please try again.');
     } finally {
       setExportLoading(false);
     }
@@ -983,6 +1124,26 @@ const RepairTeamStock = () => {
             >
               <CIcon icon={cilSearch} className='icon' /> Search
             </CButton>
+            
+            {/* Accept Button */}
+            {hasSelectedPendingItems() && (
+              <CButton 
+                size="sm" 
+                color="success" 
+                className="action-btn me-1"
+                onClick={acceptPendingItems}
+                disabled={processing}
+              >
+                {processing ? (
+                  <CSpinner size="sm" />
+                ) : (
+                  <>
+                    <CIcon icon={cilCheck} className='icon' /> Accept ({getSelectedPendingItems().length})
+                  </>
+                )}
+              </CButton>
+            )}
+            
             {(activeSearch.center || activeSearch.date) && (
               <CButton 
                 size="sm" 
@@ -1007,8 +1168,20 @@ const RepairTeamStock = () => {
         </CCardHeader>
         
         <CCardBody>
+          {processSuccess && (
+            <CAlert color="success" className="mb-3" onClose={() => setProcessSuccess(null)}>
+              {processSuccess}
+            </CAlert>
+          )}
+          {processError && (
+            <CAlert color="danger" className="mb-3" onClose={() => setProcessError(null)}>
+              {processError}
+            </CAlert>
+          )}
+          
           <div className="d-flex justify-content-between mb-3">
-            <div></div>
+            <div>
+            </div>
             <div className='d-flex'>
               <CFormLabel className='mt-1 m-1'>Search:</CFormLabel>
               <CFormInput
@@ -1017,6 +1190,7 @@ const RepairTeamStock = () => {
                 className="d-inline-block square-search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                disabled={processing}
               />
             </div>
           </div>
@@ -1025,63 +1199,94 @@ const RepairTeamStock = () => {
           <CTable striped bordered hover className='responsive-table'>
             <CTableHead>
               <CTableRow>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('date')} className="sortable-header">
+                <CTableHeaderCell scope="col" width="50px">
+                  <CFormCheck
+                    id="header-select-all"
+                    checked={selectedItems.length > 0 && selectedItems.length === getPendingUnderRepairItems().length}
+                    onChange={handleSelectAll}
+                    disabled={processing}
+                  />
+                </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => !processing && handleSort('date')} className={`sortable-header ${processing ? 'disabled' : ''}`}>
                    Date {getSortIcon('date')}
                 </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('fromCenter.centerName')} className="sortable-header">
+                <CTableHeaderCell scope="col" onClick={() => !processing && handleSort('fromCenter.centerName')} className={`sortable-header ${processing ? 'disabled' : ''}`}>
                  Center {getSortIcon('fromCenter.centerName')}
                 </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('product.productTitle')} className="sortable-header">
+                <CTableHeaderCell scope="col" onClick={() => !processing && handleSort('product.productTitle')} className={`sortable-header ${processing ? 'disabled' : ''}`}>
                  Product {getSortIcon('product.productTitle')}
                 </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('serialNumber')} className="sortable-header">
+                <CTableHeaderCell scope="col" onClick={() => !processing && handleSort('serialNumber')} className={`sortable-header ${processing ? 'disabled' : ''}`}>
                  Serial Number {getSortIcon('serialNumber')}
                 </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('quantity')} className="sortable-header">
+                <CTableHeaderCell scope="col" onClick={() => !processing && handleSort('quantity')} className={`sortable-header ${processing ? 'disabled' : ''}`}>
                   Quantity {getSortIcon('quantity')}
                 </CTableHeaderCell>
-                <CTableHeaderCell scope="col" onClick={() => handleSort('serialStatus')} className="sortable-header">
+                <CTableHeaderCell scope="col" onClick={() => !processing && handleSort('quantity')} className={`sortable-header ${processing ? 'disabled' : ''}`}>
+                  Pending Quantity {getSortIcon('quantity')}
+                </CTableHeaderCell>
+                <CTableHeaderCell scope="col" onClick={() => !processing && handleSort('serialStatus')} className={`sortable-header ${processing ? 'disabled' : ''}`}>
                  Status {getSortIcon('serialStatus')}
                 </CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
               {sortedData.length > 0 ? (
-                sortedData.map((item, index) => (
-                  <CTableRow key={`${item._id}-${item.serialNumber}-${index}`} 
-                    className={
-                      item.serialStatus === 'repaired' ? 'use-product-row' : 
-                      item.serialStatus === 'irreparable' ? 'damage-product-row' : 
-                      item.serialStatus === 'under_repair' ? 'warning-row' : ''
-                    }>
-                    <CTableDataCell>
-                      {formatDate(item.date || '')}
-                    </CTableDataCell>
-                    <CTableDataCell>{item.fromCenter?.centerName || ' '}</CTableDataCell>
-                    <CTableDataCell>
-                      {item.product?.productTitle || ' '}
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      {item.isSerialized ? item.serialNumber : ' '}
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      {item.quantity}
-                      {item.isSerialized && item.originalQuantity > 1 && (
-                        <small className="text-muted d-block">
-                          of {item.originalQuantity}
-                        </small>
-                      )}
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      <CBadge color={getStatusBadge(item.serialStatus)}>
-                        {item.serialStatus?.replace('_', ' ') || ' '}
-                      </CBadge>
-                    </CTableDataCell>
-                  </CTableRow>
-                ))
+                sortedData.map((item, index) => {
+                  const isPending = item.serialStatus === 'pending_under_repair';
+                  const itemId = getItemUniqueId(item);
+                  const isSelected = selectedItems.includes(itemId);
+
+                  return (
+                    <CTableRow key={itemId} 
+                      className={
+                        item.serialStatus === 'repaired' ? 'use-product-row' : 
+                        item.serialStatus === 'irreparable' ? 'damage-product-row' : 
+                        item.serialStatus === 'under_repair' ? 'warning-row' :
+                        item.serialStatus === 'pending_under_repair' ? 'pending-row' : ''
+                      }>
+                      <CTableDataCell>
+                        {isPending && (
+                          <CFormCheck
+                            id={`select-${itemId}`}
+                            checked={isSelected}
+                            onChange={(e) => !processing && handleSelectItem(itemId, e.target.checked)}
+                            disabled={processing}
+                          />
+                        )}
+                      </CTableDataCell>
+                      <CTableDataCell>
+                        {formatDate(item.date || '')}
+                      </CTableDataCell>
+                      <CTableDataCell>{item.fromCenter?.centerName || ' '}</CTableDataCell>
+                      <CTableDataCell>
+                        {item.product?.productTitle || ' '}
+                      </CTableDataCell>
+                      <CTableDataCell>
+                        {item.isSerialized ? item.serialNumber : ' '}
+                      </CTableDataCell>
+                      <CTableDataCell>
+                        {item.quantity}
+                        {item.isSerialized && item.originalQuantity > 1 && (
+                          <small className="text-muted d-block">
+                            of {item.originalQuantity}
+                          </small>
+                        )}
+                      </CTableDataCell>
+                      <CTableDataCell>
+                        {item.pendingUnderRepairQty || 0}
+                      </CTableDataCell>
+                      <CTableDataCell>
+                        <CBadge color={getStatusBadge(item.serialStatus)}>
+                          {item.serialStatus?.replace('_', ' ') || ' '}
+                        </CBadge>
+                      </CTableDataCell>
+                    </CTableRow>
+                  );
+                })
               ) : (
                 <CTableRow>
-                  <CTableDataCell colSpan="7" className="text-center">
+                  <CTableDataCell colSpan="8" className="text-center">
                     No data found
                   </CTableDataCell>
                 </CTableRow>

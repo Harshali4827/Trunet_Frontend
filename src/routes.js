@@ -100,6 +100,10 @@ const TransferToReseller = React.lazy(() => import('./views/faultyStock/Transfer
 const ReturnStock = React.lazy(() => import('./views/return-stock/ReturnStock'))
 const RepairedCost = React.lazy(() => import('./views/Settings/repair-cost/RepairCostList'))
 const ResellerStock = React.lazy(() => import('./views/Report/ResellerStock'))
+const TransferToTesting = React.lazy(() => import('./views/testing-material/TransferToTesting'))
+const TestingStock = React.lazy(() => import('./views/testing-material/TestingStock'))
+const TestingProfile = React.lazy(() => import('./views/testing-material/TestingProfile'))
+const TestMaterial = React.lazy(() => import('./views/testing-material/TestMaterial'))
 const routes = [
 
   { path: '/', exact: true, name: <Translation>{(t) => t('home')}</Translation> },
@@ -639,7 +643,31 @@ const routes = [
     exact:true,
     name:<Translation>{(t) => t('Reseller Stock')}</Translation>,
     element: ResellerStock 
-  }
+  },
+  {
+    path:'/testing-stock',
+    exact:true,
+    name:<Translation>{(t) => t('Testing Stock')}</Translation>,
+    element: TestingStock 
+  },
+  {
+    path:'/transfer-to-testing',
+    exact:true,
+    name:<Translation>{(t) => t('Transfer To Testing')}</Translation>,
+    element: TransferToTesting 
+  },
+  {
+    path:'/testing-profile/:id',
+    exact:true,
+    name:<Translation>{(t) => t('Testing Material')}</Translation>,
+    element: TestingProfile 
+  },
+  {
+    path:'/test-material',
+    exact:true,
+    name:<Translation>{(t) => t('Test Material')}</Translation>,
+    element: TestMaterial 
+  },
 ]
 
 export default routes

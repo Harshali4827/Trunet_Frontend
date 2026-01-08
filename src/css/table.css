@@ -4,12 +4,6 @@
     border-top: 4px solid #2759a2;
     overflow: hidden;
   }
-  /* .responsive-table-wrapper {
-    max-height: 400px;
-    overflow-y: auto;
-    position: relative;
-  } 
-    */
 
     .responsive-table-wrapper {
       max-height: 500px;

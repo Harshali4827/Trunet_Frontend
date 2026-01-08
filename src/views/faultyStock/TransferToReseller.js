@@ -1,7 +1,5 @@
-
-
 // import React, { useState, useEffect } from 'react';
-// import { useNavigate} from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 // import axiosInstance from 'src/axiosInstance';
 // import '../../css/form.css';
 // import '../../css/table.css';
@@ -14,21 +12,19 @@
 //   CTableHead, 
 //   CTableHeaderCell, 
 //   CTableRow, 
-//   CAlert
+//   CAlert,
+//   CButton
 // } from '@coreui/react';
 // import TransferSerialNumber from './TransferRepairedSerialNumber';
-
 
 // const TransferToReseller = () => {
 //   const navigate = useNavigate();
 
 //   const [formData, setFormData] = useState({
 //     date: new Date().toISOString().split('T')[0],
-//     outletId: '',
 //     transferRemark: '',
 //   });
   
-//   const [centers, setCenters] = useState([]);
 //   const [products, setProducts] = useState([]);
 //   const [selectedRows, setSelectedRows] = useState({});
 //   const [productSearchTerm, setProductSearchTerm] = useState('');
@@ -38,6 +34,7 @@
 //   const [serialModalVisible, setSerialModalVisible] = useState(false);
 //   const [selectedProduct, setSelectedProduct] = useState(null);
 //   const [assignedSerials, setAssignedSerials] = useState({});
+//   const [outlets, setOutlets] = useState([]);
 
 //   const [alert, setAlert] = useState({
 //     visible: false,
@@ -45,48 +42,35 @@
 //     message: ''
 //   });
 
+//   // Fetch repaired products in outlet stock
 //   useEffect(() => {
-//     fetchCenters();
-//   },[])
-//   const fetchCenters = async () => {
-//     try {
-//       const res = await axiosInstance.get('/centers/main-warehouse?centerType=Outlet');
-//       if (res.data.success) {
-//         const telecomWarehouses = res.data.data.filter(warehouse => 
-//           warehouse.centerName?.toLowerCase().includes('telecom') || 
-//           warehouse.centerType?.toLowerCase().includes('telecom') ||
-//           warehouse.category?.toLowerCase().includes('telecom')
-//         );
-//         setCenters(telecomWarehouses);
-//       }
-//     } catch (error) {
-//       console.error('Error fetching warehouses:', error);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchProducts();
+//     fetchRepairedProducts();
 //   }, []);
 
-//   const fetchProducts = async () => {
+//   const fetchRepairedProducts = async () => {
 //     try {
-//       const res = await axiosInstance.get('/faulty-stock/repaired-products');
-//       if (res.data.success) {
-//         console.log('Fetched repaired products:', res.data.data);
+//       setLoading(true);
+//       const response = await axiosInstance.get('/faulty-stock/outlet-repaired-stock');
+      
+//       if (response.data.success) {
+//         console.log('Fetched repaired products in outlet:', response.data.data);
+//         setProducts(response.data.data.repairedProducts || []);
+
+//         const uniqueOutlets = [];
+//         const outletIds = new Set();
         
-//         let repairedProducts = [];
+//         (response.data.data.repairedProducts || []).forEach(product => {
+//           if (product.outlet && !outletIds.has(product.outlet._id)) {
+//             outletIds.add(product.outlet._id);
+//             uniqueOutlets.push(product.outlet);
+//           }
+//         });
         
-//         if (res.data.data.repairedProducts) {
-//           repairedProducts = res.data.data.repairedProducts;
-//         } else if (Array.isArray(res.data.data)) {
-//           repairedProducts = res.data.data;
-//         }
-        
-//         setProducts(repairedProducts || []);
+//         setOutlets(uniqueOutlets);
 //       }
 //     } catch (error) {
-//       console.error('Error fetching products:', error);
-//       showAlert('danger', 'Failed to fetch products');
+//       console.error('Error fetching repaired products:', error);
+//       showAlert('danger', 'Failed to fetch repaired products');
 //     } finally {
 //       setLoading(false);
 //     }
@@ -99,13 +83,14 @@
 //   };
 
 //   const handleOpenSerialModal = (product) => {
-//     const transferQuantity = parseInt(selectedRows[product.product._id]?.quantity) || 0;
+//     const transferQuantity = parseInt(selectedRows[product.outletStockId]?.quantity) || 0;
 //     if (transferQuantity > 0) {
 //       const productForSerial = {
 //         _id: product.product._id,
 //         productTitle: product.product.productTitle,
 //         trackSerialNumber: product.product.trackSerialNumber,
-//         productId: product.product._id
+//         productId: product.product._id,
+//         outletStockId: product.outletStockId
 //       };
       
 //       setSelectedProduct(productForSerial);
@@ -113,49 +98,39 @@
 //     }
 //   };
 
-//   const handleSerialNumbersUpdate = (productId, serialsArray) => {
+//   const handleSerialNumbersUpdate = (outletStockId, serialsArray) => {
 //     setAssignedSerials(prev => ({
 //       ...prev,
-//       [productId]: serialsArray
+//       [outletStockId]: serialsArray
 //     }));
 //   };
 
 //   const handleRowSelect = (product) => {
-//     const productId = product.product._id;
+//     const outletStockId = product.outletStockId;
     
 //     setSelectedRows((prev) => ({
 //       ...prev,
-//       [productId]: prev[productId]
+//       [outletStockId]: prev[outletStockId]
 //         ? undefined
 //         : { 
 //             quantity: Math.min(1, product.totalRepairedQuantity || 1), 
-//             damageRemark: '',
+//             remark: '',
 //             availableQuantity: product.totalRepairedQuantity || 0,
-//             serialNumbers: extractSerialNumbers(product.repairedSerials),
-//             productId: productId,
-//             productData: product
+//             serialNumbers: product.repairedSerials.map(s => s.serialNumber),
+//             outletStockId: outletStockId,
+//             productId: product.product._id,
+//             productData: product,
+//             resellerGroups: product.resellerGroups,
+//             outlet: product.outlet
 //           },
 //     }));
 //   };
 
-//   const extractSerialNumbers = (serialNumbersArray) => {
-//     if (!serialNumbersArray || serialNumbersArray.length === 0) return [];
-    
-//     return serialNumbersArray.map(sn => {
-//       if (typeof sn === 'string') {
-//         return sn;
-//       } else if (sn.serialNumber) {
-//         return sn.serialNumber;
-//       }
-//       return '';
-//     }).filter(sn => sn.length > 0);
-//   };
-
-//   const handleRowDataChange = (productId, field, value) => {
+//   const handleRowDataChange = (outletStockId, field, value) => {
 //     setSelectedRows((prev) => ({
 //       ...prev,
-//       [productId]: {
-//         ...prev[productId],
+//       [outletStockId]: {
+//         ...prev[outletStockId],
 //         [field]: value
 //       }
 //     }));
@@ -165,16 +140,15 @@
 //     let newErrors = {};
 
 //     if (!formData.date) newErrors.date = 'Date is required';
-//     if (!formData.outletId) newErrors.outletId = 'Center is required';
 
 //     const selectedProducts = Object.keys(selectedRows).filter(id => selectedRows[id]);
 //     if (selectedProducts.length === 0) {
 //       newErrors.products = 'At least one product must be selected';
 //     }
 
-//     Object.keys(selectedRows).forEach(productId => {
-//       const selectedRow = selectedRows[productId];
-//       const product = products.find(p => p.product._id === productId);
+//     Object.keys(selectedRows).forEach(outletStockId => {
+//       const selectedRow = selectedRows[outletStockId];
+//       const product = products.find(p => p.outletStockId === outletStockId);
       
 //       if (!selectedRow.quantity || parseInt(selectedRow.quantity) <= 0) {
 //         newErrors.products = `Please enter valid quantity for ${product?.product?.productTitle}`;
@@ -186,7 +160,7 @@
       
 //       if (product?.product?.trackSerialNumber === "Yes") {
 //         const transferQty = parseInt(selectedRow.quantity);
-//         const assignedSerialsForProduct = assignedSerials[productId] || [];
+//         const assignedSerialsForProduct = assignedSerials[outletStockId] || [];
         
 //         if (assignedSerialsForProduct.length !== transferQty) {
 //           newErrors.products = `Please assign serial numbers for all ${transferQty} items of ${product?.product?.productTitle}`;
@@ -199,19 +173,30 @@
 
 //   const prepareSubmitData = () => {
 //     const items = Object.keys(selectedRows)
-//       .filter(productId => selectedRows[productId])
-//       .map(productId => {
-//         const row = selectedRows[productId];
-//         const product = products.find(p => p.product._id === productId);
+//       .filter(outletStockId => selectedRows[outletStockId])
+//       .map(outletStockId => {
+//         const row = selectedRows[outletStockId];
+//         const product = products.find(p => p.outletStockId === outletStockId);
+
+//         const resellerGroup = row.resellerGroups && row.resellerGroups.length > 0 
+//           ? row.resellerGroups[0] 
+//           : null;
         
+//         if (!resellerGroup) {
+//           throw new Error(`No reseller information found for product ${row.productData?.product?.productTitle}`);
+//         }
+
 //         const itemData = {
 //           productId: row.productId,
 //           quantity: parseInt(row.quantity) || 0,
-//           damageRemark: row.damageRemark || ''
+//           remark: row.remark || '',
+//           resellerId: resellerGroup.reseller._id,
+//           destinationCenterId: resellerGroup.center._id,
+//           outletStockId: row.outletStockId
 //         };
 
 //         if (product?.product?.trackSerialNumber === "Yes") {
-//           const serialNumbers = assignedSerials[productId] || [];
+//           const serialNumbers = assignedSerials[outletStockId] || [];
 //           if (serialNumbers.length > 0) {
 //             itemData.serialNumbers = serialNumbers;
 //           }
@@ -222,7 +207,6 @@
     
 //     return {
 //       items: items,
-//       outletId: formData.outletId,
 //       transferRemark: formData.transferRemark || ''
 //     };
 //   };
@@ -235,7 +219,6 @@
 //   const handleReset = () => {
 //     setFormData({
 //       date: new Date().toISOString().split('T')[0],
-//        outletId: '',
 //       transferRemark: '',
 //     });
 //     setSelectedRows({});
@@ -258,23 +241,23 @@
   
 //     try {
 //       const submitData = prepareSubmitData();
-//       console.log('Submitting data:', submitData);
+//       console.log('Submitting data to reseller:', submitData);
 
-//       const response = await axiosInstance.post('/faulty-stock/transfer-repaired-to-warehouse',submitData);
+//       const response = await axiosInstance.post('/faulty-stock/transfer-to-reseller-center', submitData);
   
 //       if (response.data.success) {
-//         showAlert('success', 'Repaired stock transferred successfully!');
+//         showAlert('success', response.data.message || 'Repaired stock transferred to reseller successfully!');
 //         setTimeout(() => {
-//           navigate('/repair-faulty-stock');
+//           navigate('/reseller-stock');
 //         }, 1500);
 //       } else {
-//         showAlert('danger', response.data.message || 'Failed to transfer repaired stock');
+//         showAlert('danger', response.data.message || 'Failed to transfer repaired stock to reseller');
 //       }
       
 //     } catch (error) {
-//       console.error('Error transferring repaired stock:', error);
+//       console.error('Error transferring to reseller:', error);
       
-//       let errorMessage = 'Failed to transfer repaired stock';
+//       let errorMessage = 'Failed to transfer repaired stock to reseller';
 //       if (error.response?.data?.message) {
 //         errorMessage = error.response.data.message;
 //       }
@@ -286,17 +269,35 @@
 
 //   const filteredProducts = products.filter((p) =>
 //     p.product?.productTitle?.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
-//     p.product?.productCode?.toLowerCase().includes(productSearchTerm.toLowerCase())
+//     p.product?.productCode?.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+//     (p.reseller?.resellerName?.toLowerCase() || '').includes(productSearchTerm.toLowerCase()) ||
+//     (p.center?.centerName?.toLowerCase() || '').includes(productSearchTerm.toLowerCase())
 //   );
 
 //   const handleBack = () => {
-//     navigate('/repair-faulty-stock');
+//     navigate('/faulty-stock');
 //   };
+
+//   const groupedProducts = filteredProducts.reduce((groups, product) => {
+//     const outletName = product.outlet?.centerName || 'Unknown Outlet';
+//     if (!groups[outletName]) {
+//       groups[outletName] = [];
+//     }
+//     groups[outletName].push(product);
+//     return groups;
+//   }, {});
 
 //   return (
 //     <div className="form-container">
 //       <div className="title">
-//        Transfer to Reseller
+//         <CButton
+//           size="sm"
+//           className="back-button me-3"
+//           onClick={handleBack}
+//         >
+//           <i className="fa fa-fw fa-arrow-left"></i>Back
+//         </CButton>
+//         Transfer Repaired Stock to Reseller
 //       </div>
       
 //       <div className="form-card">
@@ -322,8 +323,7 @@
 //             <div className="form-row">
 //               <div className="form-group">
 //                 <label  
-//                   className={`form-label 
-//                     ${errors.date ? 'error-label' : formData.date ? 'valid-label' : ''}`}
+//                   className={`form-label ${errors.date ? 'error-label' : formData.date ? 'valid-label' : ''}`}
 //                   htmlFor="date"
 //                 >
 //                   Date <span className="required">*</span>
@@ -332,22 +332,32 @@
 //                   type="date"
 //                   id="date"
 //                   name="date"
-//                   className={`form-input 
-//                     ${errors.date ? 'error-input' : formData.date ? 'valid-input' : ''}`}
+//                   className={`form-input ${errors.date ? 'error-input' : formData.date ? 'valid-input' : ''}`}
 //                   value={formData.date}
 //                   onChange={handleChange}
 //                 />
 //                 {errors.date && <span className="error">{errors.date}</span>}
 //               </div>
+              
 //               <div className="form-group">
-//               </div> 
-//               <div className="form-group">
+//                 <label className="form-label" htmlFor="transferRemark">
+//                   Transfer Remark
+//                 </label>
+//                 <textarea
+//                   id="transferRemark"
+//                   name="transferRemark"
+//                   className="form-textarea"
+//                   value={formData.transferRemark}
+//                   onChange={handleChange}
+//                   rows="3"
+//                 />
 //               </div>
+//               <div className="form-group"></div>
 //             </div>
 
 //             <div className="mt-4">
 //               <div className="d-flex justify-content-between mb-2">
-//                 <h5>Repaired Products</h5>
+//                 <h5>Products</h5>
 //                 {errors.products && <span className="error-text">{errors.products}</span>}
 //                 <div className="d-flex">
 //                   <label className="me-2 mt-1">Search:</label>
@@ -365,101 +375,115 @@
 //                   <CSpinner color="primary" />
 //                 </div>
 //               ) : (
-//                 <div className="responsive-table-wrapper">
-//                 <CTable bordered striped className='responsive-table'>
-//                   <CTableHead>
-//                     <CTableRow>
-//                       <CTableHeaderCell>Select</CTableHeaderCell>
-//                       <CTableHeaderCell>Product Name</CTableHeaderCell>
-//                       <CTableHeaderCell>Reseller</CTableHeaderCell>
-//                       <CTableHeaderCell>Repaired Quantity</CTableHeaderCell>
-//                       <CTableHeaderCell>Transfer Quantity</CTableHeaderCell>
-//                       <CTableHeaderCell>Remark</CTableHeaderCell>
-//                     </CTableRow>
-//                   </CTableHead>
-//                   <CTableBody>
-//                     {filteredProducts.length > 0 ? (
-//                       filteredProducts.map((product) => {
-//                         const isSelected = !!selectedRows[product.product._id];
-//                         const selectedRow = selectedRows[product.product._id];
-//                         const trackSerial = product.product?.trackSerialNumber === "Yes";
+//                 <>
+//                   {Object.keys(groupedProducts).length > 0 ? (
+//                     Object.keys(groupedProducts).map((outletName) => (
+//                       <div key={outletName} className="mb-4">
+//                         <div className="responsive-table-wrapper">
+//                           <CTable bordered striped className='responsive-table'>
+//                             <CTableHead>
+//                               <CTableRow>
+//                                 <CTableHeaderCell>Select</CTableHeaderCell>
+//                                 <CTableHeaderCell>Product Name</CTableHeaderCell>
+//                                 <CTableHeaderCell>Reseller</CTableHeaderCell>
+//                                 <CTableHeaderCell>Original Center</CTableHeaderCell>
+//                                 <CTableHeaderCell>Repaired Qty</CTableHeaderCell>
+//                                 <CTableHeaderCell>Transfer Qty</CTableHeaderCell>
+//                                 <CTableHeaderCell>Remark</CTableHeaderCell>
+//                               </CTableRow>
+//                             </CTableHead>
+//                             <CTableBody>
+//                               {groupedProducts[outletName].map((product) => {
+//                                 const isSelected = !!selectedRows[product.outletStockId];
+//                                 const selectedRow = selectedRows[product.outletStockId];
+//                                 const trackSerial = product.product?.trackSerialNumber === "Yes";
+//                                 const resellerInfo = product.resellerGroups && product.resellerGroups.length > 0 
+//                                   ? product.resellerGroups[0] 
+//                                   : { reseller: { resellerName: 'N/A' }, center: { centerName: 'N/A' } };
 
-//                         return (
-//                           <CTableRow 
-//                             key={product.product._id}
-//                             className={isSelected ? 'selected-row' : 'table-row'}
-//                           >
-//                             <CTableDataCell>
-//                               <input
-//                                 type="checkbox"
-//                                 checked={isSelected}
-//                                 onChange={() => handleRowSelect(product)}
-//                                 style={{height:"20px", width:"20px"}}
-//                               />
-//                             </CTableDataCell>
-//                             <CTableDataCell>
-//                               {product.product?.productTitle || 'N/A'}
-//                             </CTableDataCell>
-//                             <CTableDataCell>
-//                               {product.totalRepairedQuantity || 0}
-//                             </CTableDataCell>
-//                             <CTableDataCell>
-//                               {isSelected && (
-//                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-//                                   <CFormInput
-//                                     type="number"
-//                                     value={selectedRow?.quantity || ''}
-//                                     onChange={(e) => handleRowDataChange(product.product._id, 'quantity', e.target.value)}
-//                                     placeholder="Qty"
-//                                     style={{width:'100px'}}
-//                                     min="1"
-//                                     max={product.totalRepairedQuantity || 1}
-//                                   />
-//                                   {trackSerial && (
-//                                     <span
-//                                       style={{
-//                                         fontSize: '18px',
-//                                         cursor: 'pointer',
-//                                         color: '#337ab7',
-//                                       }}
-//                                       onClick={() => handleOpenSerialModal(product)}
-//                                       title="Assign Serial Numbers"
-//                                     >
-//                                       ☰
-//                                     </span>
-//                                   )}
-//                                 </div>
-//                               )}
-//                             </CTableDataCell>
-//                             <CTableDataCell>
-//                               {isSelected && (
-//                                 <CFormInput
-//                                   type="text"
-//                                   placeholder="remark..."
-//                                   value={selectedRow?.damageRemark || ''}
-//                                   onChange={(e) => handleRowDataChange(product.product._id, 'damageRemark', e.target.value)}
-//                                 />
-//                               )}
-//                             </CTableDataCell>
-//                           </CTableRow>
-//                         );
-//                       })
-//                     ) : (
-//                       <CTableRow>
-//                         <CTableDataCell colSpan={6} className="text-center">
-//                           No repaired products found
-//                         </CTableDataCell>
-//                       </CTableRow>
-//                     )}
-//                   </CTableBody>
-//                 </CTable>
-//                 </div>
+//                                 return (
+//                                   <CTableRow 
+//                                     key={product.outletStockId}
+//                                     className={isSelected ? 'selected-row' : 'table-row'}
+//                                   >
+//                                     <CTableDataCell>
+//                                       <input
+//                                         type="checkbox"
+//                                         checked={isSelected}
+//                                         onChange={() => handleRowSelect(product)}
+//                                         style={{height:"20px", width:"20px"}}
+//                                       />
+//                                     </CTableDataCell>
+//                                     <CTableDataCell>
+//                                        {product.product?.productTitle || 'N/A'}
+//                                     </CTableDataCell>
+//                                     <CTableDataCell>
+//                                       {resellerInfo.reseller?.resellerName || 'N/A'}
+//                                     </CTableDataCell>
+//                                     <CTableDataCell>
+//                                       {resellerInfo.center?.centerName || 'N/A'}
+//                                     </CTableDataCell>
+//                                     <CTableDataCell>
+//                                       {product.totalRepairedQuantity || 0}
+//                                     </CTableDataCell>
+//                                     <CTableDataCell>
+//                                       {isSelected && (
+//                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+//                                           <CFormInput
+//                                             type="number"
+//                                             value={selectedRow?.quantity || ''}
+//                                             onChange={(e) => handleRowDataChange(product.outletStockId, 'quantity', e.target.value)}
+//                                             placeholder="Qty"
+//                                             style={{width:'100px'}}
+//                                             min="1"
+//                                             max={product.totalRepairedQuantity || 1}
+//                                           />
+//                                           {trackSerial && (
+//                                             <span
+//                                               style={{
+//                                                 fontSize: '18px',
+//                                                 cursor: 'pointer',
+//                                                 color: '#337ab7',
+//                                               }}
+//                                               onClick={() => handleOpenSerialModal(product)}
+//                                               title="Assign Serial Numbers"
+//                                             >
+//                                               ☰
+//                                             </span>
+//                                           )}
+//                                         </div>
+//                                       )}
+//                                     </CTableDataCell>
+//                                     <CTableDataCell>
+//                                       {isSelected && (
+//                                         <CFormInput
+//                                           type="text"
+//                                           placeholder="remark..."
+//                                           value={selectedRow?.remark || ''}
+//                                           onChange={(e) => handleRowDataChange(product.outletStockId, 'remark', e.target.value)}
+//                                         />
+//                                       )}
+//                                     </CTableDataCell>
+//                                   </CTableRow>
+//                                 );
+//                               })}
+//                             </CTableBody>
+//                           </CTable>
+//                         </div>
+//                       </div>
+//                     ))
+//                   ) : (
+//                     <div className="text-center my-3">
+//                       <p>No repaired products found in outlet stock</p>
+//                     </div>
+//                   )}
+//                 </>
 //               )}
 //             </div>
 
 //             <div className="form-footer">
 //               <button type="submit" className="submit-button" disabled={submitting}>
-//                 {submitting ? 'Transferring...' : 'Transfer Repaired Stock'}
+//                 {submitting ? 'Transferring to Reseller...' : 'Transfer to Reseller Stock'}
 //               </button>
 //             </div>
 //           </form>
@@ -470,10 +494,13 @@
 //         visible={serialModalVisible}
 //         onClose={() => setSerialModalVisible(false)}
 //         product={selectedProduct}
-//         usageQty={parseInt(selectedRows[selectedProduct?._id]?.quantity) || 0}
-//         onSerialNumbersUpdate={handleSerialNumbersUpdate}
+//         usageQty={parseInt(selectedRows[selectedProduct?.outletStockId]?.quantity) || 0}
+//         onSerialNumbersUpdate={(productId, serials) => {
+//           // Pass outletStockId instead of productId
+//           handleSerialNumbersUpdate(selectedProduct?.outletStockId, serials);
+//         }}
 //         availableSerials={selectedProduct ? 
-//           (products.find(p => p.product._id === selectedProduct._id)?.repairedSerials || []) 
+//           (products.find(p => p.outletStockId === selectedProduct.outletStockId)?.repairedSerials || []) 
 //           : []}
 //       />
 //     </div>
@@ -500,9 +527,17 @@ import {
   CTableHeaderCell, 
   CTableRow, 
   CAlert,
-  CButton
+  CButton,
+  CBadge,
+  CCard,
+  CCardBody,
+  CCardHeader,
+  CCol,
+  CRow,
+  CProgress
 } from '@coreui/react';
 import TransferSerialNumber from './TransferRepairedSerialNumber';
+import { confirmAction, showSuccess, showError } from '../../utils/sweetAlerts';
 
 const TransferToReseller = () => {
   const navigate = useNavigate();
@@ -522,12 +557,16 @@ const TransferToReseller = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [assignedSerials, setAssignedSerials] = useState({});
   const [outlets, setOutlets] = useState([]);
+  const [acceptingItems, setAcceptingItems] = useState({}); // Track accepting state per item
 
   const [alert, setAlert] = useState({
     visible: false,
     type: 'success',
     message: ''
   });
+
+  // Tabs state
+  const [activeTab, setActiveTab] = useState('pending'); // 'pending', 'available'
 
   // Fetch repaired products in outlet stock
   useEffect(() => {
@@ -541,12 +580,70 @@ const TransferToReseller = () => {
       
       if (response.data.success) {
         console.log('Fetched repaired products in outlet:', response.data.data);
-        setProducts(response.data.data.repairedProducts || []);
-
+        
+        const allProducts = response.data.data.repairedProducts || [];
+        
+        // Transform the data to include a properly formatted repairedSerials array
+        const transformedProducts = allProducts.map(product => {
+          // Create a comprehensive repairedSerials array
+          const repairedSerials = [];
+          
+          // Add pending serials
+          if (product.pendingRepairedSerials && Array.isArray(product.pendingRepairedSerials)) {
+            product.pendingRepairedSerials.forEach(serial => {
+              repairedSerials.push({
+                ...serial,
+                status: serial.status || "pending_approval",
+                isPending: true
+              });
+            });
+          }
+          
+          // Add available serials
+          if (product.availableRepairedSerials && Array.isArray(product.availableRepairedSerials)) {
+            product.availableRepairedSerials.forEach(serial => {
+              repairedSerials.push({
+                ...serial,
+                status: serial.status || "available",
+                isPending: false
+              });
+            });
+          }
+          
+          // Also add any serials from resellerGroups
+          if (product.resellerGroups && Array.isArray(product.resellerGroups)) {
+            product.resellerGroups.forEach(group => {
+              if (group.serials && Array.isArray(group.serials)) {
+                group.serials.forEach(serialNumber => {
+                  // Check if serial already exists
+                  if (!repairedSerials.some(s => s.serialNumber === serialNumber)) {
+                    repairedSerials.push({
+                      serialNumber: serialNumber,
+                      status: "available",
+                      isPending: false,
+                      source: "reseller_group"
+                    });
+                  }
+                });
+              }
+            });
+          }
+          
+          return {
+            ...product,
+            repairedSerials, // Properly formatted array
+            totalRepairedQuantity: product.totalRepairedQuantity || 0,
+            pendingRepairedQuantity: product.pendingRepairedQuantity || 0,
+            availableRepairedQuantity: product.availableRepairedQuantity || 0
+          };
+        });
+        
+        setProducts(transformedProducts);
+  
         const uniqueOutlets = [];
         const outletIds = new Set();
         
-        (response.data.data.repairedProducts || []).forEach(product => {
+        transformedProducts.forEach(product => {
           if (product.outlet && !outletIds.has(product.outlet._id)) {
             outletIds.add(product.outlet._id);
             uniqueOutlets.push(product.outlet);
@@ -563,6 +660,153 @@ const TransferToReseller = () => {
     }
   };
 
+  // New function to accept pending items
+  const handleAcceptItem = async (product) => {
+    try {
+      const isSerialized = product.product?.trackSerialNumber === "Yes";
+      let serialNumbers = [];
+      
+      if (isSerialized) {
+        // For serialized products, get pending serials
+        const pendingSerials = product.repairedSerials?.filter(
+          serial => serial.status === "pending_approval"
+        );
+        
+        if (!pendingSerials || pendingSerials.length === 0) {
+          showAlert('warning', 'No pending items found for this product');
+          return;
+        }
+        
+        serialNumbers = pendingSerials.map(serial => serial.serialNumber);
+        
+        // Show confirmation for serialized
+        const result = await confirmAction(
+          'Accept Repaired Items',
+          `Are you sure you want to accept ${serialNumbers.length} items of ${product.product?.productTitle}?<br>
+          <small>Serial Numbers: ${serialNumbers.join(', ')}</small>`,
+          'question',
+          'Yes, accept items'
+        );
+        
+        if (!result.isConfirmed) return;
+      } else {
+        // For non-serialized products
+        const result = await confirmAction(
+          'Accept Repaired Items',
+          `Are you sure you want to accept repaired items of ${product.product?.productTitle}?`,
+          'question',
+          'Yes, accept items'
+        );
+        
+        if (!result.isConfirmed) return;
+      }
+
+      // Set accepting state
+      setAcceptingItems(prev => ({
+        ...prev,
+        [product.outletStockId]: true
+      }));
+
+      // Call accept API
+      const acceptData = {
+        productId: product.product._id,
+        action: 'accept',
+        ...(isSerialized && serialNumbers.length > 0 && { serialNumbers })
+      };
+
+      const response = await axiosInstance.post('/warehouse-repaired', acceptData);
+
+      if (response.data.success) {
+        showSuccess(response.data.message || 'Items accepted successfully!');
+        
+        // Refresh the list
+        await fetchRepairedProducts();
+        
+        // Remove from selected rows if selected
+        setSelectedRows(prev => {
+          const updated = { ...prev };
+          delete updated[product.outletStockId];
+          return updated;
+        });
+      } else {
+        throw new Error(response.data.message || 'Failed to accept items');
+      }
+    } catch (error) {
+      console.error('Error accepting item:', error);
+      showError(error, 'Failed to accept items');
+    } finally {
+      setAcceptingItems(prev => ({
+        ...prev,
+        [product.outletStockId]: false
+      }));
+    }
+  };
+
+  // New function to accept selected items in bulk
+  const handleAcceptSelected = async () => {
+    const selectedProducts = Object.keys(selectedRows)
+      .filter(id => selectedRows[id])
+      .map(id => {
+        const row = selectedRows[id];
+        const product = products.find(p => p.outletStockId === id);
+        return { ...product, selectedRow: row };
+      });
+
+    if (selectedProducts.length === 0) {
+      showAlert('warning', 'Please select items to accept');
+      return;
+    }
+
+    try {
+      // Show confirmation
+      const result = await confirmAction(
+        'Accept Selected Items',
+        `Are you sure you want to accept ${selectedProducts.length} item(s)?`,
+        'question',
+        'Yes, accept all'
+      );
+
+      if (!result.isConfirmed) return;
+
+      setSubmitting(true);
+
+      // Process each selected item
+      for (const product of selectedProducts) {
+        const isSerialized = product.product?.trackSerialNumber === "Yes";
+        let serialNumbers = [];
+
+        if (isSerialized) {
+          // Get assigned serials or all pending serials
+          serialNumbers = assignedSerials[product.outletStockId] || 
+                         product.repairedSerials?.filter(s => s.status === "pending_approval")
+                           .map(s => s.serialNumber) || [];
+        }
+
+        const acceptData = {
+          productId: product.product._id,
+          action: 'accept',
+          ...(isSerialized && serialNumbers.length > 0 && { serialNumbers })
+        };
+
+        await axiosInstance.post('/warehouse-repaired', acceptData);
+      }
+
+      showSuccess(`${selectedProducts.length} item(s) accepted successfully!`);
+      
+      // Refresh list
+      await fetchRepairedProducts();
+      
+      // Clear selections
+      setSelectedRows({});
+      setAssignedSerials({});
+    } catch (error) {
+      console.error('Error accepting selected items:', error);
+      showError(error, 'Failed to accept items');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -570,19 +814,16 @@ const TransferToReseller = () => {
   };
 
   const handleOpenSerialModal = (product) => {
-    const transferQuantity = parseInt(selectedRows[product.outletStockId]?.quantity) || 0;
-    if (transferQuantity > 0) {
-      const productForSerial = {
-        _id: product.product._id,
-        productTitle: product.product.productTitle,
-        trackSerialNumber: product.product.trackSerialNumber,
-        productId: product.product._id,
-        outletStockId: product.outletStockId
-      };
-      
-      setSelectedProduct(productForSerial);
-      setSerialModalVisible(true);
-    }
+    const productForSerial = {
+      _id: product.product._id,
+      productTitle: product.product.productTitle,
+      trackSerialNumber: product.product.trackSerialNumber,
+      productId: product.product._id,
+      outletStockId: product.outletStockId
+    };
+    
+    setSelectedProduct(productForSerial);
+    setSerialModalVisible(true);
   };
 
   const handleSerialNumbersUpdate = (outletStockId, serialsArray) => {
@@ -600,10 +841,8 @@ const TransferToReseller = () => {
       [outletStockId]: prev[outletStockId]
         ? undefined
         : { 
-            quantity: Math.min(1, product.totalRepairedQuantity || 1), 
+            quantity: Math.min(1, getPendingCount(product)), 
             remark: '',
-            availableQuantity: product.totalRepairedQuantity || 0,
-            serialNumbers: product.repairedSerials.map(s => s.serialNumber),
             outletStockId: outletStockId,
             productId: product.product._id,
             productData: product,
@@ -622,82 +861,51 @@ const TransferToReseller = () => {
       }
     }));
   };
-
-  const validateForm = () => {
-    let newErrors = {};
-
-    if (!formData.date) newErrors.date = 'Date is required';
-
-    const selectedProducts = Object.keys(selectedRows).filter(id => selectedRows[id]);
-    if (selectedProducts.length === 0) {
-      newErrors.products = 'At least one product must be selected';
-    }
-
-    Object.keys(selectedRows).forEach(outletStockId => {
-      const selectedRow = selectedRows[outletStockId];
-      const product = products.find(p => p.outletStockId === outletStockId);
-      
-      if (!selectedRow.quantity || parseInt(selectedRow.quantity) <= 0) {
-        newErrors.products = `Please enter valid quantity for ${product?.product?.productTitle}`;
-      }
-      
-      if (selectedRow.quantity > selectedRow.availableQuantity) {
-        newErrors.products = `Quantity exceeds available repaired quantity for ${product?.product?.productTitle}`;
-      }
-      
-      if (product?.product?.trackSerialNumber === "Yes") {
-        const transferQty = parseInt(selectedRow.quantity);
-        const assignedSerialsForProduct = assignedSerials[outletStockId] || [];
-        
-        if (assignedSerialsForProduct.length !== transferQty) {
-          newErrors.products = `Please assign serial numbers for all ${transferQty} items of ${product?.product?.productTitle}`;
-        }
-      }
-    });
+// Update the getAvailableCount function
+const getAvailableCount = (product) => {
+  if (product.product?.trackSerialNumber === "Yes") {
+    // Check both availableRepairedSerials and repairedSerials
+    const availableSerials = product.availableRepairedSerials || [];
+    const repairedSerials = product.repairedSerials || [];
     
-    return newErrors;
-  };
-
-  const prepareSubmitData = () => {
-    const items = Object.keys(selectedRows)
-      .filter(outletStockId => selectedRows[outletStockId])
-      .map(outletStockId => {
-        const row = selectedRows[outletStockId];
-        const product = products.find(p => p.outletStockId === outletStockId);
-
-        const resellerGroup = row.resellerGroups && row.resellerGroups.length > 0 
-          ? row.resellerGroups[0] 
-          : null;
-        
-        if (!resellerGroup) {
-          throw new Error(`No reseller information found for product ${row.productData?.product?.productTitle}`);
-        }
-
-        const itemData = {
-          productId: row.productId,
-          quantity: parseInt(row.quantity) || 0,
-          remark: row.remark || '',
-          resellerId: resellerGroup.reseller._id,
-          destinationCenterId: resellerGroup.center._id,
-          outletStockId: row.outletStockId
-        };
-
-        if (product?.product?.trackSerialNumber === "Yes") {
-          const serialNumbers = assignedSerials[outletStockId] || [];
-          if (serialNumbers.length > 0) {
-            itemData.serialNumbers = serialNumbers;
-          }
-        }
-        
-        return itemData;
-      });
+    // Count from availableRepairedSerials (from API)
+    const countFromApi = availableSerials.length;
     
-    return {
-      items: items,
-      transferRemark: formData.transferRemark || ''
-    };
-  };
+    // Also check repairedSerials array for "available" status
+    const countFromRepairedSerials = repairedSerials.filter(
+      s => s.status === "available" && !s.isPending
+    ).length;
+    
+    // Return the larger count (or API count if it exists)
+    return countFromApi > 0 ? countFromApi : countFromRepairedSerials;
+  }
+  
+  // For non-serialized products
+  return product.availableRepairedQuantity || 0;
+};
 
+// Also update the getPendingCount function
+const getPendingCount = (product) => {
+  if (product.product?.trackSerialNumber === "Yes") {
+    // Check both pendingRepairedSerials and repairedSerials
+    const pendingSerials = product.pendingRepairedSerials || [];
+    const repairedSerials = product.repairedSerials || [];
+    
+    // Count from pendingRepairedSerials (from API)
+    const countFromApi = pendingSerials.length;
+    
+    // Also check repairedSerials array for pending items
+    const countFromRepairedSerials = repairedSerials.filter(
+      s => (s.status === "pending_approval" || s.isPending === true)
+    ).length;
+    
+    // Return the larger count (or API count if it exists)
+    return countFromApi > 0 ? countFromApi : countFromRepairedSerials;
+  }
+  
+  // For non-serialized products
+  return product.pendingRepairedQuantity || 0;
+};
   const showAlert = (type, message) => {
     setAlert({ visible: true, type, message });
     setTimeout(() => setAlert(prev => ({ ...prev, visible: false })), 5000);
@@ -718,22 +926,58 @@ const TransferToReseller = () => {
     e.preventDefault();
     setSubmitting(true);
   
-    const newErrors = validateForm();
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      setSubmitting(false);
-      showAlert('warning', 'Please fix the form errors before submitting');
-      return;
-    }
-  
     try {
-      const submitData = prepareSubmitData();
+      // Prepare data for transfer to reseller
+      const selectedProducts = Object.keys(selectedRows)
+        .filter(id => selectedRows[id])
+        .map(id => {
+          const row = selectedRows[id];
+          const product = products.find(p => p.outletStockId === id);
+
+          const resellerGroup = row.resellerGroups && row.resellerGroups.length > 0 
+            ? row.resellerGroups[0] 
+            : null;
+          
+          if (!resellerGroup) {
+            throw new Error(`No reseller information found for product ${row.productData?.product?.productTitle}`);
+          }
+
+          const itemData = {
+            productId: row.productId,
+            quantity: parseInt(row.quantity) || 0,
+            remark: row.remark || '',
+            resellerId: resellerGroup.reseller._id,
+            destinationCenterId: resellerGroup.center._id,
+            outletStockId: row.outletStockId
+          };
+
+          if (product?.product?.trackSerialNumber === "Yes") {
+            const serialNumbers = assignedSerials[row.outletStockId] || [];
+            if (serialNumbers.length > 0) {
+              itemData.serialNumbers = serialNumbers;
+            }
+          }
+          
+          return itemData;
+        });
+
+      if (selectedProducts.length === 0) {
+        showAlert('warning', 'Please select items to transfer');
+        setSubmitting(false);
+        return;
+      }
+
+      const submitData = {
+        items: selectedProducts,
+        transferRemark: formData.transferRemark || ''
+      };
+
       console.log('Submitting data to reseller:', submitData);
 
       const response = await axiosInstance.post('/faulty-stock/transfer-to-reseller-center', submitData);
-  
+
       if (response.data.success) {
-        showAlert('success', response.data.message || 'Repaired stock transferred to reseller successfully!');
+        showSuccess(response.data.message || 'Repaired stock transferred to reseller successfully!');
         setTimeout(() => {
           navigate('/reseller-stock');
         }, 1500);
@@ -743,12 +987,7 @@ const TransferToReseller = () => {
       
     } catch (error) {
       console.error('Error transferring to reseller:', error);
-      
-      let errorMessage = 'Failed to transfer repaired stock to reseller';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      }
-      showAlert('danger', errorMessage);
+      showError(error, 'Failed to transfer repaired stock to reseller');
     } finally {
       setSubmitting(false);
     }
@@ -784,7 +1023,7 @@ const TransferToReseller = () => {
         >
           <i className="fa fa-fw fa-arrow-left"></i>Back
         </CButton>
-        Transfer Repaired Stock to Reseller
+        Manage Repaired Stock in Outlet
       </div>
       
       <div className="form-card">
@@ -805,175 +1044,384 @@ const TransferToReseller = () => {
               {alert.message}
             </CAlert>
           )}
- 
-          <form onSubmit={handleSubmit}>
-            <div className="form-row">
-              <div className="form-group">
-                <label  
-                  className={`form-label ${errors.date ? 'error-label' : formData.date ? 'valid-label' : ''}`}
-                  htmlFor="date"
-                >
-                  Date <span className="required">*</span>
-                </label>
-                <input
-                  type="date"
-                  id="date"
-                  name="date"
-                  className={`form-input ${errors.date ? 'error-input' : formData.date ? 'valid-input' : ''}`}
-                  value={formData.date}
-                  onChange={handleChange}
-                />
-                {errors.date && <span className="error">{errors.date}</span>}
-              </div>
-              
-              <div className="form-group">
-                <label className="form-label" htmlFor="transferRemark">
-                  Transfer Remark
-                </label>
-                <textarea
-                  id="transferRemark"
-                  name="transferRemark"
-                  className="form-textarea"
-                  value={formData.transferRemark}
-                  onChange={handleChange}
-                  rows="3"
-                />
-              </div>
-              <div className="form-group"></div>
-            </div>
 
-            <div className="mt-4">
-              <div className="d-flex justify-content-between mb-2">
-                <h5>Products</h5>
-                {errors.products && <span className="error-text">{errors.products}</span>}
-                <div className="d-flex">
-                  <label className="me-2 mt-1">Search:</label>
-                  <CFormInput
-                    type="text"
-                    value={productSearchTerm}
-                    onChange={(e) => setProductSearchTerm(e.target.value)}
-                    style={{ maxWidth: '250px' }}
-                  />
+          {/* Tabs for Pending vs Available */}
+          <CRow className="mb-4">
+            <CCol>
+              <div className="d-flex justify-content-between align-items-center">
+                <div className="btn-group" role="group">
+                  <CButton
+                    color={activeTab === 'pending' ? 'primary' : 'secondary'}
+                    onClick={() => setActiveTab('pending')}
+                    className="me-2"
+                  >
+                    Pending Approval
+                    <CBadge color="warning" className="ms-2">
+                      {products.filter(p => getPendingCount(p) > 0).length}
+                    </CBadge>
+                  </CButton>
+                  <CButton
+                    color={activeTab === 'available' ? 'primary' : 'secondary'}
+                    onClick={() => setActiveTab('available')}
+                  >
+                    Available Stock
+                    <CBadge color="success" className="ms-2">
+                      {products.filter(p => getAvailableCount(p) > 0).length}
+                    </CBadge>
+                  </CButton>
                 </div>
+                
+                {/* Bulk Accept Button for Pending Tab */}
+                {activeTab === 'pending' && Object.keys(selectedRows).length > 0 && (
+                  <CButton
+                    color="success"
+                    onClick={handleAcceptSelected}
+                    disabled={submitting}
+                  >
+                    {submitting ? (
+                      <>
+                        <CSpinner size="sm" /> Accepting...
+                      </>
+                    ) : (
+                      `Accept Selected (${Object.keys(selectedRows).length})`
+                    )}
+                  </CButton>
+                )}
               </div>
+            </CCol>
+          </CRow>
 
-              {loading ? (
-                <div className="text-center my-3">
-                  <CSpinner color="primary" />
-                </div>
-              ) : (
-                <>
-                  {Object.keys(groupedProducts).length > 0 ? (
-                    Object.keys(groupedProducts).map((outletName) => (
-                      <div key={outletName} className="mb-4">
-                        <div className="responsive-table-wrapper">
-                          <CTable bordered striped className='responsive-table'>
-                            <CTableHead>
-                              <CTableRow>
-                                <CTableHeaderCell>Select</CTableHeaderCell>
-                                <CTableHeaderCell>Product Name</CTableHeaderCell>
-                                <CTableHeaderCell>Reseller</CTableHeaderCell>
-                                <CTableHeaderCell>Original Center</CTableHeaderCell>
-                                <CTableHeaderCell>Repaired Qty</CTableHeaderCell>
-                                <CTableHeaderCell>Transfer Qty</CTableHeaderCell>
-                                <CTableHeaderCell>Remark</CTableHeaderCell>
-                              </CTableRow>
-                            </CTableHead>
-                            <CTableBody>
-                              {groupedProducts[outletName].map((product) => {
-                                const isSelected = !!selectedRows[product.outletStockId];
-                                const selectedRow = selectedRows[product.outletStockId];
-                                const trackSerial = product.product?.trackSerialNumber === "Yes";
-                                const resellerInfo = product.resellerGroups && product.resellerGroups.length > 0 
-                                  ? product.resellerGroups[0] 
-                                  : { reseller: { resellerName: 'N/A' }, center: { centerName: 'N/A' } };
-
-                                return (
-                                  <CTableRow 
-                                    key={product.outletStockId}
-                                    className={isSelected ? 'selected-row' : 'table-row'}
-                                  >
-                                    <CTableDataCell>
-                                      <input
-                                        type="checkbox"
-                                        checked={isSelected}
-                                        onChange={() => handleRowSelect(product)}
-                                        style={{height:"20px", width:"20px"}}
-                                      />
-                                    </CTableDataCell>
-                                    <CTableDataCell>
-                                       {product.product?.productTitle || 'N/A'}
-                                    </CTableDataCell>
-                                    <CTableDataCell>
-                                      {resellerInfo.reseller?.resellerName || 'N/A'}
-                                    </CTableDataCell>
-                                    <CTableDataCell>
-                                      {resellerInfo.center?.centerName || 'N/A'}
-                                    </CTableDataCell>
-                                    <CTableDataCell>
-                                      {product.totalRepairedQuantity || 0}
-                                    </CTableDataCell>
-                                    <CTableDataCell>
-                                      {isSelected && (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                          <CFormInput
-                                            type="number"
-                                            value={selectedRow?.quantity || ''}
-                                            onChange={(e) => handleRowDataChange(product.outletStockId, 'quantity', e.target.value)}
-                                            placeholder="Qty"
-                                            style={{width:'100px'}}
-                                            min="1"
-                                            max={product.totalRepairedQuantity || 1}
-                                          />
-                                          {trackSerial && (
-                                            <span
-                                              style={{
-                                                fontSize: '18px',
-                                                cursor: 'pointer',
-                                                color: '#337ab7',
-                                              }}
-                                              onClick={() => handleOpenSerialModal(product)}
-                                              title="Assign Serial Numbers"
-                                            >
-                                              ☰
-                                            </span>
-                                          )}
-                                        </div>
-                                      )}
-                                    </CTableDataCell>
-                                    <CTableDataCell>
-                                      {isSelected && (
-                                        <CFormInput
-                                          type="text"
-                                          placeholder="remark..."
-                                          value={selectedRow?.remark || ''}
-                                          onChange={(e) => handleRowDataChange(product.outletStockId, 'remark', e.target.value)}
-                                        />
-                                      )}
-                                    </CTableDataCell>
-                                  </CTableRow>
-                                );
-                              })}
-                            </CTableBody>
-                          </CTable>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center my-3">
-                      <p>No repaired products found in outlet stock</p>
+          {activeTab === 'pending' ? (
+            <>
+              <CCard className="mb-4">
+                <CCardHeader>
+                  <strong>Pending Approval Items</strong>
+                  <small className="text-muted ms-2">
+                    Items transferred from repair center waiting for acceptance
+                  </small>
+                </CCardHeader>
+                <CCardBody>
+                  <div className="d-flex justify-content-between mb-3">
+                  <div>
+                  </div>
+                    <div>
+                      <label className="me-2 mt-1">Search:</label>
+                      <CFormInput
+                        type="text"
+                        value={productSearchTerm}
+                        onChange={(e) => setProductSearchTerm(e.target.value)}
+                        style={{ maxWidth: '250px' }}
+                      />
                     </div>
-                  )}
-                </>
-              )}
-            </div>
+                  </div>
 
-            <div className="form-footer">
-              <button type="submit" className="submit-button" disabled={submitting}>
-                {submitting ? 'Transferring to Reseller...' : 'Transfer to Reseller Stock'}
-              </button>
-            </div>
-          </form>
+                  {loading ? (
+                    <div className="text-center my-5">
+                      <CSpinner color="primary" />
+                      <p className="mt-2">Loading repaired products...</p>
+                    </div>
+                  ) : (
+                    <>
+                      {Object.keys(groupedProducts).length > 0 ? (
+                        Object.keys(groupedProducts).map((outletName) => (
+                          <div key={outletName} className="mb-4">
+                            <div className="responsive-table-wrapper">
+                              <CTable bordered striped className='responsive-table'>
+                                <CTableHead>
+                                  <CTableRow>
+                                    <CTableHeaderCell width="50px">Select</CTableHeaderCell>
+                                    <CTableHeaderCell>Product Name</CTableHeaderCell>
+                                    <CTableHeaderCell>Reseller</CTableHeaderCell>
+                                    <CTableHeaderCell>Original Center</CTableHeaderCell>
+                                    <CTableHeaderCell>Pending Qty</CTableHeaderCell>
+                                    <CTableHeaderCell>Available Qty</CTableHeaderCell>
+                                    <CTableHeaderCell width="120px">Action</CTableHeaderCell>
+                                  </CTableRow>
+                                </CTableHead>
+                                <CTableBody>
+                                  {groupedProducts[outletName].map((product) => {
+                                    const isSelected = !!selectedRows[product.outletStockId];
+                                    const selectedRow = selectedRows[product.outletStockId];
+                                    const trackSerial = product.product?.trackSerialNumber === "Yes";
+                                    const pendingCount = getPendingCount(product);
+                                    const availableCount = getAvailableCount(product);
+                                    const isAccepting = acceptingItems[product.outletStockId];
+                                    const resellerInfo = product.resellerGroups && product.resellerGroups.length > 0 
+                                      ? product.resellerGroups[0] 
+                                      : { reseller: { resellerName: 'N/A' }, center: { centerName: 'N/A' } };
+
+                                    if (pendingCount === 0) return null;
+
+                                    return (
+                                      <CTableRow 
+                                        key={product.outletStockId}
+                                        className={isSelected ? 'table-primary' : ''}
+                                      >
+                                        <CTableDataCell>
+                                          <input
+                                            type="checkbox"
+                                            checked={isSelected}
+                                            onChange={() => handleRowSelect(product)}
+                                            style={{ height: "20px", width: "20px" }}
+                                          />
+                                        </CTableDataCell>
+                                        <CTableDataCell>
+                                           {product.product?.productTitle || ''}
+                                        </CTableDataCell>
+                                        <CTableDataCell>
+                                          {resellerInfo.reseller?.resellerName || 'N/A'}
+                                        </CTableDataCell>
+                                        <CTableDataCell>
+                                          {resellerInfo.center?.centerName || 'N/A'}
+                                        </CTableDataCell>
+                                        <CTableDataCell>
+                                          <div className="d-flex align-items-center">
+                                            <span className="me-2">{pendingCount}</span>
+                                            {trackSerial && isSelected && (
+                                              <CButton
+                                                size="sm"
+                                                color="info"
+                                                onClick={() => handleOpenSerialModal(product)}
+                                                title="Assign specific serials"
+                                              >
+                                                <i className="fa fa-fw fa-list"></i>
+                                              </CButton>
+                                            )}
+                                          </div>
+                                          {trackSerial && (
+                                            <div className="mt-1">
+                                              <small className="text-muted">
+                                                {product.repairedSerials?.filter(s => s.status === "pending_approval").length || 0} serial(s)
+                                              </small>
+                                            </div>
+                                          )}
+                                        </CTableDataCell>
+                                        <CTableDataCell>
+                                          <span className={availableCount > 0 ? 'text-success' : 'text-muted'}>
+                                            {availableCount}
+                                          </span>
+                                        </CTableDataCell>
+                                        <CTableDataCell>
+                                          <CButton
+                                            size="sm"
+                                            color="success"
+                                            onClick={() => handleAcceptItem(product)}
+                                            disabled={isAccepting}
+                                            className="w-100"
+                                          >
+                                            {isAccepting ? (
+                                              <CSpinner size="sm" />
+                                            ) : (
+                                              'Accept'
+                                            )}
+                                          </CButton>
+                                        </CTableDataCell>
+                                      </CTableRow>
+                                    );
+                                  })}
+                                </CTableBody>
+                              </CTable>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center my-5 py-5">
+                          <i className="fa fa-check-circle fa-3x text-success mb-3"></i>
+                          <h5>No Pending Items</h5>
+                          <p className="text-muted">All repaired items have been accepted.</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CCardBody>
+              </CCard>
+            </>
+          ) : (
+            <CCard>
+              <CCardHeader>
+                <strong>Available Repaired Stock</strong>
+                <small className="text-muted ms-2">
+                  Accepted items available for transfer to resellers
+                </small>
+              </CCardHeader>
+              <CCardBody>
+                {/* Form for transferring to reseller */}
+                <form onSubmit={handleSubmit}>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label  
+                        className={`form-label ${errors.date ? 'error-label' : formData.date ? 'valid-label' : ''}`}
+                        htmlFor="date"
+                      >
+                        Transfer Date <span className="required">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        id="date"
+                        name="date"
+                        className={`form-input ${errors.date ? 'error-input' : formData.date ? 'valid-input' : ''}`}
+                        value={formData.date}
+                        onChange={handleChange}
+                      />
+                      {errors.date && <span className="error">{errors.date}</span>}
+                    </div>
+                    
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="transferRemark">
+                        Transfer Remark
+                      </label>
+                      <textarea
+                        id="transferRemark"
+                        name="transferRemark"
+                        className="form-textarea"
+                        value={formData.transferRemark}
+                        onChange={handleChange}
+                        rows="3"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <div className="d-flex justify-content-between mb-2">
+                      <h5>Select Products for Reseller Transfer</h5>
+                      {errors.products && <span className="error-text">{errors.products}</span>}
+                      <div className="d-flex">
+                        <label className="me-2 mt-1">Search:</label>
+                        <CFormInput
+                          type="text"
+                          value={productSearchTerm}
+                          onChange={(e) => setProductSearchTerm(e.target.value)}
+                          style={{ maxWidth: '250px' }}
+                          placeholder="Search available products..."
+                        />
+                      </div>
+                    </div>
+
+                    {loading ? (
+                      <div className="text-center my-3">
+                        <CSpinner color="primary" />
+                      </div>
+                    ) : (
+                      <>
+                        {Object.keys(groupedProducts).length > 0 ? (
+                          Object.keys(groupedProducts).map((outletName) => (
+                            <div key={outletName} className="mb-4">
+                              <div className="responsive-table-wrapper">
+                                <CTable bordered striped className='responsive-table'>
+                                  <CTableHead>
+                                    <CTableRow>
+                                      <CTableHeaderCell>Select</CTableHeaderCell>
+                                      <CTableHeaderCell>Product Name</CTableHeaderCell>
+                                      <CTableHeaderCell>Reseller</CTableHeaderCell>
+                                      <CTableHeaderCell>Original Center</CTableHeaderCell>
+                                      <CTableHeaderCell>Available Qty</CTableHeaderCell>
+                                      <CTableHeaderCell>Transfer Qty</CTableHeaderCell>
+                                      <CTableHeaderCell>Remark</CTableHeaderCell>
+                                    </CTableRow>
+                                  </CTableHead>
+                                  <CTableBody>
+                                    {groupedProducts[outletName].map((product) => {
+                                      const isSelected = !!selectedRows[product.outletStockId];
+                                      const selectedRow = selectedRows[product.outletStockId];
+                                      const trackSerial = product.product?.trackSerialNumber === "Yes";
+                                      const availableCount = getAvailableCount(product);
+                                      const resellerInfo = product.resellerGroups && product.resellerGroups.length > 0 
+                                        ? product.resellerGroups[0] 
+                                        : { reseller: { resellerName: 'N/A' }, center: { centerName: 'N/A' } };
+
+                                      if (availableCount === 0) return null;
+
+                                      return (
+                                        <CTableRow 
+                                          key={product.outletStockId}
+                                          className={isSelected ? 'selected-row' : 'table-row'}
+                                        >
+                                          <CTableDataCell>
+                                            <input
+                                              type="checkbox"
+                                              checked={isSelected}
+                                              onChange={() => handleRowSelect(product)}
+                                              style={{height:"20px", width:"20px"}}
+                                            />
+                                          </CTableDataCell>
+                                          <CTableDataCell>
+                                            {product.product?.productTitle || 'N/A'}
+                                          </CTableDataCell>
+                                          <CTableDataCell>
+                                            {resellerInfo.reseller?.resellerName || 'N/A'}
+                                          </CTableDataCell>
+                                          <CTableDataCell>
+                                            {resellerInfo.center?.centerName || 'N/A'}
+                                          </CTableDataCell>
+                                          <CTableDataCell>
+                                            <span className="text-success fw-bold">
+                                              {availableCount}
+                                            </span>
+                                          </CTableDataCell>
+                                          <CTableDataCell>
+                                            {isSelected && (
+                                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <CFormInput
+                                                  type="number"
+                                                  value={selectedRow?.quantity || ''}
+                                                  onChange={(e) => handleRowDataChange(product.outletStockId, 'quantity', e.target.value)}
+                                                  placeholder="Qty"
+                                                  style={{width:'100px'}}
+                                                  min="1"
+                                                  max={availableCount}
+                                                />
+                                                {trackSerial && (
+                                                  <span
+                                                    style={{
+                                                      fontSize: '18px',
+                                                      cursor: 'pointer',
+                                                      color: '#337ab7',
+                                                    }}
+                                                    onClick={() => handleOpenSerialModal(product)}
+                                                    title="Assign Serial Numbers"
+                                                  >
+                                                    ☰
+                                                  </span>
+                                                )}
+                                              </div>
+                                            )}
+                                          </CTableDataCell>
+                                          <CTableDataCell>
+                                            {isSelected && (
+                                              <CFormInput
+                                                type="text"
+                                                placeholder="remark..."
+                                                value={selectedRow?.remark || ''}
+                                                onChange={(e) => handleRowDataChange(product.outletStockId, 'remark', e.target.value)}
+                                              />
+                                            )}
+                                          </CTableDataCell>
+                                        </CTableRow>
+                                      );
+                                    })}
+                                  </CTableBody>
+                                </CTable>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-center my-3">
+                            <p>No available repaired products found</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  <div className="form-footer">
+                    <button type="submit" className="submit-button" disabled={submitting}>
+                      {submitting ? 'Transferring to Reseller...' : 'Transfer to Reseller Stock'}
+                    </button>
+                  </div>
+                </form>
+              </CCardBody>
+            </CCard>
+          )}
         </div>
       </div>
 
@@ -983,12 +1431,12 @@ const TransferToReseller = () => {
         product={selectedProduct}
         usageQty={parseInt(selectedRows[selectedProduct?.outletStockId]?.quantity) || 0}
         onSerialNumbersUpdate={(productId, serials) => {
-          // Pass outletStockId instead of productId
           handleSerialNumbersUpdate(selectedProduct?.outletStockId, serials);
         }}
         availableSerials={selectedProduct ? 
           (products.find(p => p.outletStockId === selectedProduct.outletStockId)?.repairedSerials || []) 
           : []}
+        showOnlyPending={activeTab === 'pending'}
       />
     </div>
   );

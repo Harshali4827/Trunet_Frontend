@@ -518,7 +518,7 @@ import {
   CAlert
 } from '@coreui/react';
 import CIcon from '@coreui/icons-react';
-import { cilArrowTop, cilArrowBottom, cilSearch, cilZoomOut, cilCheck, cilWarning } from '@coreui/icons';
+import { cilArrowTop, cilArrowBottom, cilSearch, cilZoomOut, cilCheck} from '@coreui/icons';
 import { Link } from 'react-router-dom';
 import { CFormLabel } from '@coreui/react-pro';
 import axiosInstance from 'src/axiosInstance';

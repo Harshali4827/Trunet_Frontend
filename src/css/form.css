@@ -408,22 +408,19 @@
   color: white !important;
 }
 
-/* For error state */
+
 .error-border .react-select__control {
   border-color: #dc3545 !important;
 }
 
-/* For success state */
 .valid-border .react-select__control {
   border-color: #198754 !important;
 }
 
-/* Dropdown menu */
 .react-select__menu {
   z-index: 9999 !important;
 }
 
-/* Clear indicator */
 .react-select__clear-indicator {
   color: #6c757d !important;
   padding: 6px !important;
