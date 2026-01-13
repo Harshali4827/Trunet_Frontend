@@ -396,6 +396,19 @@ return '"0"';
     }
   };
 
+  const handleTransferReceiveClick = (item) => {
+    if (item.transferReceive > 0) {
+      const params = new URLSearchParams({
+        product: item.productId || '',
+        center: item.center?.id || '',
+        productName: encodeURIComponent(item.productName || ''),
+        centerName: encodeURIComponent(item.center?.name || ''),
+        month: activeSearch.month || '',
+        transferType: 'receive'
+      });
+      navigate(`/transfer-detail?${params.toString()}`);
+    }
+  };
   if (error) {
     return <div className="alert alert-danger">{error}</div>;
   }
@@ -551,7 +564,17 @@ return '"0"';
                         <CTableDataCell>{item.opening || 0}</CTableDataCell>
                         <CTableDataCell>{item.purchase || 0}</CTableDataCell>
                         <CTableDataCell>{item.distributed || 0}</CTableDataCell>
-                        <CTableDataCell>{item.transferReceive || 0}</CTableDataCell>
+                        {/* <CTableDataCell>{item.transferReceive || 0}</CTableDataCell> */}
+                        <CTableDataCell 
+                className={item.usage > 0 ? 'clickable-cell' : ''}
+                onClick={() => item.usage > 0 && handleTransferReceiveClick(item)}
+                style={{
+                  cursor: item.usage > 0 ? 'pointer' : 'default',
+                  color: item.usage > 0 ? '#007bff' : 'inherit',
+                }}
+              >
+               {item.transferReceive || 0}
+              </CTableDataCell>
                         <CTableDataCell>{item.replaceReturn || 0}</CTableDataCell>
                         {/* <CTableDataCell>{item.usage || 0}</CTableDataCell> */}
                         <CTableDataCell 
