@@ -33,9 +33,6 @@ const ChallanModal = ({ visible, onClose, data }) => {
   const warehouseChallanApprovedAt = data.approvalInfo?.warehouseChallanApprovedAt;
   const warehouseChallanApprovedBy = data.approvalInfo?.warehouseChallanApprovedBy;
 
-  const centerChallanApprovedAt = data.approvalInfo?.centerChallanApprovedAt;
-  const centerChallanApprovedBy = data.approvalInfo?.centerChallanApprovedBy;
-
 
   const downloadPDF = async () => {
     if (!challanRef.current) return;
@@ -156,17 +153,21 @@ const ChallanModal = ({ visible, onClose, data }) => {
 
           <div className="signatures-section">
             <div className="signature-box">
-            {centerChallanApprovedBy && (
+            {data.completionInfo?.completedBy ? (
                 <div className="approval-info">
                   <div className="approval-name">
-                    <strong>{centerChallanApprovedBy.fullName}</strong>
+                    <strong>{data.completionInfo.completedBy.fullName}</strong>
                   </div>
-                  {centerChallanApprovedAt && (
+                  {data.completionInfo.completedOn && (
                     <div className="approval-date">
-                      Date: {formatDateTime(centerChallanApprovedAt)}
+                      Date: {formatDateTime(data.completionInfo.completedOn)}
                     </div>
                   )}
                 </div>
+):(<div className="approval-info">
+     <div className="approval-name">
+</div>
+</div>
               )}
               <div className="signature-line"></div>
               <strong>Receivers Name & Signature</strong>
@@ -252,14 +253,16 @@ ChallanModal.propTypes = {
         _id: PropTypes.string,
         fullName: PropTypes.string,
         email: PropTypes.string
-      }),
-      centerChallanApprovedAt: PropTypes.string,
-      centerChallanApprovedBy: PropTypes.shape({
-        _id: PropTypes.string,
-        fullName: PropTypes.string,
-        email: PropTypes.string
       })
     }),
+    completionInfo:PropTypes.shape({
+     completedOn: PropTypes.string,
+completedBy: PropTypes.shape({
+_id:PropTypes.string,
+fullName:PropTypes.string,
+email:PropTypes.string
+})
+}),
     createdBy: PropTypes.shape({
       _id: PropTypes.string,
       fullName: PropTypes.string,

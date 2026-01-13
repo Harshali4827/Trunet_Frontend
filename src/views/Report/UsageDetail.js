@@ -884,15 +884,15 @@ const UsageDetail = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Function to get URL parameters
   const getUrlParams = () => {
     const searchParams = new URLSearchParams(location.search);
     const product = searchParams.get('product');
     const center = searchParams.get('center');
     const productName = searchParams.get('productName');
     const centerName = searchParams.get('centerName');
+    const month = searchParams.get('month');
     
-    return { product, center, productName, centerName };
+    return { product, center, productName, centerName, month };
   };
 
   useEffect(() => {
@@ -924,17 +924,22 @@ const UsageDetail = () => {
           
           console.log('Using filtered search from URL:', searchParams);
           setActiveSearch(searchParams);
-          
-          // Set document title
           if (urlParams.productName && urlParams.centerName) {
             document.title = `Usage Details - ${decodeURIComponent(urlParams.productName)} at ${decodeURIComponent(urlParams.centerName)}`;
+          }
+          if (urlParams.month) {
+            searchParams.startDate = getMonthStartDate(urlParams.month);
+            searchParams.endDate = getMonthEndDate(urlParams.month);
+            setActiveSearch(prev => ({
+              ...prev,
+              startDate: searchParams.startDate,
+              endDate: searchParams.endDate
+            }));
           }
         } else {
           console.log('No URL parameters, fetching all data');
           searchParams = {};
         }
-        
-        // Fetch data with determined parameters
         await fetchData(searchParams, 1);
         
       } catch (error) {
@@ -946,7 +951,20 @@ const UsageDetail = () => {
     };
 
     initializeData();
-  }, [location.search]); // Depend on location.search instead of location.state
+  }, [location.search]);
+
+  const getMonthStartDate = (monthString) => {
+    if (!monthString) return '';
+    const [year, month] = monthString.split('-');
+    return `${year}-${month.padStart(2, '0')}-01`;
+  };
+
+  const getMonthEndDate = (monthString) => {
+    if (!monthString) return '';
+    const [year, month] = monthString.split('-');
+    const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+    return `${year}-${month.padStart(2, '0')}-${lastDay.toString().padStart(2, '0')}`;
+  };
 
   const convertDateFormat = (dateStr) => {
     const [day, month, year] = dateStr.split('-');
@@ -957,8 +975,6 @@ const UsageDetail = () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-
-      // Use the searchParams that are passed (including from URL params)
       if (searchParams.center) {
         params.append('center', searchParams.center);
       }

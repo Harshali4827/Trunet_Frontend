@@ -1361,7 +1361,7 @@ const handleCompleteIndent = async () => {
   try {
     if (userCenterType === 'center') {
       const missingReceipts = productReceipts.filter(item => 
-        !item.receivedQuantity || item.receivedQuantity === '' || Number(item.receivedQuantity) <= 0
+        !item.receivedQuantity || item.receivedQuantity === ''
       );
 
       if (missingReceipts.length > 0) {

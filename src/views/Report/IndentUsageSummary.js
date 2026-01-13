@@ -22,6 +22,7 @@ import axiosInstance from 'src/axiosInstance';
 import Pagination from 'src/utils/Pagination';
 import { showError } from 'src/utils/sweetAlerts';
 import IndentUsageSummarySearch from './IndentUsageSummarySearch';
+import { useNavigate } from 'react-router-dom';
 
 const IndentUsageSummary = () => {
   const [data, setData] = useState([]);
@@ -41,7 +42,7 @@ const IndentUsageSummary = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
+  const navigate = useNavigate();
   const fetchData = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
@@ -257,7 +258,7 @@ const IndentUsageSummary = () => {
         params.append('month', month);
         params.append('year', year);
       }
-      
+      params.append('export','true');
       const apiUrl = params.toString()
         ? `/reports/indent-usage-summary?${params.toString()}`
         : '/reports/indent-usage-summary';
@@ -331,7 +332,11 @@ const IndentUsageSummary = () => {
         headers.join(','),
         ...csvData.map(row => 
           row.map(field => {
-            const stringField = String(field || '');
+
+if(field ===0){
+return '"0"';
+} 
+           const stringField = String(field || '');
             return `"${stringField.replace(/"/g, '""')}"`;
           }).join(',')
         )
@@ -378,8 +383,21 @@ const IndentUsageSummary = () => {
     );
   }
 
+  const handleUsageClick = (item) => {
+    if (item.usage > 0) {
+      const params = new URLSearchParams({
+        product: item.productId || '',
+        center: item.center?.id || '',
+        productName: encodeURIComponent(item.productName || ''),
+        centerName: encodeURIComponent(item.center?.name || ''),
+        month: activeSearch.month || ''
+      });
+      navigate(`/usage-detail?${params.toString()}`);
+    }
+  };
+
   if (error) {
-    return <div className="alert alert-danger">Error loading data: {error}</div>;
+    return <div className="alert alert-danger">{error}</div>;
   }
 
   return (
@@ -535,7 +553,17 @@ const IndentUsageSummary = () => {
                         <CTableDataCell>{item.distributed || 0}</CTableDataCell>
                         <CTableDataCell>{item.transferReceive || 0}</CTableDataCell>
                         <CTableDataCell>{item.replaceReturn || 0}</CTableDataCell>
-                        <CTableDataCell>{item.usage || 0}</CTableDataCell>
+                        {/* <CTableDataCell>{item.usage || 0}</CTableDataCell> */}
+                        <CTableDataCell 
+                className={item.usage > 0 ? 'clickable-cell' : ''}
+                onClick={() => item.usage > 0 && handleUsageClick(item)}
+                style={{
+                  cursor: item.usage > 0 ? 'pointer' : 'default',
+                  color: item.usage > 0 ? '#007bff' : 'inherit',
+                }}
+              >
+                {item.usage || 0}
+              </CTableDataCell>
                         <CTableDataCell>{item.transferGiven || 0}</CTableDataCell>
                         <CTableDataCell>{item.nc || 0}</CTableDataCell>
                         <CTableDataCell>{item.convert || 0}</CTableDataCell>

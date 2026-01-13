@@ -218,7 +218,7 @@ const AvailableStock = () => {
       if (activeSearch.center) {
         params.append('center', activeSearch.center);
       }
-      
+      params.append('export','true');
       const apiUrl = params.toString() 
         ? `/availableStock/availableStock?${params.toString()}` 
         : '/availableStock/availableStock';
