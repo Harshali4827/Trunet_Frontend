@@ -125,21 +125,39 @@ const StockTransferDetails = () => {
     );
   };
 
+  // const handleApprovedChange = (productId, field, value) => {
+  //   if (field === 'approvedQty') {
+  //     if (value === '' || /^\d+$/.test(value)) {
+  //       setErrors(prev => ({ ...prev, [productId]: undefined }));
+  //     } else {
+  //       setErrors(prev => ({ ...prev, [productId]: 'The input value was not a correct number' }));
+  //     }
+  //   }
+  
+  //   setApprovedProducts(prev =>
+  //     prev.map(p =>
+  //       p._id === productId ? { ...p, [field]: value } : p
+  //     )
+  //   );
+  // };  
+
+  
   const handleApprovedChange = (productId, field, value) => {
     if (field === 'approvedQty') {
       if (value === '' || /^\d+$/.test(value)) {
         setErrors(prev => ({ ...prev, [productId]: undefined }));
       } else {
-        setErrors(prev => ({ ...prev, [productId]: 'The input value was not a correct number' }));
+        setErrors(prev => ({ ...prev, [productId]: 'Invalid number' }));
       }
     }
   
     setApprovedProducts(prev =>
       prev.map(p =>
-        p._id === productId ? { ...p, [field]: value } : p
+        p.productId === productId ? { ...p, [field]: value } : p
       )
     );
-  };  
+  };
+  
 
 // const handleApprove = async () => {
 //   let hasError = false;
@@ -189,9 +207,8 @@ const handleApprove = async () => {
   let hasError = false;
   const validationErrors = {};
   
-  // First, validate all inputs
   const payload = approvedProducts.map(p => {
-    // Validate approved quantity
+
     if (p.approvedQty === '' || !/^\d+$/.test(p.approvedQty)) {
       validationErrors[p._id] = 'The input value was not a correct number';
       hasError = true;
@@ -265,12 +282,14 @@ const handleApprove = async () => {
     }
   } catch (err) {
     console.error('Error approving transfer:', err);
-
+    
+    // Extract detailed error message from response
     let errorMessage = "Something went wrong while approving the transfer";
     
     if (err.response?.data) {
       const { data } = err.response;
- 
+      
+      // Handle validation errors array
       if (data.errors && Array.isArray(data.errors)) {
         const validationMessages = data.errors.map(error => {
           if (typeof error === 'string') return error;
@@ -281,6 +300,7 @@ const handleApprove = async () => {
         
         errorMessage = `Validation failed: ${validationMessages}`;
       }
+      // Handle validationResults array
       else if (data.validationResults && Array.isArray(data.validationResults)) {
         const failedValidations = data.validationResults
           .filter(result => !result.valid)
@@ -289,7 +309,7 @@ const handleApprove = async () => {
         
         errorMessage = failedValidations || data.message || "Validation failed";
       }
-
+      // Handle validationErrors array
       else if (data.validationErrors && Array.isArray(data.validationErrors)) {
         const validationErrors = data.validationErrors
           .map(error => error.error || `Product ${error.productName || error.productId} validation failed`)
@@ -297,9 +317,11 @@ const handleApprove = async () => {
         
         errorMessage = validationErrors || data.message || "Validation failed";
       }
+      // Handle single error object
       else if (data.error && typeof data.error === 'string') {
         errorMessage = data.error;
       }
+      // Handle message field
       else if (data.message) {
         errorMessage = data.message;
       }
@@ -876,7 +898,9 @@ const handleInomplete = async () => {
             <CTableBody>
               {data.products?.length > 0 ? (
                 data.products.map(item => {
-                  const approvedItem = approvedProducts.find(p => p._id === item._id) || {};
+                  // const approvedItem = approvedProducts.find(p => p._id === item._id) || {};
+                  const approvedItem = approvedProducts.find(p => p.productId === item.product._id) || {};
+
                   return (
                     <CTableRow key={item._id}>
                       <CTableDataCell>{item.product?.productTitle || ''}</CTableDataCell>
@@ -893,7 +917,7 @@ const handleInomplete = async () => {
                         <CFormInput
                               type="text"
                               value={approvedItem.approvedQty}
-                              onChange={e => handleApprovedChange(item._id, 'approvedQty', e.target.value)}
+                              onChange={e => handleApprovedChange(item.product._id, 'approvedQty', e.target.value)}
                               onBlur={e => handleApprovedBlur(item._id, e.target.value)}
                               className={errors[item._id] ? 'is-invalid' : ''}
                               style={{ width: '80px' }}
