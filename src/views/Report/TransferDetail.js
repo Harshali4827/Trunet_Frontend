@@ -62,13 +62,11 @@ const TransferDetail = () => {
         const urlParams = getUrlParams();
         
         console.log('Transfer Detail URL Parameters:', urlParams);
-        
-        // Fetch dropdown data first
+
         await Promise.all([fetchCenters(), fetchProducts()]);
         
         let searchParams = {};
-        
-        // Check if we have URL parameters
+
         if (urlParams.product && urlParams.center) {
           searchParams = {
             product: urlParams.product,
@@ -76,8 +74,6 @@ const TransferDetail = () => {
             startDate: '',
             endDate: ''
           };
-          
-          // Add date range if month is provided
           if (urlParams.month) {
             const [year, month] = urlParams.month.split('-');
             const monthStart = `${year}-${month.padStart(2, '0')}-01`;
@@ -90,7 +86,6 @@ const TransferDetail = () => {
           console.log('Using filtered search from URL:', searchParams);
           setActiveSearch(searchParams);
           
-          // Set document title
           if (urlParams.productName && urlParams.centerName) {
             const transferTypeText = urlParams.transferType === 'receive' ? 'Received' : 'Given';
             document.title = `Transfer Details (${transferTypeText}) - ${decodeURIComponent(urlParams.productName)} at ${decodeURIComponent(urlParams.centerName)}`;
@@ -161,13 +156,31 @@ const TransferDetail = () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-
-      if (searchParams.center) {
-        params.append('center', searchParams.center);
+  
+      // First, get URL parameters
+      const urlParams = getUrlParams();
+      
+      // Use URL params if available, otherwise use searchParams
+      const centerId = urlParams.center || searchParams.center;
+      const productId = urlParams.product || searchParams.product;
+      const transferType = urlParams.transferType;
+  
+      if (centerId) {
+        // Filter based on transfer type
+        if (transferType === 'receive') {
+          params.append('toCenter', centerId);
+        } else if (transferType === 'given') {
+          params.append('fromCenter', centerId);
+        } else {
+          // If no transfer type specified, search in both
+          params.append('center', centerId);
+        }
       }
-      if (searchParams.product) {
-        params.append('product', searchParams.product);
+      
+      if (productId) {
+        params.append('product', productId);
       }
+      
       if (searchParams.date && searchParams.date.includes(' to ')) {
         const [startDateStr, endDateStr] = searchParams.date.split(' to ');
         const convertDateFormat = (dateStr) => {
@@ -179,15 +192,15 @@ const TransferDetail = () => {
         params.append('endDate', convertDateFormat(endDateStr));
       }
       
-      // If we have URL parameters, we might want to filter by transfer type
-      const urlParams = getUrlParams();
-      if (urlParams.transferType === 'receive') {
-        // Filter transfers where this center is the receiver
-        // This depends on your API structure
-        params.append('toCenter', searchParams.center);
-      } else if (urlParams.transferType === 'given') {
-        // Filter transfers where this center is the sender
-        params.append('fromCenter', searchParams.center);
+      // Also check if month is in URL params
+      if (urlParams.month) {
+        const [year, month] = urlParams.month.split('-');
+        const monthStart = `${year}-${month.padStart(2, '0')}-01`;
+        const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+        const monthEnd = `${year}-${month.padStart(2, '0')}-${lastDay}`;
+        
+        params.append('startDate', monthStart);
+        params.append('endDate', monthEnd);
       }
       
       params.append('page', page);

@@ -141,13 +141,78 @@ const StockTransferDetails = () => {
     );
   };  
 
+// const handleApprove = async () => {
+//   let hasError = false;
+//   const payload = approvedProducts.map(p => {
+//     if (p.approvedQty === '' || !/^\d+$/.test(p.approvedQty)) {
+//       setErrors(prev => ({ ...prev, [p._id]: 'The input value was not a correct number' }));
+//       hasError = true;
+//     }
+//     return {
+//       productId: p.productId,
+//       approvedQuantity: Number(p.approvedQty),
+//       approvedRemark: p.approvedRemark || '',
+//       approvedSerials: (assignedSerials[p.productId] || []).map(s => s.serialNumber)
+//     };
+//   });
+
+//   if (hasError) return;
+
+//   try {
+//     const response = await axiosInstance.post(`/stocktransfer/${id}/approve`, {
+//       productApprovals: payload
+//     });
+
+//     if (response.data.success) {
+//       setAlert({ type: 'success', message: 'Data approved successfully', visible: true });
+//       setTimeout(() => window.location.reload(), 1000);
+//     } else {
+//       setAlert({ type: 'danger', message: 'Failed to approve data', visible: true });
+//     }
+//   } catch (err) {
+//     console.error(err);
+//     const errorMessage =
+//       err.response?.data?.message ||
+//       err.response?.data?.error ||   
+//       err.message ||              
+//       "Something went wrong";
+  
+//     setAlert({ type: 'danger', message: errorMessage, visible: true });
+//   }
+// };
+
+//approve admin
+
+
+
 const handleApprove = async () => {
   let hasError = false;
+  const validationErrors = {};
+  
+  // First, validate all inputs
   const payload = approvedProducts.map(p => {
+    // Validate approved quantity
     if (p.approvedQty === '' || !/^\d+$/.test(p.approvedQty)) {
-      setErrors(prev => ({ ...prev, [p._id]: 'The input value was not a correct number' }));
+      validationErrors[p._id] = 'The input value was not a correct number';
       hasError = true;
     }
+    
+    // Validate approved quantity doesn't exceed requested quantity
+    const productItem = data.products.find(item => item.product?._id === p.productId);
+    if (productItem && Number(p.approvedQty) > productItem.quantity) {
+      validationErrors[p._id] = `Approved quantity cannot exceed requested quantity (${productItem.quantity})`;
+      hasError = true;
+    }
+    
+    // For serialized products, check if serial numbers are provided
+    if (productItem?.product?.trackSerialNumber === "Yes" && Number(p.approvedQty) > 0) {
+      const serialsForProduct = assignedSerials[p.productId] || [];
+      if (serialsForProduct.length !== Number(p.approvedQty)) {
+        validationErrors[p._id] = `Please assign ${p.approvedQty} serial number(s) for this product`;
+        hasError = true;
+      }
+    }
+    
     return {
       productId: p.productId,
       approvedQuantity: Number(p.approvedQty),
@@ -156,32 +221,99 @@ const handleApprove = async () => {
     };
   });
 
-  if (hasError) return;
+  // Set validation errors if any
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    
+    // Show alert for missing serial numbers
+    const missingSerials = Object.entries(validationErrors)
+      .filter(([_, error]) => error.includes('serial number'))
+      .map(([_, error]) => error);
+    
+    if (missingSerials.length > 0) {
+      setAlert({ 
+        type: 'danger', 
+        message: `Missing serial numbers: ${missingSerials.join('. ')}`, 
+        visible: true 
+      });
+    }
+    
+    return;
+  }
 
   try {
+    // Show loading state
+    setAlert({ type: 'info', message: 'Processing approval...', visible: true });
+    
     const response = await axiosInstance.post(`/stocktransfer/${id}/approve`, {
       productApprovals: payload
     });
 
     if (response.data.success) {
-      setAlert({ type: 'success', message: 'Data approved successfully', visible: true });
+      setAlert({ 
+        type: 'success', 
+        message: response.data.message || 'Transfer approved successfully', 
+        visible: true 
+      });
       setTimeout(() => window.location.reload(), 1000);
     } else {
-      setAlert({ type: 'danger', message: 'Failed to approve data', visible: true });
+      setAlert({ 
+        type: 'danger', 
+        message: response.data.message || 'Failed to approve transfer', 
+        visible: true 
+      });
     }
   } catch (err) {
-    console.error(err);
-    const errorMessage =
-      err.response?.data?.message ||
-      err.response?.data?.error ||   
-      err.message ||              
-      "Something went wrong";
-  
-    setAlert({ type: 'danger', message: errorMessage, visible: true });
+    console.error('Error approving transfer:', err);
+
+    let errorMessage = "Something went wrong while approving the transfer";
+    
+    if (err.response?.data) {
+      const { data } = err.response;
+ 
+      if (data.errors && Array.isArray(data.errors)) {
+        const validationMessages = data.errors.map(error => {
+          if (typeof error === 'string') return error;
+          if (error.message) return error.message;
+          if (error.field && error.message) return `${error.field}: ${error.message}`;
+          return JSON.stringify(error);
+        }).join('. ');
+        
+        errorMessage = `Validation failed: ${validationMessages}`;
+      }
+      else if (data.validationResults && Array.isArray(data.validationResults)) {
+        const failedValidations = data.validationResults
+          .filter(result => !result.valid)
+          .map(result => result.error || `Product ${result.productName} validation failed`)
+          .join('. ');
+        
+        errorMessage = failedValidations || data.message || "Validation failed";
+      }
+
+      else if (data.validationErrors && Array.isArray(data.validationErrors)) {
+        const validationErrors = data.validationErrors
+          .map(error => error.error || `Product ${error.productName || error.productId} validation failed`)
+          .join('. ');
+        
+        errorMessage = validationErrors || data.message || "Validation failed";
+      }
+      else if (data.error && typeof data.error === 'string') {
+        errorMessage = data.error;
+      }
+      else if (data.message) {
+        errorMessage = data.message;
+      }
+    }
+    
+    setAlert({ 
+      type: 'danger', 
+      message: errorMessage, 
+      visible: true 
+    });
   }
 };
 
-//approve admin
+
 const handleApproveAdmin = async () => {
   let hasError = false;
   const payload = approvedProducts.map(p => {
@@ -384,7 +516,7 @@ const handleCompleteIndent = async () => {
       visible: true,
     });
 
-    // setTimeout(() => window.location.reload(), 1000);
+    setTimeout(() => window.location.reload(), 1000);
   } catch (err) {
     console.error('Error in handleCompleteIndent:', err);
 
