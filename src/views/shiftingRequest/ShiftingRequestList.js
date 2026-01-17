@@ -313,7 +313,7 @@ const ShiftinRequestList = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading shifting requests: {error}
+       {error}
       </div>
     );
   }
@@ -444,7 +444,7 @@ const ShiftinRequestList = () => {
                 {filteredBuildings.length > 0 ? (
                   filteredBuildings.map((building) => (
                     <CTableRow key={building._id} className={building.status === 'Pending' ? 'selected-row' : ''}>
-                      <CTableDataCell>{building.customer?.name}</CTableDataCell>
+                      <CTableDataCell>{building.customer?.username}</CTableDataCell>
                       <CTableDataCell>{building.fromCenter?.centerName}</CTableDataCell>
                       <CTableDataCell>{building.toCenter?.centerName || 'N/A'}</CTableDataCell>
                       <CTableDataCell>{building.remark}</CTableDataCell>
