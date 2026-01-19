@@ -372,7 +372,7 @@ const renderDeviceTable = () => (
           <CTableDataCell scope="col" className="sortable-header">Action</CTableDataCell>
         </CTableRow>
       </CTableHead>
-      <CTableBody>
+      {/* <CTableBody>
         {loadingTabs.device ? (
           <CTableRow>
             <CTableDataCell colSpan="11" className="text-center">
@@ -381,7 +381,13 @@ const renderDeviceTable = () => (
           </CTableRow>
         ) : deviceData.length > 0 ? (
           deviceData.map((item, index) => (
-            <CTableRow key={item._id || index} className={item.type === 'Damage' ? 'damage-prouct' : 'use-product'}>
+            <CTableRow key={item._id || index} 
+            // className={item.type === 'Damage' ? 'damage-prouct' : 'use-product'}
+            className={
+              item.Type === 'Damage' ? 'damage-product' : 
+              isReturnType ? 'return-product' : 'use-product'
+            }
+            >
               <CTableDataCell>{item.Product || 'N/A'}</CTableDataCell>
               <CTableDataCell>{item['Serial No.'] || 'N/A'}</CTableDataCell>
               <CTableDataCell>{item.Type || 'N/A'}</CTableDataCell>
@@ -454,7 +460,104 @@ const renderDeviceTable = () => (
             </CTableDataCell>
           </CTableRow>
         )}
-      </CTableBody>
+      </CTableBody> */}
+
+
+<CTableBody>
+          {loadingTabs.device ? (
+            <CTableRow>
+              <CTableDataCell colSpan="11" className="text-center">
+                <CSpinner size="sm" /> Loading device data...
+              </CTableDataCell>
+            </CTableRow>
+          ) : deviceData.length > 0 ? (
+            deviceData.map((item, index) => {
+              // Determine if this is a Return row
+              const isReturnType = item.Type === 'Return';
+              
+              return (
+                <CTableRow 
+                  key={item._id || index} 
+                  style={{
+                    backgroundColor: isReturnType ? '#d9edf7' : '',
+                    // Optional: remove striped effect for Return rows if needed
+                    // This will override the striped table styling
+                  }}
+                  className={
+                    item.Type === 'Damage' ? 'damage-product' : 
+                    isReturnType ? 'return-product' : 'use-product'
+                  }
+                >
+                  <CTableDataCell>{item.Product || 'N/A'}</CTableDataCell>
+                  <CTableDataCell>{item['Serial No.'] || 'N/A'}</CTableDataCell>
+                  <CTableDataCell>{item.Type || 'N/A'}</CTableDataCell>
+                  <CTableDataCell>{item.Date || 'N/A'}</CTableDataCell>
+                  <CTableDataCell>{item['Connection Type'] || 'N/A'}</CTableDataCell>
+                  <CTableDataCell>{item['Package Amount'] || 'N/A'}</CTableDataCell>
+                  <CTableDataCell>{item['Package Duration'] || 'N/A'}</CTableDataCell>
+                  <CTableDataCell>{item['ONU Charges'] || 'N/A'}</CTableDataCell>
+                  <CTableDataCell>{item['Installation Charges'] || 'N/A'}</CTableDataCell>
+                  <CTableDataCell>{item['Reason'] || 'N/A'}</CTableDataCell>
+                  <CTableDataCell>
+                    {item.Type !== 'Return' && (
+                      <div className="dropdown-container" ref={el => dropdownRefs.current[item._id] = el}>
+                        <CButton 
+                          size="sm"
+                          className='option-button btn-sm'
+                          onClick={() => toggleDropdown(item._id)}
+                        >
+                          <CIcon icon={cilSettings} />
+                          Options
+                        </CButton>
+                        {dropdownOpen[item._id] && (
+                          <div className="dropdown-menu show">
+                            <button 
+                              className="dropdown-item"
+                              onClick={() => handleReturn(
+                                item.usageId,
+                                item.productId,
+                                item['Serial No.']
+                              )}
+                            >
+                              <i className="fa fa-reply fa-margin"></i> Return
+                            </button>
+                            <button 
+                              className="dropdown-item"
+                              onClick={() => {
+                                setSelectedDevice({
+                                  productId: item.productId,
+                                  productName: item.Product,
+                                  usageId: item.usageId,
+                                  oldSerialNumber: item['Serial No.']
+                                });
+                                setSerialModalVisible(true);
+                              }}
+                            >
+                              <i className="fa fa-refresh"></i> Replace
+                            </button>
+                            <button 
+                              className="dropdown-item"
+                              onClick={() => handleDamageReturn(item.usageId, item['Serial No.'])}
+                            >
+                              <i className="fa fa-recycle fa-margin"></i> Damage
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </CTableDataCell>
+                </CTableRow>
+              );
+            })
+          ) : (
+            <CTableRow>
+              <CTableDataCell colSpan="11" className="text-center">
+                No device data found
+              </CTableDataCell>
+            </CTableRow>
+          )}
+        </CTableBody>
+        
     </CTable>
   </div>
    <br></br>

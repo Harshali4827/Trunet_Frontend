@@ -23,7 +23,7 @@ import Pagination from 'src/utils/Pagination';
 import { showError } from 'src/utils/sweetAlerts';
 import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
 import CommonSearch from './CommonSearch';
-
+import { useLocation, useNavigate } from 'react-router-dom';
 const IndentDetail = () => {
   const [data, setData] = useState([]);
   const [centers, setCenters] = useState([]);
@@ -36,6 +36,80 @@ const IndentDetail = () => {
   const [activeSearch, setActiveSearch] = useState({ center: '', product: '', startDate:'', endDate:'' });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const getUrlParams = () => {
+    const searchParams = new URLSearchParams(location.search);
+    return {
+      product: searchParams.get('product'),
+      center: searchParams.get('center'),
+      productName: searchParams.get('productName'),
+      centerName: searchParams.get('centerName'),
+      month: searchParams.get('month'),
+      transactionType: searchParams.get('transactionType')
+    };
+  };
+
+
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        setLoading(true);
+        const urlParams = getUrlParams();
+        
+        console.log('Indent Detail URL Parameters:', urlParams);
+        
+        // Fetch dropdown data first
+        await Promise.all([fetchCenters(), fetchProducts()]);
+        
+        let searchParams = {};
+        
+        // Check if we have URL parameters
+        if (urlParams.product && urlParams.center) {
+          searchParams = {
+            product: urlParams.product,
+            center: urlParams.center,
+            startDate: '',
+            endDate: ''
+          };
+          
+          // Add date range if month is provided
+          if (urlParams.month) {
+            const [year, month] = urlParams.month.split('-');
+            const monthStart = `${year}-${month.padStart(2, '0')}-01`;
+            const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+            const monthEnd = `${year}-${month.padStart(2, '0')}-${lastDay}`;
+            
+            // Format for your search component
+            searchParams.date = `01-${month.padStart(2, '0')}-${year} to ${lastDay}-${month.padStart(2, '0')}-${year}`;
+          }
+          
+          console.log('Using filtered search from URL:', searchParams);
+          setActiveSearch(searchParams);
+          
+          // Set document title
+          if (urlParams.productName && urlParams.centerName) {
+            document.title = `Indent Details - ${decodeURIComponent(urlParams.productName)} at ${decodeURIComponent(urlParams.centerName)}`;
+          }
+        } else {
+          console.log('No URL parameters, fetching all data');
+          searchParams = {};
+        }
+        
+        // Fetch data with determined parameters
+        await fetchData(searchParams, 1);
+        
+      } catch (error) {
+        console.error('Error initializing data:', error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeData();
+  }, [location.search]); 
 
   const fetchData = async (searchParams = {}, page = 1) => {
     try {
@@ -108,6 +182,10 @@ const IndentDetail = () => {
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
     fetchData(activeSearch, page);
+  };
+
+  const handleClick = (itemId) => {
+    navigate(`/stockRequest-profile/${itemId}`);
   };
 
   const getFlattenedData = () => {
@@ -470,7 +548,17 @@ const IndentDetail = () => {
                   <>
                     {filteredFlattenedData.map((item) => (
                       <CTableRow key={item.uniqueKey}>
-                        <CTableDataCell>{item.orderNumber || ''}</CTableDataCell>
+                        {/* <CTableDataCell>{item.orderNumber || ''}</CTableDataCell> */}
+                        <CTableDataCell>
+
+                        <button 
+                    className="btn btn-link p-0 text-decoration-none"
+                    onClick={() => handleClick(item._id)}
+                    style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
+                  >
+                    {item.orderNumber || ''}
+                  </button>
+                        </CTableDataCell>
                         <CTableDataCell>{formatDate(item.date || '')}</CTableDataCell>
                         <CTableDataCell>{item.center?.centerName || ''}</CTableDataCell>
                         <CTableDataCell>{item.warehouse?.centerName || ''}</CTableDataCell>

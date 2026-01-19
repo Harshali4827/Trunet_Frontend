@@ -223,6 +223,9 @@
 .damage-product-row td{
    background-color: #f2dede !important;
 }
+.return-product td{
+  background-color: #d9edf7 !important;
+}
 .damage-row td{
   background-color: #d9edf7;
 }

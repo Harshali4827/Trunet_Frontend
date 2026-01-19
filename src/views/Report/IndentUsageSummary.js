@@ -469,6 +469,28 @@ const handleStolenFieldClick = (item) => handleFieldClick(item, 'stolenField', '
 const handleReturnClick = (item) => handleFieldClick(item, 'return', 'Customer');
 const handleReplaceDamageClick = (item) => handleFieldClick(item, 'replaceDamage', 'damage');
 
+const handlePurchaseClick = (item) => {
+  if (item.purchase > 0) {
+    const centerId = item.center?.id || '';
+    const productId = item.productId || '';
+    
+    if (!centerId || !productId) {
+      console.error('Missing center or product ID:', { centerId, productId });
+      return;
+    }
+    
+    const params = new URLSearchParams({
+      product: productId,
+      center: centerId,
+      productName: encodeURIComponent(item.productName || ''),
+      centerName: encodeURIComponent(item.center?.name || ''),
+      month: activeSearch.month || '',
+      transactionType: 'purchase'
+    });
+    
+    navigate(`/indent-detail?${params.toString()}`);
+  }
+};
 
   if (error) {
     return <div className="alert alert-danger">{error}</div>;
@@ -623,7 +645,22 @@ const handleReplaceDamageClick = (item) => handleFieldClick(item, 'replaceDamage
                         <CTableDataCell>{item.center?.name || 'N/A'}</CTableDataCell>
                         <CTableDataCell>{item.productName || 'N/A'}</CTableDataCell>
                         <CTableDataCell>{item.opening || 0}</CTableDataCell>
-                        <CTableDataCell>{item.purchase || 0}</CTableDataCell>
+                        <CTableDataCell>
+                       {/*   {item.purchase || 0}   */}
+                       <button 
+        className="btn btn-link p-0 text-decoration-none"
+        onClick={() => handlePurchaseClick(item)}
+        style={{
+          border: 'none', 
+          background: 'none', 
+          cursor: item.purchase > 0 ? 'pointer' : 'default',
+          color: item.purchase > 0 ? '#337ab7' : 'inherit'
+        }}
+        disabled={item.purchase === 0}
+      >
+        {item.purchase || 0}
+      </button>
+                        </CTableDataCell>
                         <CTableDataCell>{item.distributed || 0}</CTableDataCell>
                         <CTableDataCell>
               
