@@ -526,13 +526,83 @@ const handleMarkIncomplete = async (remark) => {
   }
 };
 
+// const handleIncomplete = async () => {
+//   try {
+//     const approvalsPayload = approvedProducts.map(p => ({
+//       productId: p.productId,
+//       approvedQuantity: Number(p.approvedQty) || 0,
+//       approvedRemark: p.approvedRemark || '',
+//     }));
+
+//     const receiptsPayload = productReceipts.map(r => ({
+//       productId: r.productId,
+//       receivedQuantity: Number(r.receivedQuantity) || 0,
+//       receivedRemark: r.receivedRemark || '',
+//     }));
+
+//     console.log('Final Incomplete Payload:', {
+//       productApprovals: approvalsPayload,
+//       productReceipts: receiptsPayload,
+//     });
+
+//     const response = await axiosInstance.patch(
+//       `/stockrequest/${id}/complete-incomplete`,
+//       {
+//         productApprovals: approvalsPayload,
+//         productReceipts: receiptsPayload,
+//       }
+//     );
+//     if (!response.data.success) {
+//       setAlert({
+//         type: 'danger',
+//         message: response.data.message || 'Failed to complete indent',
+//         visible: true,
+//       });
+//       return;
+//     }
+//     setAlert({
+//       type: 'success',
+//       message: 'Indent completed successfully',
+//       visible: true,
+//     });
+
+//     setTimeout(() => window.location.reload(), 1000);
+//   } catch (err) {
+//     console.error('Error in handleIncomplete:', err);
+//     const errorMessage =
+//       err.response?.data?.message ||
+//       err.message ||
+//       'An unexpected error occurred while completing the indent';
+
+//     setAlert({
+//       type: 'danger',
+//       message: errorMessage,
+//       visible: true,
+//     });
+//   }
+// };
+
+
+
 const handleIncomplete = async () => {
   try {
-    const approvalsPayload = approvedProducts.map(p => ({
-      productId: p.productId,
-      approvedQuantity: Number(p.approvedQty) || 0,
-      approvedRemark: p.approvedRemark || '',
-    }));
+    const approvalsPayload = approvedProducts.map(p => {
+      const product = data.products.find(prod => prod.product?._id === p.productId);
+      const isSerialized = product?.product?.trackSerialNumber === "Yes";
+      
+      // Get current assigned serials for this product
+      const currentSerials = assignedSerials[p.productId] || [];
+      
+      return {
+        productId: p.productId,
+        approvedQuantity: Number(p.approvedQty) || 0,
+        approvedRemark: p.approvedRemark || '',
+        // Add serial numbers for serialized products
+        ...(isSerialized && {
+          approvedSerials: currentSerials.map(s => s.serialNumber).slice(0, Number(p.approvedQty))
+        })
+      };
+    });
 
     const receiptsPayload = productReceipts.map(r => ({
       productId: r.productId,
@@ -581,7 +651,6 @@ const handleIncomplete = async () => {
     });
   }
 };
-
   const handleApprovedBlur = (productId, value) => {
     if (value === '' || !/^\d+$/.test(value)) {
       setErrors(prev => ({ ...prev, [productId]: 'The input value was not a correct number' }));
@@ -664,7 +733,7 @@ const handleIncomplete = async () => {
                 <td className="profile-value-cell">{data.shippingInfo?.shipmentDetails || ''}</td>
 
                 <td className="profile-label-cell">Incomplete on:</td>
-                <td className="profile-value-cell">{formatDateTime(data.incompleteOn || '')}</td>
+                <td className="profile-value-cell">{formatDateTime(data.incompleteInfo?.incompleteOn || '')}</td>
               </tr>
 
               <tr className="table-row">
@@ -675,7 +744,7 @@ const handleIncomplete = async () => {
                 <td className="profile-value-cell">{data.shippingInfo?.shipmentRemark || ''}</td>
 
                 <td className="profile-label-cell">Incomplete by:</td>
-                <td className="profile-value-cell">{data.incompleteBy || ''}</td>
+                <td className="profile-value-cell">{data.incompleteInfo?.incompleteBy?.fullName || ''}</td>
               </tr>
 
               <tr className="table-row">
@@ -686,7 +755,7 @@ const handleIncomplete = async () => {
                 <td className="profile-value-cell">{data.document || ''}</td>
 
                 <td className="profile-label-cell">Incomplete Remark:</td>
-                <td className="profile-value-cell">{data.incompleteRemark || ''}</td>
+                <td className="profile-value-cell">{data.incompleteInfo?.incompleteRemark || ''}</td>
               </tr>
 
               <tr className="table-row">

@@ -158,50 +158,7 @@ const StockTransferDetails = () => {
     );
   };
   
-
-// const handleApprove = async () => {
-//   let hasError = false;
-//   const payload = approvedProducts.map(p => {
-//     if (p.approvedQty === '' || !/^\d+$/.test(p.approvedQty)) {
-//       setErrors(prev => ({ ...prev, [p._id]: 'The input value was not a correct number' }));
-//       hasError = true;
-//     }
-//     return {
-//       productId: p.productId,
-//       approvedQuantity: Number(p.approvedQty),
-//       approvedRemark: p.approvedRemark || '',
-//       approvedSerials: (assignedSerials[p.productId] || []).map(s => s.serialNumber)
-//     };
-//   });
-
-//   if (hasError) return;
-
-//   try {
-//     const response = await axiosInstance.post(`/stocktransfer/${id}/approve`, {
-//       productApprovals: payload
-//     });
-
-//     if (response.data.success) {
-//       setAlert({ type: 'success', message: 'Data approved successfully', visible: true });
-//       setTimeout(() => window.location.reload(), 1000);
-//     } else {
-//       setAlert({ type: 'danger', message: 'Failed to approve data', visible: true });
-//     }
-//   } catch (err) {
-//     console.error(err);
-//     const errorMessage =
-//       err.response?.data?.message ||
-//       err.response?.data?.error ||   
-//       err.message ||              
-//       "Something went wrong";
-  
-//     setAlert({ type: 'danger', message: errorMessage, visible: true });
-//   }
-// };
-
 //approve admin
-
-
 
 const handleApprove = async () => {
   let hasError = false;
@@ -214,14 +171,12 @@ const handleApprove = async () => {
       hasError = true;
     }
     
-    // Validate approved quantity doesn't exceed requested quantity
     const productItem = data.products.find(item => item.product?._id === p.productId);
     if (productItem && Number(p.approvedQty) > productItem.quantity) {
       validationErrors[p._id] = `Approved quantity cannot exceed requested quantity (${productItem.quantity})`;
       hasError = true;
     }
     
-    // For serialized products, check if serial numbers are provided
     if (productItem?.product?.trackSerialNumber === "Yes" && Number(p.approvedQty) > 0) {
       const serialsForProduct = assignedSerials[p.productId] || [];
       if (serialsForProduct.length !== Number(p.approvedQty)) {
@@ -500,18 +455,94 @@ const handleCancelShipment = async () => {
 
 // complete
 
+// const handleCompleteIndent = async () => {
+//   try {
+//     let payload = [];
+
+//     if (isToCenterUser) {
+//       payload = productReceipts.map(item => ({
+//         productId: item.productId,
+//         receivedQuantity: Number(item.receivedQuantity) || 0,
+//         receivedRemark: item.receivedRemark || '',
+//       }));
+//     } else {
+//       payload = data.products.map(item => ({
+//         productId: item.product?._id,
+//         receivedQuantity: item.approvedQuantity || item.receivedQuantity || 0,
+//         receivedRemark: item.receivedRemark || '',
+//       }));
+//     }
+
+//     const response = await axiosInstance.post(`/stocktransfer/${id}/complete`, {
+//       productReceipts: payload,
+//     });
+    
+//     if (!response.data.success) {
+//       setAlert({
+//         type: 'danger',
+//         message: response.data.message || 'Failed to complete indent',
+//         visible: true,
+//       });
+//       return;
+//     }
+    
+//     setAlert({
+//       type: 'success',
+//       message: 'Indent completed successfully',
+//       visible: true,
+//     });
+
+//     setTimeout(() => window.location.reload(), 1000);
+//   } catch (err) {
+//     console.error('Error in handleCompleteIndent:', err);
+
+//     const errorMessage =
+//       err.response?.data?.message ||
+//       err.message ||
+//       'An unexpected error occurred while completing the indent';
+
+//     setAlert({
+//       type: 'danger',
+//       message: errorMessage,
+//       visible: true,
+//     });
+//   }
+// };
+
 
 const handleCompleteIndent = async () => {
   try {
     let payload = [];
-
+    
     if (isToCenterUser) {
-      payload = productReceipts.map(item => ({
-        productId: item.productId,
-        receivedQuantity: Number(item.receivedQuantity) || 0,
-        receivedRemark: item.receivedRemark || '',
-      }));
+      // For ToCenter user: validate received quantities
+      payload = data.products.map(item => {
+        const receiptItem = productReceipts.find(p => p.productId === item.product?._id);
+        const receivedQtyInput = receiptItem?.receivedQuantity;
+        
+        // If receivedQty is not provided, use approvedQty
+        const receivedQuantity = receivedQtyInput !== undefined && receivedQtyInput !== '' 
+          ? Number(receivedQtyInput) 
+          : (item.approvedQuantity || 0);
+        
+        // Validation: if receivedQuantity is 0 or negative (when user explicitly entered 0 or empty)
+        if (receivedQtyInput !== undefined && receivedQtyInput !== '' && Number(receivedQtyInput) <= 0) {
+          throw new Error(`Received quantity must be greater than 0 for product: ${item.product?.productTitle || item.product?._id}`);
+        }
+        
+        // Validation: if receivedQuantity exceeds approvedQuantity
+        if (receivedQuantity > (item.approvedQuantity || 0)) {
+          throw new Error(`Received quantity (${receivedQuantity}) cannot exceed approved quantity (${item.approvedQuantity || 0}) for product: ${item.product?.productTitle || item.product?._id}`);
+        }
+        
+        return {
+          productId: item.product?._id,
+          receivedQuantity: receivedQuantity,
+          receivedRemark: receiptItem?.receivedRemark || item.receivedRemark || '',
+        };
+      });
     } else {
+      // For FromCenter user or other cases: use approved quantities
       payload = data.products.map(item => ({
         productId: item.product?._id,
         receivedQuantity: item.approvedQuantity || item.receivedQuantity || 0,
@@ -542,9 +573,8 @@ const handleCompleteIndent = async () => {
   } catch (err) {
     console.error('Error in handleCompleteIndent:', err);
 
-    const errorMessage =
+    const errorMessage = err.message || 
       err.response?.data?.message ||
-      err.message ||
       'An unexpected error occurred while completing the indent';
 
     setAlert({
@@ -554,6 +584,7 @@ const handleCompleteIndent = async () => {
     });
   }
 };
+
 // Update Shipment
 const handleOpenUpdateShipment = () => {
   if (data.shippingInfo) {

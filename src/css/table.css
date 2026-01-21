@@ -258,3 +258,9 @@ thead, tbody, tfoot, tr, td, th {
   padding-left: 0;
   margin: 0
 }
+
+/**************** sale invoice ************/
+
+.invoice-generated-row td {
+  background-color: #f0f8ff !important; 
+}

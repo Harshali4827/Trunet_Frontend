@@ -37,7 +37,7 @@ const SerialNumbers = ({
   const [selectedSerials, setSelectedSerials] = useState({});
   const [searchTerms, setSearchTerms] = useState({});
   const [showDropdowns, setShowDropdowns] = useState({});
-  const [sourceFilter, setSourceFilter] = useState('all'); // 'all', 'reseller', 'outlet'
+  const [sourceFilter, setSourceFilter] = useState('all'); 
 
   const srNumbers = Array.from({ length: approvedQty }, (_, i) => i + 1);
 

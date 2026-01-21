@@ -504,6 +504,9 @@ const ProductList = () => {
                   <CTableHeaderCell scope="col" onClick={() => handleSort('productPrice')} className="sortable-header">
                     Product Price {getSortIcon('productPrice')}
                   </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" onClick={() => handleSort('salePrice')} className="sortable-header">
+                    Sale Price {getSortIcon('salePrice')}
+                  </CTableHeaderCell>
                   <CTableHeaderCell scope="col" onClick={() => handleSort('description')} className="sortable-header">
                     Product Description {getSortIcon('description')}
                   </CTableHeaderCell>
@@ -526,6 +529,7 @@ const ProductList = () => {
                       <CTableDataCell>{product.productCategory?.productCategory || ''}</CTableDataCell>
                       <CTableDataCell>{product.productCode || ''}</CTableDataCell>
                       <CTableDataCell>{product.productPrice || ''}</CTableDataCell>
+                      <CTableDataCell>{product.salePrice || ''}</CTableDataCell>
                       <CTableDataCell>{product.description || ''}</CTableDataCell>
                       <CTableDataCell>
                         <span className={`badge ${product.status === 'Enable' ? 'bg-success' : 'bg-danger'}`}>
