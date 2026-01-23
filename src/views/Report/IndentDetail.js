@@ -305,7 +305,7 @@ const IndentDetail = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading data: {error}
+{error}
       </div>
     );
   }

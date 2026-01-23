@@ -193,11 +193,9 @@ const handleApprove = async () => {
     };
   });
 
-  // Set validation errors if any
   if (Object.keys(validationErrors).length > 0) {
     setErrors(validationErrors);
     
-    // Show alert for missing serial numbers
     const missingSerials = Object.entries(validationErrors)
       .filter(([_, error]) => error.includes('serial number'))
       .map(([_, error]) => error);
@@ -214,7 +212,7 @@ const handleApprove = async () => {
   }
 
   try {
-    // Show loading state
+
     setAlert({ type: 'info', message: 'Processing approval...', visible: true });
     
     const response = await axiosInstance.post(`/stocktransfer/${id}/approve`, {
@@ -238,13 +236,11 @@ const handleApprove = async () => {
   } catch (err) {
     console.error('Error approving transfer:', err);
     
-    // Extract detailed error message from response
     let errorMessage = "Something went wrong while approving the transfer";
     
     if (err.response?.data) {
       const { data } = err.response;
       
-      // Handle validation errors array
       if (data.errors && Array.isArray(data.errors)) {
         const validationMessages = data.errors.map(error => {
           if (typeof error === 'string') return error;
@@ -255,7 +251,7 @@ const handleApprove = async () => {
         
         errorMessage = `Validation failed: ${validationMessages}`;
       }
-      // Handle validationResults array
+
       else if (data.validationResults && Array.isArray(data.validationResults)) {
         const failedValidations = data.validationResults
           .filter(result => !result.valid)
@@ -264,7 +260,7 @@ const handleApprove = async () => {
         
         errorMessage = failedValidations || data.message || "Validation failed";
       }
-      // Handle validationErrors array
+
       else if (data.validationErrors && Array.isArray(data.validationErrors)) {
         const validationErrors = data.validationErrors
           .map(error => error.error || `Product ${error.productName || error.productId} validation failed`)
@@ -272,11 +268,11 @@ const handleApprove = async () => {
         
         errorMessage = validationErrors || data.message || "Validation failed";
       }
-      // Handle single error object
+   
       else if (data.error && typeof data.error === 'string') {
         errorMessage = data.error;
       }
-      // Handle message field
+
       else if (data.message) {
         errorMessage = data.message;
       }
@@ -515,7 +511,6 @@ const handleCompleteIndent = async () => {
     let payload = [];
     
     if (isToCenterUser) {
-      // For ToCenter user: validate received quantities
       payload = data.products.map(item => {
         const receiptItem = productReceipts.find(p => p.productId === item.product?._id);
         const receivedQtyInput = receiptItem?.receivedQuantity;
@@ -687,7 +682,7 @@ const handleInomplete = async () => {
   };
 
   if (loading) return <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}><CSpinner color="primary" /></div>;
-  if (error) return <div className="alert alert-danger">Error loading stock request: {error}</div>;
+  if (error) return <div className="alert alert-danger">{error}</div>;
   if (!data) return <div className="alert alert-warning">Stock Request not found</div>;
 
   return (
@@ -732,6 +727,25 @@ const handleInomplete = async () => {
         <CCardBody className="profile-body p-0">
   <table className="customer-details-table">
     <tbody>
+      {/* <tr className="table-row" style={{backgroundColor:"#d9edf7"}}>
+        <td className="profile-label-cell">Status:</td>
+        <td className="profile-value-cell">Transfer Approved by SSV TELECOM PVT LTD at {formatDateTime(data.adminApproval?.approvedAt || '')}</td>
+
+        <td className="profile-label-cell"></td>
+        <td className="profile-value-cell"></td>
+
+        <td className="profile-label-cell"></td>
+        <td className="profile-value-cell"></td>
+      </tr> */}
+
+<tr className="table-row" style={{ backgroundColor: "#d9edf7" }}>
+  <td className="profile-label-cell">Status:</td>
+  <td className="profile-value-cell" colSpan={5}>
+    <strong>Transfer Approved by SSV TELECOM PVT LTD at{" "}</strong>
+    {formatDateTime(data.adminApproval?.approvedAt || '')}
+  </td>
+</tr>
+
       <tr className="table-row">
         <td className="profile-label-cell">Center/Center Code:</td>
         <td className="profile-value-cell">{data.orderNumber || ''}</td>
