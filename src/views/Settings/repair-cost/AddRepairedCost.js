@@ -28,7 +28,6 @@ const AddRepairedCost = ({ visible, onClose, onRepairCostAdded, repairCost }) =>
       try {
         const response = await axiosInstance.get('/products')
         if (response.data.success) {
-          // Filter products that don't already have a repair cost (except when editing)
           const allProducts = response.data.data;
           setProducts(allProducts);
         }

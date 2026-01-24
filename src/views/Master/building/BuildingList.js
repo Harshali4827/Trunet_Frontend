@@ -74,7 +74,7 @@ const BuildingList = () => {
 
   const fetchCenters = async () => {
     try {
-      const response = await axiosInstance.get('/centers');
+      const response = await axiosInstance.get('/centers?centerType=Center');
       if (response.data.success) {
         setCenters(response.data.data);
       }
@@ -284,7 +284,7 @@ const BuildingList = () => {
             </div>
           </div>
           <div className="responsive-table-wrapper">
-          <CTable striped bordered hover responsive className='responsive-table'>
+          <CTable striped bordered hover className='responsive-table'>
             <CTableHead>
               <CTableRow>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('buildingName')} className="sortable-header">

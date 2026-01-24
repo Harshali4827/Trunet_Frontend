@@ -470,11 +470,72 @@ const handleUpdateShipment = async (shipmentData) => {
   }
 };
 
+// const handleMarkIncomplete = async (remark) => {
+//   try {
+//     if (userCenterType === 'center') {
+//       const missingReceipts = productReceipts.filter(item => 
+//         !item.receivedQuantity || item.receivedQuantity === '' || Number(item.receivedQuantity) <= 0
+//       );
+
+//       if (missingReceipts.length > 0) {
+//         setAlert({
+//           type: 'danger',
+//           message: 'Please enter received quantity for all products before marking as incomplete',
+//           visible: true,
+//         });
+//         return;
+//       }
+//     }
+//     const receivedProducts = productReceipts.map(item => ({
+//       productId: item.productId,
+//       receivedQuantity: Number(item.receivedQuantity) || 0,
+//       receivedRemark: item.receivedRemark || '',
+//     }));
+//     const payload = {
+//       incompleteRemark: remark,
+//       receivedProducts,
+//     };
+//     console.log('Incomplete Payload:', payload);
+//     const response = await axiosInstance.post(
+//       `/stockrequest/${id}/mark-incomplete`,
+//       payload
+//     );
+
+//     if (response.data.success) {
+//       setAlert({
+//         type: 'success',
+//         message: 'Stock request marked as incomplete',
+//         visible: true,
+//       });
+//       setIncompleteModal(false);
+//      setTimeout(() => window.location.reload(), 1000);
+//     } else {
+//       setAlert({
+//         type: 'danger',
+//         message: 'Failed to mark incomplete',
+//         visible: true,
+//       });
+//     }
+//   } catch (err) {
+//     console.error(err);
+//     setAlert({
+//       type: 'danger',
+//       message: 'Error marking incomplete',
+//       visible: true,
+//     });
+//   }
+// };
+
+
 const handleMarkIncomplete = async (remark) => {
   try {
     if (userCenterType === 'center') {
+      // Allow 0 as valid received quantity for incomplete status
       const missingReceipts = productReceipts.filter(item => 
-        !item.receivedQuantity || item.receivedQuantity === '' || Number(item.receivedQuantity) <= 0
+        item.receivedQuantity === undefined || 
+        item.receivedQuantity === null || 
+        item.receivedQuantity === '' ||
+        isNaN(Number(item.receivedQuantity))  // Check if it's not a valid number
       );
 
       if (missingReceipts.length > 0) {
@@ -486,15 +547,19 @@ const handleMarkIncomplete = async (remark) => {
         return;
       }
     }
+    
+    // Rest of your function remains the same...
     const receivedProducts = productReceipts.map(item => ({
       productId: item.productId,
-      receivedQuantity: Number(item.receivedQuantity) || 0,
+      receivedQuantity: Number(item.receivedQuantity) || 0,  // This will convert "" to 0
       receivedRemark: item.receivedRemark || '',
     }));
+    
     const payload = {
       incompleteRemark: remark,
       receivedProducts,
     };
+    
     console.log('Incomplete Payload:', payload);
     const response = await axiosInstance.post(
       `/stockrequest/${id}/mark-incomplete`,
@@ -508,7 +573,7 @@ const handleMarkIncomplete = async (remark) => {
         visible: true,
       });
       setIncompleteModal(false);
-     setTimeout(() => window.location.reload(), 1000);
+      setTimeout(() => window.location.reload(), 1000);
     } else {
       setAlert({
         type: 'danger',
@@ -526,71 +591,12 @@ const handleMarkIncomplete = async (remark) => {
   }
 };
 
-// const handleIncomplete = async () => {
-//   try {
-//     const approvalsPayload = approvedProducts.map(p => ({
-//       productId: p.productId,
-//       approvedQuantity: Number(p.approvedQty) || 0,
-//       approvedRemark: p.approvedRemark || '',
-//     }));
-
-//     const receiptsPayload = productReceipts.map(r => ({
-//       productId: r.productId,
-//       receivedQuantity: Number(r.receivedQuantity) || 0,
-//       receivedRemark: r.receivedRemark || '',
-//     }));
-
-//     console.log('Final Incomplete Payload:', {
-//       productApprovals: approvalsPayload,
-//       productReceipts: receiptsPayload,
-//     });
-
-//     const response = await axiosInstance.patch(
-//       `/stockrequest/${id}/complete-incomplete`,
-//       {
-//         productApprovals: approvalsPayload,
-//         productReceipts: receiptsPayload,
-//       }
-//     );
-//     if (!response.data.success) {
-//       setAlert({
-//         type: 'danger',
-//         message: response.data.message || 'Failed to complete indent',
-//         visible: true,
-//       });
-//       return;
-//     }
-//     setAlert({
-//       type: 'success',
-//       message: 'Indent completed successfully',
-//       visible: true,
-//     });
-
-//     setTimeout(() => window.location.reload(), 1000);
-//   } catch (err) {
-//     console.error('Error in handleIncomplete:', err);
-//     const errorMessage =
-//       err.response?.data?.message ||
-//       err.message ||
-//       'An unexpected error occurred while completing the indent';
-
-//     setAlert({
-//       type: 'danger',
-//       message: errorMessage,
-//       visible: true,
-//     });
-//   }
-// };
-
-
-
 const handleIncomplete = async () => {
   try {
     const approvalsPayload = approvedProducts.map(p => {
       const product = data.products.find(prod => prod.product?._id === p.productId);
       const isSerialized = product?.product?.trackSerialNumber === "Yes";
       
-      // Get current assigned serials for this product
       const currentSerials = assignedSerials[p.productId] || [];
       
       return {

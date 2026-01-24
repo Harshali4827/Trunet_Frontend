@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../../css/form.css';
 import { CAlert } from '@coreui/react';
+import Select from 'react-select';
 const AddBuilding = () => {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -24,7 +25,7 @@ const AddBuilding = () => {
   useEffect(() => {
     const fetchCenters = async () => {
       try {
-        const res = await axiosInstance.get('/centers');
+        const res = await axiosInstance.get('/centers?centerType=Center');
         setCenters(res.data.data || []);
       } catch (error) {
         console.error('Error fetching centers:', error);
@@ -130,7 +131,7 @@ const AddBuilding = () => {
 )}
           <form onSubmit={handleSubmit}>
             <div className="form-row">
-            <div className="form-group">
+            {/* <div className="form-group">
                 <label 
                 className={`form-label 
                   ${errors.center ? 'error-label' : formData.center ? 'valid-label' : ''}`}  
@@ -154,7 +155,43 @@ const AddBuilding = () => {
                   ))}
                 </select>
                 {errors.center && <span className="error">{errors.center}</span>}
-              </div>
+              </div> */}
+
+              <div className="form-group">
+                <label className={`form-label 
+                  ${errors.center ? 'error-label' : formData.center ? 'valid-label' : ''}`}
+                  htmlFor="center">
+                Branch <span className="required">*</span>
+                </label>
+             
+                <Select
+    id="center"
+    name="center"
+    value={
+      centers.find(c => c._id === formData.center)
+        ? {
+            label: centers.find(c => c._id === formData.center).centerName,
+            value: formData.center
+          }
+        : null
+    }
+    onChange={(selected) =>
+      handleChange({
+        target: { name: "center", value: selected ? selected.value : "" }
+      })
+    }
+    options={centers.map((c) => ({
+      label: c.centerName,
+      value: c._id,
+    }))}
+    placeholder="Select Branch"
+    classNamePrefix={`react-select ${
+      errors.center ? "error-input" : formData.center ? "valid-input" : ""
+    }`}
+  />
+                {errors.center && <span className="error-text">{errors.center}</span>}
+            </div>
+
               <div className="form-group">
                 <label 
                className={`form-label 

@@ -156,7 +156,7 @@ const AddStockUsage = () => {
 
   const fetchCustomers = async () => {
     try {
-      const res = await axiosInstance.get('/customers');
+      const res = await axiosInstance.get('/customers/all');
       setCustomers(res.data.data || []);
     } catch (error) {
       console.error('Error fetching customers:', error);

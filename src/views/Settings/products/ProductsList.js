@@ -407,9 +407,9 @@ const ProductList = () => {
             Cancel
           </CButton>
           <CButton 
-            color="primary" 
+            className='reset-button'
             onClick={handleImportCSV}
-            disabled={!importFile || importLoading}
+            // disabled={!importFile || importLoading}
           >
             {importLoading ? (
               <>

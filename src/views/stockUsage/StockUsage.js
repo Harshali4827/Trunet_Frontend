@@ -878,7 +878,7 @@ const StockUsage = () => {
 
   const fetchCenters = async () => {
     try {
-      const response = await axiosInstance.get('/centers');
+      const response = await axiosInstance.get('/centers?centerType=Center');
       if (response.data.success) {
         setCenters(response.data.data);
       }
@@ -1018,7 +1018,7 @@ const StockUsage = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading data: {error}
+      {error}
       </div>
     );
   }
