@@ -970,7 +970,7 @@ const handleIncomplete = async () => {
                               )}
                             </>
                           ) : (
-                            approvedItem.approvedQty || ''
+                            approvedItem.approvedQty || 0
                           )}
                         </div>
 
@@ -1001,7 +1001,7 @@ const handleIncomplete = async () => {
                               style={{ width: '80px' }}
                             />
                           ) : (
-                            <span>{item.receivedQuantity || ''}</span>
+                            <span>{item.receivedQuantity || 0}</span>
                           )}
                           
                           {item.product?.trackSerialNumber === "Yes" && item.receivedQuantity > 0 && (

@@ -204,32 +204,348 @@ const StockPurchase = () => {
     setSelectedPO(po);
   };
 
+  // const generateInvoice = () => {
+  //   if (!selectedPO) {
+  //     showError('Please select a PO first');
+  //     return;
+  //   }
+
+  //   const invoiceDate = new Date().toLocaleDateString('en-GB', {
+  //     day: '2-digit',
+  //     month: 'short',
+  //     year: '2-digit'
+  //   }).replace(/\//g, '-');
+
+  //   const totalBeforeTax = selectedPO.products.reduce((sum, product) => 
+  //     sum + (product.price * product.purchasedQuantity), 0
+  //   );
+  //   const cgst = totalBeforeTax * 0.09;
+  //   const sgst = totalBeforeTax * 0.09;
+  //   const roundOff = Math.round(totalBeforeTax + cgst + sgst) - (totalBeforeTax + cgst + sgst);
+  //   const total = totalBeforeTax + cgst + sgst + roundOff;
+
+  //   const productsPerPage = 8;
+  //   const pages = [];
+  //   for (let i = 0; i < selectedPO.products.length; i += productsPerPage) {
+  //     pages.push(selectedPO.products.slice(i, i + productsPerPage));
+  //   }
+
+  //   const invoiceHTML = `
+  //     <!DOCTYPE html>
+  //     <html>
+  //     <head>
+  //       <title>Invoice - ${selectedPO.voucherNo}</title>
+  //       <style>
+  //         @page { 
+  //           size: A4; 
+  //           margin: 12mm; 
+  //         }
+  //         body { 
+  //           font-family: Arial, sans-serif; 
+  //           color: #000; 
+  //           margin: 0; 
+  //           padding: 0;
+  //         }
+  //         .title { 
+  //           text-align: center; 
+  //           font-weight: bold; 
+  //           font-size: 18px; 
+  //           margin: 10px; 
+  //         }
+  //         .main-border { 
+  //           border: 1px solid #000; 
+  //           width: 100%; 
+  //           border-collapse: collapse; 
+  //           margin-bottom: 10px;
+  //         }
+  //         .main-border td, .main-border th { 
+  //           border: 1px solid #000; 
+  //           padding: 5px; 
+  //           vertical-align: top; 
+  //         }
+  //         .meta-table { 
+  //           width: 100%; 
+  //           border-collapse: collapse; 
+  //         }
+  //         .meta-table td { 
+  //           border: 1px solid #000; 
+  //           padding: 6px; 
+  //           vertical-align: top; 
+  //         }
+  //         .label { 
+  //           font-weight: bold; 
+  //         }
+  //         .right { 
+  //           text-align: right; 
+  //         }
+  //         .bold { 
+  //           font-weight: bold; 
+  //         }
+  //         .footer-note { 
+  //           font-style: italic; 
+  //           text-align: right; 
+  //           margin-top: 4px; 
+  //         }
+  //         .page-break { 
+  //           page-break-before: always; 
+  //         }
+  //         hr {
+  //           margin: 4px 0;
+  //           border: none;
+  //           border-top: 1px solid #000;
+  //         }
+  //         i {
+  //           font-style: italic;
+  //           margin-left: 10px;
+  //         }
+
+  //         .declaration-section {
+  //         margin-top: 20px;
+  //         display: flex;
+  //         justify-content: space-between;
+  //       }
+  //       .declaration-left {
+  //         width: 48%;
+  //       }
+  //       .declaration-right {
+  //         width: 48%;
+  //         text-align: center;
+  //       }
+  //       .signature-line {
+  //         margin-top: 60px;
+  //         border-top: 1px solid #000;
+  //         padding-top: 5px;
+  //       }
+  //       .computer-generated {
+  //         text-align: center;
+  //         font-style: italic;
+  //         margin-top: 50px;
+  //       }
+  //       </style>
+  //     </head>
+  //     <body>
+  //       <div class="title">PURCHASE ORDER</div>
+
+  //       ${pages.map((products, pageIndex) => `
+  //         <table class="main-border">
+  //           <tr>
+  //             <td style="width:50%;">
+  //               <div style="border-bottom:1px solid #000; padding-bottom:6px; margin-bottom:6px;">
+  //                  <p>Invoice To</p>
+  //                 <div class="bold">SSV Telecom Private Limited FY 22-23</div>
+  //                 A-1, Landmark CHS, Sector 14<br/>
+  //                 Vashi, Navi Mumbai<br/>
+  //                 27ABECS3422Q1ZX<br/>
+  //                 GSTIN/UIN: 27ABECS3422Q1ZX<br/>
+  //                 State Name: Maharashtra, Code: 27
+
+  //               </div>
+
+  //               <span class="label">Consignee (Ship to)</span><br/>
+  //               <div class="bold">SSV Telecom Private Limited FY 22-23</div>
+  //                 A-1, Landmark CHS, Sector 14<br/>
+  //                 Vashi, Navi Mumbai<br/>
+  //                 27ABECS3422Q1ZX<br/>
+  //               GSTIN/UIN: 27AEGFS1650E1Z6<br/>
+  //               State Name : Maharashtra, Code : 27
+  //               <hr/>
+
+  //               <span class="label">Supplier (Bill from)</span><br/>
+  //               ${selectedPO.vendor?.businessName || ' '}<br/>
+  //               ${selectedPO.vendor?.address1 || ''},${selectedPO.vendor?.city || '' }<br/>
+  //               GSTIN/UIN: ${selectedPO.vendor?.gstNumber || ''}<br/>
+  //               State Name : ${selectedPO.vendor?.state || ''}, Code : 27
+  //             </td>
+
+  //             <td style="width:50%; padding:0;">
+  //               <table class="meta-table">
+  //                 <tr>
+  //                   <td><span class="label">Voucher No.</span><br/>${selectedPO.voucherNo || ''}</td>
+  //                   <td><span class="label">Dated</span><br/>${invoiceDate}</td>
+  //                 </tr>
+  //                 <tr>
+  //                   <td></td>
+  //                   <td><span class="label">Mode/Terms of Payment</span><br/></td>
+  //                 </tr>
+  //                 <tr>
+  //                   <td><span class="label">Reference No. & Date</span><br/></td>
+  //                   <td><span class="label">Other References</span><br/></td>
+  //                 </tr>
+              
+  //                 <tr>
+  //                   <td><span class="label">Dispatched through</span><br/></td>
+  //                   <td><span class="label">Destination</span><br/><b>All Alpha Area</b></td>
+  //                 </tr>
+  //                 <tr>
+  //                   <td colspan="2"><span class="label">Terms of Delivery</span><br/></td>
+  //                 </tr>
+  //               </table>
+  //             </td>
+  //           </tr>
+  //         </table>
+
+  //         <table class="main-border" style="margin-top:10px;">
+  //           <thead>
+  //             <tr>
+  //               <th style="width: 5%;">Sl No.</th>
+  //               <th style="width: 35%;">Description of Goods</th>
+  //               <th style="width: 10%;">Due on</th>
+  //               <th style="width: 10%;">Quantity</th>
+  //               <th style="width: 10%;">Rate</th>
+  //               <th style="width: 10%;">Per</th>
+  //               <th style="width: 20%;">Amount</th>
+  //             </tr>
+  //           </thead>
+  //           <tbody>
+  //             ${products.map((product, i) => `
+  //               <tr>
+  //                 <td>${pageIndex * productsPerPage + i + 1}</td>
+  //                 <td>${product.product?.productTitle || 'N/A'}</td>
+  //                 <td>${new Date(selectedPO.date).toLocaleDateString('en-GB')}</td>
+  //                 <td class="right">${product.purchasedQuantity}</td>
+  //                 <td class="right">${product.price.toFixed(2)}</td>
+  //                 <td>${product.product?.trackSerialNumber === 'Yes' ? 'Pcs' : 'Nos'}</td>
+  //                 <td class="right">${(product.price * product.purchasedQuantity).toFixed(2)}</td>
+  //               </tr>
+  //             `).join('')}
+              
+  //             ${pageIndex === pages.length - 1 ? `
+  //               <tr>
+  //                 <td colspan="5" rowspan="5"></td>
+  //                 <td><b></b></td>
+  //                 <td class="right">${totalBeforeTax.toFixed(2)}</td>
+  //               </tr>
+  //               <tr>
+  //                 <td><b>Output CGST @9%</b></td>
+  //                 <td class="right">${cgst.toFixed(2)}</td>
+  //               </tr>
+  //               <tr>
+  //                 <td><b>Output SGST @9%</b></td>
+  //                 <td class="right">${sgst.toFixed(2)}</td>
+  //               </tr>
+  //               <tr>
+  //                 <td><b>Round Off</b></td>
+  //                 <td class="right">${roundOff.toFixed(2)}</td>
+  //               </tr>
+  //               <tr>
+  //                 <td><b>Total</b></td>
+  //                 <td class="right">${total.toFixed(2)}</td>
+  //               </tr>
+  //               <tr>
+  //                 <td colspan="7">
+  //                   <b>Amount Chargeable (in words):</b>
+  //                   <i>INR ${numToWords(Math.floor(total))} Only</i>
+  //                 </td>
+  //               </tr>
+  //             ` : ''}
+  //           </tbody>
+  //         </table>
+          
+  //            ${pageIndex === pages.length - 1 ? `
+  //         <div class="declaration-section">
+  //           <div class="declaration-left">
+  //             <div class="bold">Declaration</div>
+  //             <div>Payment Terms & Conditions</div>
+  //             <div>1. PO valid for 30 days</div>
+  //             <div>2. Taxes will be applicable</div>
+  //             <div>3. Default or damaged goods will not be accepted.</div>
+  //           </div>
+  //           <div class="declaration-right">
+  //             <div class="bold">For SSV Telecom Private Limited</div>
+
+
+  //               ${
+  //   selectedPO.status === 'approved'
+  //     ? `
+  //       <div style="margin-top:20px, display:flex">
+  //         <b>${selectedPO.approvedBy?.fullName || 'N/A'},</b>
+  //        <p>(${formatDate(selectedPO.approvedAt)})</p>
+  //       </div>
+  //     `
+  //     : ''
+  // }
+  //             <div class="signature-line">
+  //                     Authorised Signatory
+  //             </div>
+
+  //           </div>
+  //         </div>
+  //         <div class="computer-generated">
+  //           This is a Computer Generated Document
+  //         </div>
+  //       ` : ''}
+  //         ${pageIndex < pages.length - 1 ? `
+  //           <div class="footer-note">continued ...</div>
+  //           <div class="page-break"></div>
+  //         ` : ''}
+  //       `).join('')}
+        
+  //       <script>
+  //         window.onload = function() {
+  //           window.print();
+  //         }
+  //       </script>
+  //     </body>
+  //     </html>
+  //   `;
+
+  //   const newWindow = window.open('', '_blank');
+  //   newWindow.document.write(invoiceHTML);
+  //   newWindow.document.close();
+  // };
+
+
+
   const generateInvoice = () => {
     if (!selectedPO) {
       showError('Please select a PO first');
       return;
     }
-
+  
     const invoiceDate = new Date().toLocaleDateString('en-GB', {
       day: '2-digit',
       month: 'short',
       year: '2-digit'
     }).replace(/\//g, '-');
-
+  
     const totalBeforeTax = selectedPO.products.reduce((sum, product) => 
       sum + (product.price * product.purchasedQuantity), 0
     );
-    const cgst = totalBeforeTax * 0.09;
-    const sgst = totalBeforeTax * 0.09;
-    const roundOff = Math.round(totalBeforeTax + cgst + sgst) - (totalBeforeTax + cgst + sgst);
-    const total = totalBeforeTax + cgst + sgst + roundOff;
-
+    
+    const vendorState = selectedPO.vendor?.state || '';
+    const isIntraState = vendorState.toLowerCase().includes('maharashtra'); 
+    
+    let cgst = 0;
+    let sgst = 0;
+    let igst = 0;
+    let taxRate = 0.18; 
+    
+    if (isIntraState) {
+      cgst = totalBeforeTax * (taxRate / 2);
+      sgst = totalBeforeTax * (taxRate / 2);
+    } else {
+      igst = totalBeforeTax * taxRate;
+    }
+    
+    const roundOff = Math.round(totalBeforeTax + cgst + sgst + igst) - (totalBeforeTax + cgst + sgst + igst);
+    const total = totalBeforeTax + cgst + sgst + igst + roundOff;
+  
     const productsPerPage = 8;
     const pages = [];
     for (let i = 0; i < selectedPO.products.length; i += productsPerPage) {
       pages.push(selectedPO.products.slice(i, i + productsPerPage));
     }
 
+    const getStateCodeFromGSTIN = (gstin) => {
+      if (!gstin || gstin.length < 2) return '';
+      return gstin.substring(0, 2);
+    };
+  
+    const buyerGSTIN = '27ABECS3422Q1ZX';
+    const buyerStateCode = getStateCodeFromGSTIN(buyerGSTIN);
+    const vendorGSTIN = selectedPO.vendor?.gstNumber || '';
+    const vendorStateCode = getStateCodeFromGSTIN(vendorGSTIN);
+  
     const invoiceHTML = `
       <!DOCTYPE html>
       <html>
@@ -298,65 +614,82 @@ const StockPurchase = () => {
             font-style: italic;
             margin-left: 10px;
           }
-
+  
           .declaration-section {
-          margin-top: 20px;
-          display: flex;
-          justify-content: space-between;
-        }
-        .declaration-left {
-          width: 48%;
-        }
-        .declaration-right {
-          width: 48%;
-          text-align: center;
-        }
-        .signature-line {
-          margin-top: 60px;
-          border-top: 1px solid #000;
-          padding-top: 5px;
-        }
-        .computer-generated {
-          text-align: center;
-          font-style: italic;
-          margin-top: 50px;
-        }
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+          }
+          .declaration-left {
+            width: 48%;
+          }
+          .declaration-right {
+            width: 48%;
+            text-align: center;
+          }
+          .signature-line {
+            margin-top: 60px;
+            border-top: 1px solid #000;
+            padding-top: 5px;
+          }
+          .computer-generated {
+            text-align: center;
+            font-style: italic;
+            margin-top: 50px;
+          }
+          .tax-details {
+            margin-top: 10px;
+            font-size: 12px;
+          }
+          .tax-notice {
+            font-size: 11px;
+            color: #666;
+            margin-top: 5px;
+          }
         </style>
       </head>
       <body>
         <div class="title">PURCHASE ORDER</div>
-
+  
         ${pages.map((products, pageIndex) => `
           <table class="main-border">
             <tr>
               <td style="width:50%;">
                 <div style="border-bottom:1px solid #000; padding-bottom:6px; margin-bottom:6px;">
-                   <p>Invoice To</p>
+                  <p>Invoice To</p>
                   <div class="bold">SSV Telecom Private Limited FY 22-23</div>
                   A-1, Landmark CHS, Sector 14<br/>
                   Vashi, Navi Mumbai<br/>
-                  27ABECS3422Q1ZX<br/>
-                  GSTIN/UIN: 27ABECS3422Q1ZX<br/>
-                  State Name: Maharashtra, Code: 27
-
+                  ${buyerGSTIN}<br/>
+                  GSTIN/UIN: ${buyerGSTIN}<br/>
+                  State Name: Maharashtra, Code: ${buyerStateCode}
                 </div>
-
+  
                 <span class="label">Consignee (Ship to)</span><br/>
                 <div class="bold">SSV Telecom Private Limited FY 22-23</div>
-                  A-1, Landmark CHS, Sector 14<br/>
-                  Vashi, Navi Mumbai<br/>
-                  27ABECS3422Q1ZX<br/>
+                A-1, Landmark CHS, Sector 14<br/>
+                Vashi, Navi Mumbai<br/>
+                ${buyerGSTIN}<br/>
                 GSTIN/UIN: 27AEGFS1650E1Z6<br/>
-                State Name : Maharashtra, Code : 27
+                State Name: Maharashtra, Code: 27
                 <hr/>
-
+  
                 <span class="label">Supplier (Bill from)</span><br/>
                 ${selectedPO.vendor?.businessName || ' '}<br/>
-                ${selectedPO.vendor?.address1 || ''},${selectedPO.vendor?.city || '' }<br/>
-                GSTIN/UIN: ${selectedPO.vendor?.gstNumber || ''}<br/>
-                State Name : ${selectedPO.vendor?.state || ''}, Code : 27
+                ${selectedPO.vendor?.address1 || ''}, ${selectedPO.vendor?.city || ''}<br/>
+                GSTIN/UIN: ${selectedPO.vendor?.gstNumber || 'N/A'}<br/>
+                State Name: ${selectedPO.vendor?.state || 'N/A'}, Code: ${vendorStateCode || 'N/A'}
+                
+                <div class="tax-details">
+                  <b>Transaction Type:</b> ${isIntraState ? 'INTRA-STATE (CGST+SGST)' : 'INTER-STATE (IGST)'}
+                </div>
+                <div class="tax-notice">
+                  ${isIntraState 
+                    ? `CGST @${(taxRate/2*100).toFixed(0)}% + SGST @${(taxRate/2*100).toFixed(0)}% applicable` 
+                    : `IGST @${(taxRate*100).toFixed(0)}% applicable`}
+                </div>
               </td>
-
+  
               <td style="width:50%; padding:0;">
                 <table class="meta-table">
                   <tr>
@@ -383,7 +716,7 @@ const StockPurchase = () => {
               </td>
             </tr>
           </table>
-
+  
           <table class="main-border" style="margin-top:10px;">
             <thead>
               <tr>
@@ -411,24 +744,31 @@ const StockPurchase = () => {
               
               ${pageIndex === pages.length - 1 ? `
                 <tr>
-                  <td colspan="5" rowspan="5"></td>
-                  <td><b></b></td>
+                  <td colspan="5" rowspan="${isIntraState ? '5' : '3'}"></td>
+                  <td><b>Sub Total</b></td>
                   <td class="right">${totalBeforeTax.toFixed(2)}</td>
                 </tr>
-                <tr>
-                  <td><b>Output CGST @9%</b></td>
-                  <td class="right">${cgst.toFixed(2)}</td>
-                </tr>
-                <tr>
-                  <td><b>Output SGST @9%</b></td>
-                  <td class="right">${sgst.toFixed(2)}</td>
-                </tr>
+                ${isIntraState ? `
+                  <tr>
+                    <td><b>CGST @${(taxRate/2*100).toFixed(0)}%</b></td>
+                    <td class="right">${cgst.toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td><b>SGST @${(taxRate/2*100).toFixed(0)}%</b></td>
+                    <td class="right">${sgst.toFixed(2)}</td>
+                  </tr>
+                ` : `
+                  <tr>
+                    <td><b>IGST @${(taxRate*100).toFixed(0)}%</b></td>
+                    <td class="right">${igst.toFixed(2)}</td>
+                  </tr>
+                `}
                 <tr>
                   <td><b>Round Off</b></td>
                   <td class="right">${roundOff.toFixed(2)}</td>
                 </tr>
                 <tr>
-                  <td><b>Total</b></td>
+                  <td><b>Grand Total</b></td>
                   <td class="right">${total.toFixed(2)}</td>
                 </tr>
                 <tr>
@@ -441,39 +781,38 @@ const StockPurchase = () => {
             </tbody>
           </table>
           
-             ${pageIndex === pages.length - 1 ? `
-          <div class="declaration-section">
-            <div class="declaration-left">
-              <div class="bold">Declaration</div>
-              <div>Payment Terms & Conditions</div>
-              <div>1. PO valid for 30 days</div>
-              <div>2. Taxes will be applicable</div>
-              <div>3. Default or damaged goods will not be accepted.</div>
-            </div>
-            <div class="declaration-right">
-              <div class="bold">For SSV Telecom Private Limited</div>
-
-
-                ${
-    selectedPO.status === 'approved'
-      ? `
-        <div style="margin-top:20px, display:flex">
-          <b>${selectedPO.approvedBy?.fullName || 'N/A'},</b>
-         <p>(${formatDate(selectedPO.approvedAt)})</p>
-        </div>
-      `
-      : ''
-  }
-              <div class="signature-line">
-                      Authorised Signatory
+          ${pageIndex === pages.length - 1 ? `
+            <div class="declaration-section">
+              <div class="declaration-left">
+                <div class="bold">Declaration</div>
+                <div>Payment Terms & Conditions</div>
+                <div>1. PO valid for 30 days</div>
+                <div>2. Taxes will be applicable</div>
+                <div>3. Default or damaged goods will not be accepted.</div>
               </div>
-
+              <div class="declaration-right">
+                <div class="bold">For SSV Telecom Private Limited</div>
+  
+                ${
+                  selectedPO.status === 'approved'
+                    ? `
+                      <div style="margin-top:20px">
+                        <b>${selectedPO.approvedBy?.fullName || 'N/A'},</b>
+                        <p>(${formatDate(selectedPO.approvedAt)})</p>
+                      </div>
+                    `
+                    : ''
+                }
+                <div class="signature-line">
+                  Authorised Signatory
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="computer-generated">
-            This is a Computer Generated Document
-          </div>
-        ` : ''}
+           <div class="computer-generated">
+              This is a Computer Generated Document
+             </div>
+          ` : ''}
+          
           ${pageIndex < pages.length - 1 ? `
             <div class="footer-note">continued ...</div>
             <div class="page-break"></div>
@@ -488,11 +827,12 @@ const StockPurchase = () => {
       </body>
       </html>
     `;
-
+  
     const newWindow = window.open('', '_blank');
     newWindow.document.write(invoiceHTML);
     newWindow.document.close();
   };
+
 
   const filteredCustomers = customers.filter(customer => {
     if (activeSearch.keyword || activeSearch.outlet || activeSearch.startDate || activeSearch.endDate) {

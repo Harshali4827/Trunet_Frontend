@@ -5,12 +5,9 @@ import {
   CDropdown,
 
 } from '@coreui/react-pro'
-import CIcon from '@coreui/icons-react'
-import { cilEnvelopeOpen } from '@coreui/icons'
+
 
 const AppHeaderDropdownMssg = () => {
-  const { t } = useTranslation()
-  const itemsCount = 4
   return (
     <CDropdown variant="nav-item" alignment="end">
 
