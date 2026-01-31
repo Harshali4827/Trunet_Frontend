@@ -22,6 +22,7 @@ import axiosInstance from 'src/axiosInstance';
 import Pagination from 'src/utils/Pagination';
 import { showError } from 'src/utils/sweetAlerts';
 import IndentUsageSummarySearch from './IndentUsageSummarySearch';
+import { useNavigate } from 'react-router-dom';
 
 const IndentUsageSummary = () => {
   const [data, setData] = useState([]);
@@ -41,7 +42,7 @@ const IndentUsageSummary = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-
+  const navigate = useNavigate();
   const fetchData = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
@@ -257,7 +258,7 @@ const IndentUsageSummary = () => {
         params.append('month', month);
         params.append('year', year);
       }
-      
+      params.append('export','true');
       const apiUrl = params.toString()
         ? `/reports/indent-usage-summary?${params.toString()}`
         : '/reports/indent-usage-summary';
@@ -331,7 +332,11 @@ const IndentUsageSummary = () => {
         headers.join(','),
         ...csvData.map(row => 
           row.map(field => {
-            const stringField = String(field || '');
+
+if(field ===0){
+return '"0"';
+} 
+           const stringField = String(field || '');
             return `"${stringField.replace(/"/g, '""')}"`;
           }).join(',')
         )
@@ -378,8 +383,117 @@ const IndentUsageSummary = () => {
     );
   }
 
+  const handleUsageClick = (item) => {
+    if (item.usage > 0) {
+      const params = new URLSearchParams({
+        product: item.productId || '',
+        center: item.center?.id || '',
+        productName: encodeURIComponent(item.productName || ''),
+        centerName: encodeURIComponent(item.center?.name || ''),
+        month: activeSearch.month || ''
+      });
+      navigate(`/usage-detail?${params.toString()}`);
+    }
+  };
+
+  const handleTransferReceiveClick = (item) => {
+    if (item.transferReceive > 0) {
+      const centerId = item.center?.id || '';
+      const productId = item.productId || '';
+      
+      if (!centerId || !productId) {
+        console.error('Missing center or product ID:', { centerId, productId });
+        return;
+      }
+      
+      const params = new URLSearchParams({
+        product: productId,
+        center: centerId,
+        transferType: 'receive'
+      });
+      navigate(`/transfer-detail?${params.toString()}`);
+    }
+  };
+
+  const handleTransferGivenClick = (item) => {
+    if (item.transferGiven > 0) {
+      const centerId = item.center?.id || '';
+      const productId = item.productId || '';
+      
+      if (!centerId || !productId) {
+        console.error('Missing center or product ID:', { centerId, productId });
+        return;
+      }
+      
+      const params = new URLSearchParams({
+        product: productId,
+        center: centerId,
+        transferType: 'given'
+      });
+      navigate(`/transfer-detail?${params.toString()}`);
+    }
+  };
+const handleFieldClick = (item, field, type) => {
+  const value = item[field] || 0;
+  if (value > 0) {
+    const centerId = item.center?.id || '';
+    const productId = item.productId || '';
+    
+    if (!centerId || !productId) {
+      console.error('Missing center or product ID:', { centerId, productId });
+      return;
+    }
+    
+    const params = new URLSearchParams({
+      product: productId,
+      center: centerId,
+      usageType: type,
+      productName: encodeURIComponent(item.productName || ''),
+      centerName: encodeURIComponent(item.center?.name || ''),
+      month: activeSearch.month || ''
+    });
+    navigate(`/transaction-report?${params.toString()}`);
+  }
+};
+
+const handleNcClick = (item) => handleFieldClick(item, 'nc', 'Customer');
+const handleConvertClick = (item) => handleFieldClick(item, 'convert', 'Customer');
+const handleShiftingClick = (item) => handleFieldClick(item, 'shifting', 'Customer');
+const handleBuildingUsageClick = (item) => handleFieldClick(item, 'buildingUsage', 'Building');
+const handleBuildingDamageClick = (item) => handleFieldClick(item, 'buildingDamage', 'building');
+const handleOtherClick = (item) => handleFieldClick(item, 'other', 'other');
+const handleDamageClick = (item) => handleFieldClick(item, 'damage', 'Damage');
+const handleRepairClick = (item) => handleFieldClick(item, 'repair', 'Customer');
+const handleStolenCenterClick = (item) => handleFieldClick(item, 'stolenCenter', 'Stolen from Center');
+const handleStolenFieldClick = (item) => handleFieldClick(item, 'stolenField', 'Stolen from Field');
+const handleReturnClick = (item) => handleFieldClick(item, 'return', 'Customer');
+const handleReplaceDamageClick = (item) => handleFieldClick(item, 'replaceDamage', 'damage');
+
+const handlePurchaseClick = (item) => {
+  if (item.purchase > 0) {
+    const centerId = item.center?.id || '';
+    const productId = item.productId || '';
+    
+    if (!centerId || !productId) {
+      console.error('Missing center or product ID:', { centerId, productId });
+      return;
+    }
+    
+    const params = new URLSearchParams({
+      product: productId,
+      center: centerId,
+      productName: encodeURIComponent(item.productName || ''),
+      centerName: encodeURIComponent(item.center?.name || ''),
+      month: activeSearch.month || '',
+      transactionType: 'purchase'
+    });
+    
+    navigate(`/indent-detail?${params.toString()}`);
+  }
+};
+
   if (error) {
-    return <div className="alert alert-danger">Error loading data: {error}</div>;
+    return <div className="alert alert-danger">{error}</div>;
   }
 
   return (
@@ -531,24 +645,133 @@ const IndentUsageSummary = () => {
                         <CTableDataCell>{item.center?.name || 'N/A'}</CTableDataCell>
                         <CTableDataCell>{item.productName || 'N/A'}</CTableDataCell>
                         <CTableDataCell>{item.opening || 0}</CTableDataCell>
-                        <CTableDataCell>{item.purchase || 0}</CTableDataCell>
+                        <CTableDataCell>
+                       {/*   {item.purchase || 0}   */}
+                       <button 
+        className="btn btn-link p-0 text-decoration-none"
+        onClick={() => handlePurchaseClick(item)}
+        style={{
+          border: 'none', 
+          background: 'none', 
+          cursor: item.purchase > 0 ? 'pointer' : 'default',
+          color: item.purchase > 0 ? '#337ab7' : 'inherit'
+        }}
+        disabled={item.purchase === 0}
+      >
+        {item.purchase || 0}
+      </button>
+                        </CTableDataCell>
                         <CTableDataCell>{item.distributed || 0}</CTableDataCell>
-                        <CTableDataCell>{item.transferReceive || 0}</CTableDataCell>
+                        <CTableDataCell>
+              
+                          <button 
+                    className="btn btn-link p-0 text-decoration-none"
+                    onClick={() => handleTransferReceiveClick(item)}
+                    style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
+                  >
+                     {item.transferReceive || 0}
+
+                  </button>
+              </CTableDataCell>
                         <CTableDataCell>{item.replaceReturn || 0}</CTableDataCell>
-                        <CTableDataCell>{item.usage || 0}</CTableDataCell>
-                        <CTableDataCell>{item.transferGiven || 0}</CTableDataCell>
-                        <CTableDataCell>{item.nc || 0}</CTableDataCell>
-                        <CTableDataCell>{item.convert || 0}</CTableDataCell>
-                        <CTableDataCell>{item.shifting || 0}</CTableDataCell>
-                        <CTableDataCell>{item.buildingUsage || 0}</CTableDataCell>
+                        <CTableDataCell>
+                    <button 
+                    className="btn btn-link p-0 text-decoration-none"
+                    onClick={() => handleUsageClick(item)}
+                    style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
+                  >
+                     {item.usage || 0}
+
+                  </button>
+              </CTableDataCell>
+                        <CTableDataCell>
+                          
+                        <button 
+                    className="btn btn-link p-0 text-decoration-none"
+                    onClick={() => handleTransferGivenClick(item)}
+                    style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
+                  >
+                    {item.transferGiven || 0}
+
+                  </button>
+                  </CTableDataCell>
+                        <CTableDataCell>
+                        <button 
+              className="btn btn-link p-0 text-decoration-none"
+              onClick={() => handleNcClick(item)}
+              style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
+            >
+              {item.nc || 0}
+            </button>
+            </CTableDataCell>
+            <CTableDataCell>
+            <button 
+              className="btn btn-link p-0 text-decoration-none"
+              onClick={() => handleConvertClick(item)}
+              style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
+            >
+              {item.convert || 0}
+            </button>
+          </CTableDataCell>
+          <CTableDataCell>
+            <button 
+              className="btn btn-link p-0 text-decoration-none"
+              onClick={() => handleShiftingClick(item)}
+              style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
+            >
+              {item.shifting || 0}
+            </button>
+          </CTableDataCell>
+          <CTableDataCell>
+            <button 
+              className="btn btn-link p-0 text-decoration-none"
+              onClick={() => handleBuildingUsageClick(item)}
+              style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
+            >
+              {item.buildingUsage || 0}
+            </button>
+          </CTableDataCell>
                         <CTableDataCell>{item.buildingDamage || 0}</CTableDataCell>
-                        <CTableDataCell>{item.other || 0}</CTableDataCell>
+                        <CTableDataCell>
+            <button 
+              className="btn btn-link p-0 text-decoration-none"
+              onClick={() => handleOtherClick(item)}
+              style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
+            >
+              {item.other || 0}
+            </button>
+          </CTableDataCell>
+          
                         <CTableDataCell>{item.return || 0}</CTableDataCell>
                         <CTableDataCell>{item.repair || 0}</CTableDataCell>
-                        <CTableDataCell>{item.damage || 0}</CTableDataCell>
+                        <CTableDataCell>
+            <button 
+              className="btn btn-link p-0 text-decoration-none"
+              onClick={() => handleDamageClick(item)}
+              style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
+            >
+              {item.damage || 0}
+            </button>
+          </CTableDataCell>
                         <CTableDataCell>{item.replaceDamage || 0}</CTableDataCell>
-                        <CTableDataCell>{item.stolenCenter || 0}</CTableDataCell>
-                        <CTableDataCell>{item.stolenField || 0}</CTableDataCell>
+                        <CTableDataCell> 
+                          <button 
+              className="btn btn-link p-0 text-decoration-none"
+              onClick={() => handleStolenCenterClick(item)}
+              style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
+            >
+              {item.stolenCenter || 0}
+            </button>
+            </CTableDataCell>
+                        <CTableDataCell>
+                        <button 
+              className="btn btn-link p-0 text-decoration-none"
+              onClick={() => handleStolenFieldClick(item)}
+              style={{border: 'none', background: 'none', cursor: 'pointer',color:'#337ab7'}}
+            >
+              {item.stolenField || 0}
+            </button>
+                        </CTableDataCell>
                         <CTableDataCell>{item.closing || 0}</CTableDataCell>
                       </CTableRow>
                     ))}

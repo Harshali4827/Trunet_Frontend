@@ -23,6 +23,7 @@ import Pagination from 'src/utils/Pagination';
 import { showError } from 'src/utils/sweetAlerts';
 import { formatDate} from 'src/utils/FormatDateTime';
 import CommonSearch from './CommonSearch';
+import { useLocation } from 'react-router-dom';
 
 const TransferDetail = () => {
   const [data, setData] = useState([]);
@@ -41,18 +42,145 @@ const TransferDetail = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const location = useLocation();
+
+  const getUrlParams = () => {
+    const searchParams = new URLSearchParams(location.search);
+    return {
+      product: searchParams.get('product'),
+      center: searchParams.get('center'),
+      productName: searchParams.get('productName'),
+      centerName: searchParams.get('centerName'),
+      month: searchParams.get('month'),
+      transferType: searchParams.get('transferType')
+    };
+  };
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        setLoading(true);
+        const urlParams = getUrlParams();
+        
+        console.log('Transfer Detail URL Parameters:', urlParams);
+
+        await Promise.all([fetchCenters(), fetchProducts()]);
+        
+        let searchParams = {};
+
+        if (urlParams.product && urlParams.center) {
+          searchParams = {
+            product: urlParams.product,
+            center: urlParams.center,
+            startDate: '',
+            endDate: ''
+          };
+          if (urlParams.month) {
+            const [year, month] = urlParams.month.split('-');
+            const monthStart = `${year}-${month.padStart(2, '0')}-01`;
+            const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+            const monthEnd = `${year}-${month.padStart(2, '0')}-${lastDay}`;
+            
+            searchParams.date = `01-${month.padStart(2, '0')}-${year} to ${lastDay}-${month.padStart(2, '0')}-${year}`;
+          }
+          
+          console.log('Using filtered search from URL:', searchParams);
+          setActiveSearch(searchParams);
+          
+          if (urlParams.productName && urlParams.centerName) {
+            const transferTypeText = urlParams.transferType === 'receive' ? 'Received' : 'Given';
+            document.title = `Transfer Details (${transferTypeText}) - ${decodeURIComponent(urlParams.productName)} at ${decodeURIComponent(urlParams.centerName)}`;
+          }
+        } else {
+          console.log('No URL parameters, fetching all data');
+          searchParams = {};
+        }
+        await fetchData(searchParams, 1);
+        
+      } catch (error) {
+        console.error('Error initializing data:', error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeData();
+  }, [location.search]);
+
+
+  // const fetchData = async (searchParams = {}, page = 1) => {
+  //   try {
+  //     setLoading(true);
+  //     const params = new URLSearchParams();
+
+  //     if (searchParams.center) {
+  //       params.append('center', searchParams.center);
+  //     }
+  //     if (searchParams.product) {
+  //       params.append('product', searchParams.product);
+  //     }
+  //     if (searchParams.date && searchParams.date.includes(' to ')) {
+  //       const [startDateStr, endDateStr] = searchParams.date.split(' to ');
+  //       const convertDateFormat = (dateStr) => {
+  //         const [day, month, year] = dateStr.split('-');
+  //         return `${year}-${month}-${day}`;
+  //       };
+        
+  //       params.append('startDate', convertDateFormat(startDateStr));
+  //       params.append('endDate', convertDateFormat(endDateStr));
+  //     }
+      
+  //     params.append('page', page);
+  //     const url = params.toString() ? `/reports/transfers?${params.toString()}` : '/reports/transfers';
+  //     console.log('Fetching URL:', url);
+  //     const response = await axiosInstance.get(url);
+      
+  //     if (response.data.success) {
+  //       setData(response.data.data);
+  //       setCurrentPage(response.data.pagination.currentPage);
+  //       setTotalPages(response.data.pagination.totalPages);
+  //     } else {
+  //       throw new Error('API returned unsuccessful response');
+  //     }
+  //   } catch (err) {
+  //     setError(err.message);
+  //     console.error('Error fetching data:', err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
 
   const fetchData = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-
-      if (searchParams.center) {
-        params.append('center', searchParams.center);
+  
+      // First, get URL parameters
+      const urlParams = getUrlParams();
+      
+      // Use URL params if available, otherwise use searchParams
+      const centerId = urlParams.center || searchParams.center;
+      const productId = urlParams.product || searchParams.product;
+      const transferType = urlParams.transferType;
+  
+      if (centerId) {
+        // Filter based on transfer type
+        if (transferType === 'receive') {
+          params.append('toCenter', centerId);
+        } else if (transferType === 'given') {
+          params.append('fromCenter', centerId);
+        } else {
+          // If no transfer type specified, search in both
+          params.append('center', centerId);
+        }
       }
-      if (searchParams.product) {
-        params.append('product', searchParams.product);
+      
+      if (productId) {
+        params.append('product', productId);
       }
+      
       if (searchParams.date && searchParams.date.includes(' to ')) {
         const [startDateStr, endDateStr] = searchParams.date.split(' to ');
         const convertDateFormat = (dateStr) => {
@@ -62,6 +190,17 @@ const TransferDetail = () => {
         
         params.append('startDate', convertDateFormat(startDateStr));
         params.append('endDate', convertDateFormat(endDateStr));
+      }
+      
+      // Also check if month is in URL params
+      if (urlParams.month) {
+        const [year, month] = urlParams.month.split('-');
+        const monthStart = `${year}-${month.padStart(2, '0')}-01`;
+        const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+        const monthEnd = `${year}-${month.padStart(2, '0')}-${lastDay}`;
+        
+        params.append('startDate', monthStart);
+        params.append('endDate', monthEnd);
       }
       
       params.append('page', page);
@@ -83,7 +222,6 @@ const TransferDetail = () => {
       setLoading(false);
     }
   };
-
   const fetchCenters = async () => {
     try {
       const response = await axiosInstance.get('/centers');

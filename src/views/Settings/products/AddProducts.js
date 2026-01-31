@@ -94,34 +94,98 @@ const AddProducts = () => {
       }
        setTimeout(() => navigate('/product-list'), 1500)
     }  catch (error) {
-      console.error('Error saving data:', error);
-      if (error.response && error.response.data?.errors) {
-        const backendErrors = error.response.data.errors;
-        let fieldErrors = {};
+    //   console.error('Error saving data:', error);
+    //   if (error.response && error.response.data?.errors) {
+    //     const backendErrors = error.response.data.errors;
+    //     let fieldErrors = {};
         
-        backendErrors.forEach((err) => {
-          if (err.path) {
-            fieldErrors[err.path] = err.msg;
-          }
+    //     backendErrors.forEach((err) => {
+    //       if (err.path) {
+    //         fieldErrors[err.path] = err.msg;
+    //       }
+    //     });
+    
+    //     setErrors(fieldErrors);
+    //     setAlert({ type: 'danger', message: error.response.data.message || "Validation failed" });
+    //     return;
+    //   }
+    
+    //   let message = 'Failed to save data. Please try again!';
+    
+    //   if (error.response) {
+    //     message = error.response.data?.message || error.response.data?.error || message;
+    //   } else if (error.request) {
+    //     message = 'No response from server. Please check your connection.';
+    //   } else {
+    //     message = error.message;
+    //   }
+    
+    //   setAlert({ type: 'danger', message });
+    // }
+
+
+    console.error('Error saving data:', error);
+      
+    // Handle backend validation errors
+    if (error.response && error.response.data?.errors) {
+      const backendErrors = error.response.data.errors;
+      let fieldErrors = {};
+      let errorMessages = [];
+      
+      backendErrors.forEach((err) => {
+        if (err.path) {
+          fieldErrors[err.path] = err.msg;
+        }
+        // Collect all error messages for alert
+        if (err.msg) {
+          errorMessages.push(err.msg);
+        }
+      });
+  
+      setErrors(fieldErrors);
+      
+      // Show the first error message or custom message
+      if (errorMessages.length > 0) {
+        setAlert({ 
+          type: 'danger', 
+          message: errorMessages[0] 
         });
-    
-        setErrors(fieldErrors);
-        setAlert({ type: 'danger', message: error.response.data.message || "Validation failed" });
-        return;
+      } else if (error.response.data.message) {
+        setAlert({ 
+          type: 'danger', 
+          message: error.response.data.message 
+        });
       }
-    
-      let message = 'Failed to save data. Please try again!';
-    
-      if (error.response) {
-        message = error.response.data?.message || error.response.data?.error || message;
-      } else if (error.request) {
-        message = 'No response from server. Please check your connection.';
-      } else {
-        message = error.message;
-      }
-    
-      setAlert({ type: 'danger', message });
+      return;
     }
+    
+    // Handle duplicate error from MongoDB (11000 error code)
+    if (error.response && error.response.data?.debug && error.response.data.debug.includes('E11000')) {
+      setAlert({ 
+        type: 'danger', 
+        message: 'Product with this title or code already exists' 
+      });
+      return;
+    }
+  
+    // Handle other errors
+    let message = 'Failed to save data. Please try again!';
+  
+    if (error.response) {
+      message = error.response.data?.message || 
+               error.response.data?.error || 
+               `Server error: ${error.response.status}`;
+    } else if (error.request) {
+      message = 'No response from server. Please check your connection.';
+    } else {
+      message = error.message;
+    }
+  
+    setAlert({ 
+      type: 'danger', 
+      message 
+    });
+  }
   }
   
   const handleReset = () => {

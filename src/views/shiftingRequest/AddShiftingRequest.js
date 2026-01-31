@@ -36,7 +36,7 @@ const AddShiftingRequest = () => {
 
   const fetchCustomers = async () => {
     try {
-      const res = await axiosInstance.get('/customers');
+      const res = await axiosInstance.get('/customers/all');
       setCustomers(res.data.data || []);
     } catch (error) {
       console.error('Error fetching customers:', error);
@@ -239,7 +239,7 @@ const AddShiftingRequest = () => {
       })
     }
     options={customers.map((customer) => ({
-      label: `${customer.name || customer.username} - ${customer.mobile}`,
+      label: `${ customer.username} - ${customer.mobile}`,
       value: customer._id,
     }))}
     placeholder="Search Customer"
@@ -256,21 +256,7 @@ const AddShiftingRequest = () => {
                   htmlFor="toCenter">
                   To Branch <span className="required">*</span>
                 </label>
-                {/* <select
-                  id="toCenter"
-                  name="toCenter"
-                  className={`form-input 
-                    ${errors.toCenter ? 'error-input' : formData.toCenter ? 'valid-input' : ''}`}
-                  value={formData.toCenter}
-                  onChange={handleChange}
-                >
-                  <option value="">SELECT</option>
-                  {centers.map((c) => (
-                    <option key={c._id} value={c._id}>
-                      {c.centerName}
-                    </option>
-                  ))}
-                </select> */}
+             
                 <Select
     id="toCenter"
     name="toCenter"

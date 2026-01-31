@@ -25,7 +25,9 @@
     "test": "react-scripts test",
     "test:cov": "npm test -- --coverage --watchAll=false",
     "test:debug": "react-scripts --inspect-brk test --runInBand",
-    "zip": "git archive -o $npm_package_config_zipPrefix-$npm_package_config_theme-$npm_package_config_bundler-v$npm_package_version.zip -9 HEAD"
+    "zip": "git archive -o $npm_package_config_zipPrefix-$npm_package_config_theme-$npm_package_config_bundler-v$npm_package_version.zip -9 HEAD",
+       "seed:superadmin": "node scripts/seedSuperadmin.js",
+    "init:superadmin": "node scripts/initSuperadmin.js"
   },
   "dependencies": {
     "@coreui/chartjs": "^4.0.0",

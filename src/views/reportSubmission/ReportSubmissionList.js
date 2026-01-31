@@ -105,7 +105,7 @@ const ReportSubmissionList = () => {
 
   const fetchCenters = async () => {
     try {
-      const response = await axiosInstance.get('/centers');
+      const response = await axiosInstance.get('/centers?centerType=Center');
       if (response.data.success) {
         setCenters(response.data.data);
       }

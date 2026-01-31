@@ -3,13 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from 'src/axiosInstance';
 import '../../../css/form.css';
 import { CAlert } from '@coreui/react';
+import Select from 'react-select';
 
 const AddVendor = () => {
   const navigate = useNavigate();
   const { id } = useParams();
 
   const [formData, setFormData] = useState({
-    businessName: '',
     businessName: '',
     name: '',
     mobile: '',
@@ -24,6 +24,29 @@ const AddVendor = () => {
 
   const [errors, setErrors] = useState({});
   const [alert, setAlert] = useState({ type: '', message: '' })
+  
+  const stateOptions = [
+    { value: 'Andhra Pradesh', label: 'Andhra Pradesh' },
+    { value: 'Arunachal Pradesh', label: 'Arunachal Pradesh' },
+    { value: 'Assam', label: 'Assam' },
+    { value: 'Bihar', label: 'Bihar' },
+    { value: 'Chhattisgarh', label: 'Chhattisgarh' },
+    { value: 'Goa', label: 'Goa' },
+    { value: 'Gujarat', label: 'Gujarat' },
+    { value: 'Haryana', label: 'Haryana' },
+    { value: 'Himachal Pradesh', label: 'Himachal Pradesh' },
+    { value: 'Jharkhand', label: 'Jharkhand' },
+    { value: 'Karnataka', label: 'Karnataka' },
+    { value: 'Kerala', label: 'Kerala' },
+    { value: 'Madhya Pradesh', label: 'Madhya Pradesh' },
+    { value: 'Maharashtra', label: 'Maharashtra' },
+    { value: 'Tamil Nadu', label: 'Tamil Nadu' },
+    { value: 'Telangana', label: 'Telangana' },
+    { value: 'Uttar Pradesh', label: 'Uttar Pradesh' },
+    { value: 'West Bengal', label: 'West Bengal' },
+  ];
+  
+
 
   useEffect(() => {
     if (id) {
@@ -49,7 +72,7 @@ const AddVendor = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     let newErrors = {};
-    ['businessName', 'contactNumber', 'name', 'email', 'address1'].forEach((field) => {
+    ['businessName', 'contactNumber', 'name', 'email', 'address1','state'].forEach((field) => {
       if (!formData[field]) newErrors[field] = 'This is a required field';
     });
 
@@ -283,17 +306,32 @@ const AddVendor = () => {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label" htmlFor="state">
-                State
+                <label className={`form-label 
+                  ${errors.state ? 'error-label' : formData.state ? 'valid-label' : ''}`}  htmlFor="state">
+                State  <span className="required">*</span>
                 </label>
-                <input
+                {/* <input
                   type="text"
                   id="state"
                   name="state"
                   className="form-input"
                   value={formData.state}
                   onChange={handleChange}
-                />
+                /> */}
+
+<Select
+    options={stateOptions}
+    placeholder="Select State"
+    isSearchable
+    value={stateOptions.find(opt => opt.value === formData.state) || null}
+    onChange={(selected) =>
+      setFormData(prev => ({
+        ...prev,
+        state: selected ? selected.value : ''
+      }))
+    }
+  />
+   {errors.state && <span className="error">{errors.state}</span>}
               </div>
               <div className="form-group">
                 <label className="form-label" htmlFor="logo">
