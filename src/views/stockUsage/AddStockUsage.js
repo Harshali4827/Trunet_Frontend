@@ -1135,17 +1135,20 @@ const AddStockUsage = () => {
         return (
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">
-                Address
+              <label className={`form-label ${errors.address ? 'error-label' : formData.address ? 'valid-label' : ''}`}>
+                Address <span className="required">*</span>
               </label>
               <textarea
                 type="text"
                 name="address"
-                className="form-textarea"
+                // className="form-textarea"
+                className={`form-textarea 
+                  ${errors.address ? 'error-input' : formData.address ? 'valid-input' : ''}`}
                 value={formData.address}
                 onChange={handleChange}
                 placeholder="Address"
               />
+               {errors.address && <span className="error">{errors.address}</span>}
             </div>
             <div className="form-group"></div>
             <div className="form-group"></div>

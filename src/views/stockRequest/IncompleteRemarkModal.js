@@ -16,7 +16,7 @@ const IncompleteRemarkModal = ({ visible, onClose, onSubmit, initialRemark = '' 
   };
 
   return (
-    <CModal visible={visible} onClose={onClose} size="md">
+    <CModal visible={visible} onClose={onClose} size="sm">
       <CModalHeader>
         <CModalTitle>Add Incomplete Remark</CModalTitle>
       </CModalHeader>

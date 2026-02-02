@@ -997,7 +997,7 @@ const handleIncomplete = async () => {
         <td className="profile-value-cell">{data.shippingInfo?.shipmentDetails || ''}</td>
 
         <td className="profile-label-cell">Incomplete on:</td>
-        <td className="profile-value-cell">{formatDateTime(data.incompleteOn || '')}</td>
+        <td className="profile-value-cell">{formatDateTime(data.completionInfo?.incompleteOn || '')}</td>
       </tr>
 
       <tr className="table-row">
@@ -1008,7 +1008,7 @@ const handleIncomplete = async () => {
         <td className="profile-value-cell">{data.shippingInfo?.shipmentRemark || ''}</td>
 
         <td className="profile-label-cell">Incomplete by:</td>
-        <td className="profile-value-cell">{data.incompleteBy || ''}</td>
+        <td className="profile-value-cell">{data.completionInfo?.incompleteBy?.fullName || ''}</td>
       </tr>
 
       <tr className="table-row">
@@ -1019,7 +1019,7 @@ const handleIncomplete = async () => {
         <td className="profile-value-cell">{data.document || ''}</td>
 
         <td className="profile-label-cell">Incomplete Remark:</td>
-        <td className="profile-value-cell">{data.incompleteRemark || ''}</td>
+        <td className="profile-value-cell">{data.completionInfo?.incompleteRemark || ''}</td>
       </tr>
 
        <tr className="table-row">
