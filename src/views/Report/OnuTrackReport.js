@@ -272,10 +272,100 @@ const OnuTrackReport = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading data: {error}
+        {error}
       </div>
     );
   }
+
+  // const generateDetailExport = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const params = new URLSearchParams();
+      
+  //     if (activeSearch.product) {
+  //       params.append('product', activeSearch.product);
+  //     }
+  //     if (activeSearch.status) {
+  //       params.append('status', activeSearch.status);
+  //     }
+  //     if (activeSearch.keyword) {
+  //       params.append('search', activeSearch.keyword);
+  //     }
+  //     if (activeSearch.reseller) {
+  //       params.append('reseller', activeSearch.reseller);
+  //     }
+      
+  //     const apiUrl = `/reports/onu-report?${params.toString()}`;
+  //     const response = await axiosInstance.get(apiUrl);
+      
+  //     if (!response.data.success) {
+  //       throw new Error('API returned unsuccessful response');
+  //     }
+  
+  //     const exportData = response.data.data;
+      
+  //     if (!exportData || exportData.length === 0) {
+  //       showError('No data available for export');
+  //       return;
+  //     }
+  
+  //     const headers = [
+  //       'Activation Date',
+  //       'Customer',
+  //       'Serial Number',
+  //       'Connection Type',
+  //       'Reseller Name',
+  //       'Area',
+  //       'Center',
+  //       'ONU Amount',
+  //     ];
+  
+  //     const csvData = exportData.flatMap(record => 
+  //       record.items.flatMap(item => 
+  //         (item.serialNumbers || []).map(serial => [
+  //           formatDate(record.date),
+  //           record.customer?.username || '',
+  //           serial.serialNumber || serial,
+  //           record.connectionType || '',
+  //           record.center?.reseller?.businessName || '',
+  //           record.center?.area?.areaName || '',
+  //           record.center?.centerName || '',
+  //           record.onuCharges || 0,
+  //         ])
+  //       )
+  //     );
+  
+  //     const csvContent = [
+  //       headers.join(','),
+  //       ...csvData.map(row => 
+  //         row.map(field => {
+  //           const stringField = String(field || '');
+  //           return `"${stringField.replace(/"/g, '""')}"`;
+  //         }).join(',')
+  //       )
+  //     ].join('\n');
+  
+  //     const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  //     const link = document.createElement('a');
+  //     const downloadUrl = URL.createObjectURL(blob);
+      
+  //     link.setAttribute('href', downloadUrl);
+  //     link.setAttribute('download', `Product Serial Report ${new Date().toISOString().split('T')[0]}.csv`);
+  //     link.style.visibility = 'hidden';
+      
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     document.body.removeChild(link);
+  //     URL.revokeObjectURL(downloadUrl);
+    
+  //   } catch (error) {
+  //     console.error('Error generating export:', error);
+  //     showError('Error generating export file');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
 
   const generateDetailExport = async () => {
     try {
@@ -316,6 +406,7 @@ const OnuTrackReport = () => {
         'Connection Type',
         'Reseller Name',
         'Area',
+        'Center',
         'ONU Amount',
       ];
   
@@ -328,6 +419,7 @@ const OnuTrackReport = () => {
             record.connectionType || '',
             record.center?.reseller?.businessName || '',
             record.center?.area?.areaName || '',
+            record.center?.centerName || '',
             record.onuCharges || 0,
           ])
         )
@@ -337,7 +429,7 @@ const OnuTrackReport = () => {
         headers.join(','),
         ...csvData.map(row => 
           row.map(field => {
-            const stringField = String(field || '');
+            const stringField = String(field !== undefined && field !== null ? field : '');
             return `"${stringField.replace(/"/g, '""')}"`;
           }).join(',')
         )
@@ -500,7 +592,7 @@ const OnuTrackReport = () => {
                             <CTableDataCell>{record.connectionType || ''}</CTableDataCell>
                             <CTableDataCell>{record.center?.reseller?.businessName || ''}</CTableDataCell>
                             <CTableDataCell>{record.center?.area?.areaName || ''}</CTableDataCell>
-                            <CTableDataCell>{item.onuCharges || 0}</CTableDataCell>
+                            <CTableDataCell>{record.onuCharges || 0}</CTableDataCell>
                           </CTableRow>
                         ))
                       )
