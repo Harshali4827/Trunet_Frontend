@@ -39,7 +39,7 @@ const IndentSummary = () => {
     startDate: '', 
     endDate: '',
     usageType: '',
-    keyword: '', 
+    keyword: '',
     outlet: '' 
   });
   const [currentPage, setCurrentPage] = useState(1);
@@ -227,7 +227,7 @@ const IndentSummary = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading data: {error}
+        {error}
       </div>
     );
   }
@@ -290,9 +290,9 @@ const IndentSummary = () => {
       ];
   
       const csvData = exportData.map(item => [
-        item.center || 'N/A',
-        item.parentCenter || 'N/A',
-        item.product || 'N/A',
+        item.center || '',
+        item.parentCenter || '',
+        item.product || '',
         item.totalQty || 0,
       ]);
   
