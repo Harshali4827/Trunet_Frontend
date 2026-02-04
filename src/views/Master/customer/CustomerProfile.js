@@ -526,7 +526,6 @@ const renderDeviceTable = () => (
     </div>
   );
 
-  // Render Shifting Tab Table
   const renderShiftingTable = () => (
     <div className="responsive-table-wrapper">
       <CTable striped bordered hover className='responsive-table'>

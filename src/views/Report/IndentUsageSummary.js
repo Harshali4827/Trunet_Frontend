@@ -125,7 +125,8 @@ const IndentUsageSummary = () => {
       purchase: 0,
       distributed: 0,
       transferReceive: 0,
-      replaceReturn: 0,
+      // replaceReturn: 0,
+      return:0,
       usage: 0,
       transferGiven: 0,
       nc: 0,
@@ -148,7 +149,8 @@ const IndentUsageSummary = () => {
       totals.purchase += parseFloat(item.purchase || 0);
       totals.distributed += parseFloat(item.distributed || 0);
       totals.transferReceive += parseFloat(item.transferReceive || 0);
-      totals.replaceReturn += parseFloat(item.replaceReturn || 0);
+      // totals.replaceReturn += parseFloat(item.replaceReturn || 0);
+      totals.return += parseFloat(item.return || 0);
       totals.usage += parseFloat(item.usage || 0);
       totals.transferGiven += parseFloat(item.transferGiven || 0);
       totals.nc += parseFloat(item.nc || 0);
@@ -310,7 +312,8 @@ const IndentUsageSummary = () => {
         item.purchase || 0,
         item.distributed || 0,
         item.transferReceive || 0,
-        item.replaceReturn || 0,
+        // item.replaceReturn || 0,
+        item.return || 0,
         item.usage || 0,
         item.transferGiven || 0,
         item.nc || 0,
@@ -673,7 +676,8 @@ const handlePurchaseClick = (item) => {
 
                   </button>
               </CTableDataCell>
-                        <CTableDataCell>{item.replaceReturn || 0}</CTableDataCell>
+                        {/* <CTableDataCell>{item.replaceReturn || 0}</CTableDataCell> */}
+                        <CTableDataCell>{item.return || 0}</CTableDataCell>
                         <CTableDataCell>
                     <button 
                     className="btn btn-link p-0 text-decoration-none"
@@ -781,7 +785,8 @@ const handlePurchaseClick = (item) => {
                       <CTableDataCell><strong>{totals.purchase}</strong></CTableDataCell>
                       <CTableDataCell><strong>{totals.distributed}</strong></CTableDataCell>
                       <CTableDataCell><strong>{totals.transferReceive}</strong></CTableDataCell>
-                      <CTableDataCell><strong>{totals.replaceReturn}</strong></CTableDataCell>
+                      {/* <CTableDataCell><strong>{totals.replaceReturn}</strong></CTableDataCell> */}
+                      <CTableDataCell><strong>{totals.repair}</strong></CTableDataCell>
                       <CTableDataCell><strong>{totals.usage}</strong></CTableDataCell>
                       <CTableDataCell><strong>{totals.transferGiven}</strong></CTableDataCell>
                       <CTableDataCell><strong>{totals.nc}</strong></CTableDataCell>
