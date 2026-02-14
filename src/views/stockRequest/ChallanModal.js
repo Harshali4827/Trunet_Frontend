@@ -291,7 +291,8 @@ const ChallanModal = ({ visible, onClose, data }) => {
 
   const companyInfo = {
     name: data.warehouse?.centerName || "SSV TELECOM PVT LTD",
-    branch: data.center?.reseller?.businessName || "SSV ALPAH - Anand Nagar",
+    // branch: data.center?.reseller?.businessName || "SSV ALPAH - Anand Nagar",
+    branch: data.center?.reseller?.businessName || "",
     address: data.center?.centerName || "Anand Nagar",
     area: data.center?.area?.areaName || "Anand Nagar",
     contactPerson: data.center?.reseller?.name || "Sameer Kodlikar",

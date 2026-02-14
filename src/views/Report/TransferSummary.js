@@ -46,6 +46,7 @@ const TransferSummary = () => {
   const fetchData = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
+      setError(null);
       const params = new URLSearchParams();
     
       if (searchParams.center) {
@@ -78,7 +79,9 @@ const TransferSummary = () => {
         setCurrentPage(response.data.pagination.currentPage);
         setTotalPages(response.data.pagination.totalPages);
       } else {
-        throw new Error('API returned unsuccessful response');
+        const errorMessage = response.data.message || 'API returned unsuccessful response';
+        setError(errorMessage);
+        console.error('Backend error:', response.data);
       }
     } catch (err) {
       setError(err.message);

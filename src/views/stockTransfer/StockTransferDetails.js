@@ -1054,7 +1054,7 @@ const handleIncomplete = async () => {
           <div className="subtitle">Product Details</div>
        <div className="action-buttons">
 
-       {data.status === 'Draft' && userRole !== 'admin' && (
+       {data.status === 'Draft' && userRole !== 'admin' && userRole !== 'superadmin' && (
         <CButton className="btn-action btn-incomplete" onClick={handleSubmitRequest}>
           Submit
         </CButton>
@@ -1067,10 +1067,7 @@ const handleIncomplete = async () => {
           </CButton>
         </>
       )}
-
-
-{ /* change */}
-
+      
       {data.status === 'Confirmed' && userRole !== 'admin' && isFromCenterUser &&  (
         <>
           <CButton className="btn-action btn-submitted me-2" onClick={handleChangeApprovedQty}>
@@ -1090,8 +1087,6 @@ const handleIncomplete = async () => {
           </CButton>
         </>
       )}
-
-             {/* change */}
 
       {data.status === 'Shipped' && userRole !== 'admin' && isFromCenterUser &&(
         <>
@@ -1118,8 +1113,6 @@ const handleIncomplete = async () => {
         </>
       )}
 
-     {/* change */}
-
       {data.status === 'Admin_Approved' && userRole !== 'admin' && hasPermission('Transfer', 'approval_transfer_center') && isFromCenterUser &&(
         <>
           <CButton className="btn-action btn-submitted me-2" onClick={handleApprove}>
@@ -1132,7 +1125,7 @@ const handleIncomplete = async () => {
       )}
       
 
-      {data.status === 'Submitted' && userRole === 'admin' && (
+      {data.status === 'Submitted' &&  (userRole === 'admin' || userRole === 'superadmin') && (
         <>
          <CButton className="btn-action btn-incomplete me-2" onClick={handleApproveAdmin}>
           Approval
@@ -1175,7 +1168,6 @@ const handleIncomplete = async () => {
                       <CTableDataCell>{item.productInStock || 0}</CTableDataCell>
                       <CTableDataCell>{item.productRemark || ''}</CTableDataCell>
 
-                      {/* chnage */}
                       <CTableDataCell>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         { isFromCenterUser ? (
@@ -1205,9 +1197,6 @@ const handleIncomplete = async () => {
     <CFormText className="text-danger">{errors[item._id]}</CFormText>
   )}
 </CTableDataCell>
-
-
-                     {/* change */}
 
                       <CTableDataCell>
                         { isFromCenterUser ? (
@@ -1273,16 +1262,6 @@ const handleIncomplete = async () => {
   onSubmit={handleMarkIncomplete}
   initialRemark={data.incompleteRemark}
 />
-{/* <StockSerialNumber
-  visible={serialModalVisible}
-  onClose={() => setSerialModalVisible(false)}
-  product={selectedProduct}
-  approvedQty={approvedProducts.find(p => p._id === selectedProduct?._id)?.approvedQty || 0}
-  initialSerials={assignedSerials[selectedProduct?.product?._id] || []} 
-  onSerialNumbersUpdate={handleSerialNumbersUpdate}
-  warehouseId={data?.fromCenter?._id}
-/> */}
-
 <StockSerialNumber
   visible={serialModalVisible}
   onClose={() => setSerialModalVisible(false)}

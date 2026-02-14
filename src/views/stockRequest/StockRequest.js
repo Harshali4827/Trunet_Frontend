@@ -61,7 +61,7 @@ const StockRequest = () => {
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
   
-  const { hasPermission, hasAnyPermission } = usePermission();
+  const { hasPermission, hasAnyPermission,isSuperAdmin} = usePermission();
   
   const statusFilters = {
     open: ['Confirmed', 'Submitted', 'Shipped', 'Incompleted', 'Draft'],
@@ -426,19 +426,11 @@ const StockRequest = () => {
       return newState;
     });
   };
-  
-  // if (loading) {
-  //   return (
-  //     <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
-  //       <CSpinner color="primary" />
-  //     </div>
-  //   );
-  // }
 
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading data: {error}
+       {error}
       </div>
     );
   }

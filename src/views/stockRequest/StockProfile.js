@@ -530,7 +530,6 @@ const handleUpdateShipment = async (shipmentData) => {
 const handleMarkIncomplete = async (remark) => {
   try {
     if (userCenterType === 'center') {
-      // Allow 0 as valid received quantity for incomplete status
       const missingReceipts = productReceipts.filter(item => 
         item.receivedQuantity === undefined || 
         item.receivedQuantity === null || 
@@ -603,7 +602,6 @@ const handleIncomplete = async () => {
         productId: p.productId,
         approvedQuantity: Number(p.approvedQty) || 0,
         approvedRemark: p.approvedRemark || '',
-        // Add serial numbers for serialized products
         ...(isSerialized && {
           approvedSerials: currentSerials.map(s => s.serialNumber).slice(0, Number(p.approvedQty))
         })
@@ -827,7 +825,7 @@ const handleIncomplete = async () => {
               </>
             )}
 
-            {data.status === 'Confirmed' && userCenterType === 'outlet' && userRole === 'admin' && isWarehouse && (
+            {data.status === 'Confirmed' && userCenterType === 'outlet' &&  (userRole === 'admin' || userRole === 'superadmin')  && isWarehouse && (
               <>
                 <CButton className="btn-action btn-submitted me-2" onClick={handleChangeApprovedQty}>
                   Change Approved Qty
@@ -870,7 +868,7 @@ const handleIncomplete = async () => {
               </>
             )}
 
-            {data.status === 'Shipped' && userCenterType === 'outlet' && userRole === 'admin' && isWarehouse &&(
+            {data.status === 'Shipped' && userCenterType === 'outlet' &&  (userRole === 'admin' || userRole === 'superadmin') && isWarehouse &&(
               <>
                 <CButton className="btn-action btn-update me-2" onClick={handleOpenUpdateShipment}>
                   Update Shipment
@@ -905,7 +903,7 @@ const handleIncomplete = async () => {
               </>
             )}
 
-            {data.status === 'Incompleted' && userCenterType === 'outlet' && userRole === 'admin' && isWarehouse && (
+            {data.status === 'Incompleted' && userCenterType === 'outlet' && (userRole === 'admin' || userRole === 'superadmin') && isWarehouse && (
               <>
                 <CButton className="btn-action btn-incomplete me-2" onClick={handleIncomplete}>
                   Change Qty And Complete Request

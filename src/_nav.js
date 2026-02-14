@@ -286,14 +286,12 @@ export const hasPermission = (permissions, module, requiredPermissions = []) => 
 const userCenter = JSON.parse(localStorage.getItem('userCenter')) || {};
 const userCenterType = (userCenter.centerType || 'Outlet').toLowerCase();
 
-// Get user info from localStorage
 const userInfo = JSON.parse(localStorage.getItem('userInfo')) || {};
 const isSuperAdmin = userInfo.isSuperAdmin || false;
 
 const getNav = (permissions = []) => {
   const _nav = []
 
-  // Always show Dashboard for everyone
   _nav.push({
     component: CNavItem,
     name: <Translation>{(t) => t('dashboard')}</Translation>,
@@ -488,6 +486,13 @@ const getNav = (permissions = []) => {
       ],
     })
 
+    _nav.push({
+      component: CNavItem,
+      name: <Translation>{(t) => t('Audit Logs')}</Translation>,
+      to: '/auditLogs',
+      icon: <i className="fa fa-history nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px' }} />,
+    })
+
   } else {
     // Original permission-based logic for non-superadmin users
     if (hasPermission(permissions, 'Indent', ['indent_own_center', 'indent_all_center'])) {
@@ -570,12 +575,12 @@ const getNav = (permissions = []) => {
         icon: <i className="fa fa-check nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px'}} />,
       })
     }
-      _nav.push({
-        component: CNavItem,
-        name: <Translation>{(t) => t('Forward Testing')}</Translation>,
-        to: '/testing-stock',
-        icon: <i className="fa fa-file-invoice nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px'}} />,
-      })
+      // _nav.push({
+      //   component: CNavItem,
+      //   name: <Translation>{(t) => t('Forward Testing')}</Translation>,
+      //   to: '/testing-stock',
+      //   icon: <i className="fa fa-file-invoice nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px'}} />,
+      // })
 
     // ===== MASTERS =====
     const masterItems = []
@@ -613,6 +618,9 @@ const getNav = (permissions = []) => {
       reportItems.push({ component: CNavItem, name: 'Available Stock', to: '/available-stock' })
       if (userCenterType === 'outlet') {
         reportItems.push({ component: CNavItem, name: 'Reseller Stock', to: '/reseller-stock' })
+      }
+      if (userCenterType === 'outlet') {
+        reportItems.push({ component: CNavItem, name: 'Reseller QTY', to: '/reseller-qty' })
       }
       reportItems.push({ component: CNavItem, name: 'Field Stock', to: '/filled-stock' })
       reportItems.push({ component: CNavItem, name: 'Transaction Report', to: '/transaction-report' })
@@ -708,6 +716,16 @@ const getNav = (permissions = []) => {
         items: [
           { component: CNavItem, name: 'Import Usage', to:'/base/imageUsage' },
         ],
+      })
+    }
+
+
+    if (hasPermission(permissions, 'AuditLogs', ['view_audit_logs_all','view_audit_logs_own_center','view_audit_logs_own'])) {
+      _nav.push({
+        component: CNavItem,
+        name: <Translation>{(t) => t('Audit Logs')}</Translation>,
+        to: '/auditLogs',
+        icon: <i className="fa fa-history nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px' }} />,
       })
     }
   }

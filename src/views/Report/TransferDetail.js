@@ -107,72 +107,24 @@ const TransferDetail = () => {
     initializeData();
   }, [location.search]);
 
-
-  // const fetchData = async (searchParams = {}, page = 1) => {
-  //   try {
-  //     setLoading(true);
-  //     const params = new URLSearchParams();
-
-  //     if (searchParams.center) {
-  //       params.append('center', searchParams.center);
-  //     }
-  //     if (searchParams.product) {
-  //       params.append('product', searchParams.product);
-  //     }
-  //     if (searchParams.date && searchParams.date.includes(' to ')) {
-  //       const [startDateStr, endDateStr] = searchParams.date.split(' to ');
-  //       const convertDateFormat = (dateStr) => {
-  //         const [day, month, year] = dateStr.split('-');
-  //         return `${year}-${month}-${day}`;
-  //       };
-        
-  //       params.append('startDate', convertDateFormat(startDateStr));
-  //       params.append('endDate', convertDateFormat(endDateStr));
-  //     }
-      
-  //     params.append('page', page);
-  //     const url = params.toString() ? `/reports/transfers?${params.toString()}` : '/reports/transfers';
-  //     console.log('Fetching URL:', url);
-  //     const response = await axiosInstance.get(url);
-      
-  //     if (response.data.success) {
-  //       setData(response.data.data);
-  //       setCurrentPage(response.data.pagination.currentPage);
-  //       setTotalPages(response.data.pagination.totalPages);
-  //     } else {
-  //       throw new Error('API returned unsuccessful response');
-  //     }
-  //   } catch (err) {
-  //     setError(err.message);
-  //     console.error('Error fetching data:', err);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-
-
   const fetchData = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
+      setError(null);
       const params = new URLSearchParams();
-  
-      // First, get URL parameters
+
       const urlParams = getUrlParams();
       
-      // Use URL params if available, otherwise use searchParams
       const centerId = urlParams.center || searchParams.center;
       const productId = urlParams.product || searchParams.product;
       const transferType = urlParams.transferType;
   
       if (centerId) {
-        // Filter based on transfer type
         if (transferType === 'receive') {
           params.append('toCenter', centerId);
         } else if (transferType === 'given') {
           params.append('fromCenter', centerId);
         } else {
-          // If no transfer type specified, search in both
           params.append('center', centerId);
         }
       }
@@ -192,7 +144,6 @@ const TransferDetail = () => {
         params.append('endDate', convertDateFormat(endDateStr));
       }
       
-      // Also check if month is in URL params
       if (urlParams.month) {
         const [year, month] = urlParams.month.split('-');
         const monthStart = `${year}-${month.padStart(2, '0')}-01`;
@@ -213,11 +164,24 @@ const TransferDetail = () => {
         setCurrentPage(response.data.pagination.currentPage);
         setTotalPages(response.data.pagination.totalPages);
       } else {
-        throw new Error('API returned unsuccessful response');
+        const errorMessage = response.data.message || 'API returned unsuccessful response';
+      setError(errorMessage);
+      console.error('Backend error:', response.data);
       }
     } catch (err) {
-      setError(err.message);
-      console.error('Error fetching data:', err);
+      if (err.response) {
+        const errorMessage = err.response.data?.message || 
+                            err.response.data?.error || 
+                            `Error ${err.response.status}: ${err.response.statusText}`;
+        setError(errorMessage);
+        console.error('Error response:', err.response.data);
+      } else if (err.request) {
+        setError('No response received from server. Please check your network connection.');
+        console.error('Error request:', err.request);
+      } else {
+        setError(err.message || 'An error occurred while fetching data');
+        console.error('Error message:', err.message);
+      }
     } finally {
       setLoading(false);
     }

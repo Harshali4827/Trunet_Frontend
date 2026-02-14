@@ -48,27 +48,68 @@ const ShiftinRequestList = () => {
 
   const { hasAnyPermission } = usePermission(); 
 
+  // const fetchData = async (searchParams = {}, page = 1) => {
+  //   try {
+  //     setLoading(true);
+  //     const params = new URLSearchParams();
+
+  //     if (searchParams.keyword) params.append('search', searchParams.keyword);
+  //     if (searchParams.center) params.append('center', searchParams.center);
+  //     params.append('page', page);
+  //     const url = params.toString() ? `/shiftingRequest?${params.toString()}` : '/shiftingRequest';
+  //     const response = await axiosInstance.get(url);
+
+  //     if (response.data.success) {
+  //       setBuildings(response.data.data);
+  //       setCurrentPage(response.data.pagination.currentPage);
+  //       setTotalPages(response.data.pagination.totalPages);
+  //     } else {
+  //       throw new Error('API returned unsuccessful response');
+  //     }
+  //   } catch (err) {
+  //     setError(err.message);
+  //     console.error('Error fetching buildings:', err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
   const fetchData = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
+      setError(null);
       const params = new URLSearchParams();
-
+  
       if (searchParams.keyword) params.append('search', searchParams.keyword);
       if (searchParams.center) params.append('center', searchParams.center);
       params.append('page', page);
       const url = params.toString() ? `/shiftingRequest?${params.toString()}` : '/shiftingRequest';
       const response = await axiosInstance.get(url);
-
+  
       if (response.data.success) {
         setBuildings(response.data.data);
         setCurrentPage(response.data.pagination.currentPage);
         setTotalPages(response.data.pagination.totalPages);
       } else {
-        throw new Error('API returned unsuccessful response');
+        const errorMessage = response.data.message || 'API returned unsuccessful response';
+        setError(errorMessage);
+        console.error('Backend error:', response.data);
       }
     } catch (err) {
-      setError(err.message);
-      console.error('Error fetching buildings:', err);
+      if (err.response) {
+        const errorMessage = err.response.data?.message || 
+                            err.response.data?.error || 
+                            `Error ${err.response.status}: ${err.response.statusText}`;
+        setError(errorMessage);
+        console.error('Error response:', err.response.data);
+      } else if (err.request) {
+        setError('No response received from server. Please check your network connection.');
+        console.error('Error request:', err.request);
+      } else {
+        setError(err.message || 'An error occurred while fetching data');
+        console.error('Error message:', err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -313,7 +354,9 @@ const ShiftinRequestList = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading shifting requests: {error}
+       {error}
+       <br />
+       <small>Please check your permissions or contact administrator.</small>
       </div>
     );
   }

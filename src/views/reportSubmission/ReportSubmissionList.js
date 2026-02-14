@@ -389,7 +389,7 @@ const ReportSubmissionList = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading data: {error}
+        {error}
       </div>
     );
   }
@@ -528,7 +528,7 @@ const ReportSubmissionList = () => {
                     <CTableDataCell>{formatDateTime(customer.createdAt || 'N/A')}</CTableDataCell>
                     <CTableDataCell>{customer.createdBy?.email || 'N/A'}</CTableDataCell>
                     <CTableDataCell>{customer.approvedRemark || ''}</CTableDataCell>
-                    {userRole === 'admin' &&  <CTableDataCell>
+                    {(userRole === 'admin' || userRole === 'superadmin')  &&  <CTableDataCell>
                     <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
                         <CButton 
                           size="sm"

@@ -39,9 +39,41 @@ const AvailableStock = () => {
 
   const dropdownRefs = useRef({});
 
-  const fetchData = async (searchParams = {}, page = 1) => {
+  // const fetchData = async (searchParams = {}, page = 1) => {
+  //   try {
+  //     setLoading(true);
+  //     const params = new URLSearchParams();
+      
+  //     if (searchParams.product) {
+  //       params.append('product', searchParams.product);
+  //     }
+  //     if (searchParams.center) {
+  //       params.append('center', searchParams.center);
+  //     }
+  //     params.append('page', page);
+  //     const url = params.toString() ? `/availableStock/availableStock?${params.toString()}` : '/availableStock/availableStock';
+  //     const response = await axiosInstance.get(url);
+      
+  //     if (response.data.success) {
+  //       setData(response.data.data.stock);
+  //       setCurrentPage(response.data.data.pagination.currentPage);
+  //       setTotalPages(response.data.data.pagination.totalPages);
+  //     } else {
+  //       throw new Error('API returned unsuccessful response');
+  //     }
+  //   } catch (err) {
+  //     setError(err.message);
+  //     console.error('Error fetching data:', err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
+ const fetchData = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
+      setError(null);
       const params = new URLSearchParams();
       
       if (searchParams.product) {
@@ -51,6 +83,7 @@ const AvailableStock = () => {
         params.append('center', searchParams.center);
       }
       params.append('page', page);
+      
       const url = params.toString() ? `/availableStock/availableStock?${params.toString()}` : '/availableStock/availableStock';
       const response = await axiosInstance.get(url);
       
@@ -59,11 +92,24 @@ const AvailableStock = () => {
         setCurrentPage(response.data.data.pagination.currentPage);
         setTotalPages(response.data.data.pagination.totalPages);
       } else {
-        throw new Error('API returned unsuccessful response');
+        const errorMessage = response.data.message || 'API returned unsuccessful response';
+        setError(errorMessage);
+        console.error('Backend error:', response.data);
       }
     } catch (err) {
-      setError(err.message);
-      console.error('Error fetching data:', err);
+      if (err.response) {
+        const errorMessage = err.response.data?.message || 
+                            err.response.data?.error || 
+                            `Error ${err.response.status}: ${err.response.statusText}`;
+        setError(errorMessage);
+        console.error('Error response:', err.response.data);
+      } else if (err.request) {
+        setError('No response received from server. Please check your network connection.');
+        console.error('Error request:', err.request);
+      } else {
+        setError(err.message || 'An error occurred while fetching data');
+        console.error('Error message:', err.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -200,7 +246,7 @@ const AvailableStock = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading data: {error}
+      {error}
       </div>
     );
   }
@@ -208,8 +254,6 @@ const AvailableStock = () => {
   const generateDetailExport = async () => {
     try {
       setLoading(true);
-      
-      // Use activeSearch filters instead of fetching all data
       const params = new URLSearchParams();
       
       if (activeSearch.product) {

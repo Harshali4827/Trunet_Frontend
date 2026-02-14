@@ -27,7 +27,8 @@ const AddUser = () => {
   const [alert, setAlert] = useState({ type: '', message: '' });
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-
+  const user = JSON.parse(localStorage.getItem('user')) || {};
+  const userRole = (user?.role?.roleTitle || '').toLowerCase();
   const fetchCenters = async () => {
     try {
       const res = await axiosInstance.get('/centers/main-warehouse');
@@ -61,7 +62,6 @@ const AddUser = () => {
       const res = await axiosInstance.get(`/auth/user/${itemId}`);
       const user = res.data.data.user;
 
-      // Extract accessible centers
       const accessibleCenters = user.accessibleCenters || (user.center ? [user.center] : []);
       const centerIds = accessibleCenters.map(c => c._id);
 
@@ -244,13 +244,11 @@ const AddUser = () => {
     value: center._id
   }));
 
-  // Get selected centers for display
   const selectedCenters = formData.centers.map(centerId => {
     const center = centers.find(c => c._id === centerId);
     return center ? { label: `${center.centerName} (${center.centerCode})`, value: center._id } : null;
   }).filter(Boolean);
 
-  // Custom styles for react-select to show chips
   const customStyles = {
     control: (base, state) => ({
       ...base,
@@ -459,8 +457,14 @@ const AddUser = () => {
                       onChange={handleChange}
                     >
                       <option value="">SELECT</option>
-                      <option value="Enable">Enable</option>
-                      <option value="Disable">Disable</option>
+                      {/* <option value="Enable">Enable</option>
+                      <option value="Disable">Disable</option> */}
+                       {!isEditing && <option value="Enable">Enable</option>}
+ 
+                      {isEditing && userRole === 'superadmin' && (
+                          <option value="Enable">Enable</option>
+                      )}
+                     <option value="Disable">Disable</option>
                     </select>
                     {errors.status && <span className="error">{errors.status}</span>}
                   </div>

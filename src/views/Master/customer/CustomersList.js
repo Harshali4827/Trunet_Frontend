@@ -41,9 +41,37 @@ const CustomersList = () => {
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
   const { hasAnyPermission } = usePermission(); 
+  // const fetchCustomers = async (searchParams = {}, page = 1) => {
+  //   try {
+  //     setLoading(true);
+  //     const params = new URLSearchParams();
+  
+  //     if (searchParams.keyword) params.append('search', searchParams.keyword);
+  //     if (searchParams.center) params.append('center', searchParams.center);
+  
+  //     params.append('page', page);
+  
+  //     const url = params.toString() ? `/customers?${params.toString()}` : '/customers';
+  //     const response = await axiosInstance.get(url);
+  
+  //     if (response.data.success) {
+  //       setCustomers(response.data.data);
+  //       setCurrentPage(response.data.pagination.currentPage);
+  //       setTotalPages(response.data.pagination.totalPages);
+  //     }
+  //   } catch (err) {
+  //     setError(err.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };  
+  
+
+
   const fetchCustomers = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
+      setError(null);
       const params = new URLSearchParams();
   
       if (searchParams.keyword) params.append('search', searchParams.keyword);
@@ -58,14 +86,29 @@ const CustomersList = () => {
         setCustomers(response.data.data);
         setCurrentPage(response.data.pagination.currentPage);
         setTotalPages(response.data.pagination.totalPages);
+      } else {
+        const errorMessage = response.data.message || 'API returned unsuccessful response';
+        setError(errorMessage);
+        console.error('Backend error:', response.data);
       }
     } catch (err) {
-      setError(err.message);
+      if (err.response) {
+        const errorMessage = err.response.data?.message || 
+                            err.response.data?.error || 
+                            `Error ${err.response.status}: ${err.response.statusText}`;
+        setError(errorMessage);
+        console.error('Error response:', err.response.data);
+      } else if (err.request) {
+        setError('No response received from server. Please check your network connection.');
+        console.error('Error request:', err.request);
+      } else {
+        setError(err.message || 'An error occurred while fetching data');
+        console.error('Error message:', err.message);
+      }
     } finally {
       setLoading(false);
     }
-  };  
-  
+  };
   const fetchCenters = async () => {
     try {
       const response = await axiosInstance.get('/centers?centerType=Center');
@@ -216,7 +259,7 @@ const CustomersList = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading customers: {error}
+      {error}
       </div>
     );
   }

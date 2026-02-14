@@ -131,31 +131,6 @@ const AddBuilding = () => {
 )}
           <form onSubmit={handleSubmit}>
             <div className="form-row">
-            {/* <div className="form-group">
-                <label 
-                className={`form-label 
-                  ${errors.center ? 'error-label' : formData.center ? 'valid-label' : ''}`}  
-                htmlFor="center"
-                >
-                  Branch <span className="required">*</span>
-                </label>
-                <select
-                  id="center"
-                  name="center"
-                  className={`form-input 
-                    ${errors.center ? 'error-input' : formData.center ? 'valid-input' : ''}`}
-                  value={formData.center}
-                  onChange={handleChange}
-                >
-                  <option value="">SELECT</option>
-                  {centers.map((c) => (
-                    <option key={c._id} value={c._id}>
-                      {c.centerName}
-                    </option>
-                  ))}
-                </select>
-                {errors.center && <span className="error">{errors.center}</span>}
-              </div> */}
 
               <div className="form-group">
                 <label className={`form-label 

@@ -72,62 +72,6 @@ const UsageDetail = () => {
     }
   }, [location.state]);
 
-
-
-  // const fetchData = async (searchParams = {}, page = 1) => {
-  //   try {
-  //     setLoading(true);
-  //     const params = new URLSearchParams();
-
-  //     if (searchParams.center) {
-  //       params.append('center', searchParams.center);
-  //     }
-  //     if (searchParams.product) {
-  //       params.append('product', searchParams.product);
-  //     }
-  //     if (searchParams.usageType) {
-  //       params.append('usageType', searchParams.usageType);
-  //     }
-  //     if (searchParams.connectionType) {
-  //       params.append('connectionType', searchParams.connectionType);
-  //     }
-  //     if (searchParams.customer) {
-  //       params.append('customer', searchParams.customer);
-  //     }
-  //     if (searchParams.startDate && searchParams.endDate) {
-  //       const convertDateFormat = (dateStr) => {
-  //         const [day, month, year] = dateStr.split('-');
-  //         return `${year}-${month}-${day}`;
-  //       };
-        
-  //       params.append('startDate', convertDateFormat(searchParams.startDate));
-  //       params.append('endDate', convertDateFormat(searchParams.endDate));
-  //     }
-      
-  //     params.append('page', page);
-  //     const url = params.toString() ? `/reports/usages?${params.toString()}` : '/reports/usages';
-      
-  //     console.log('Fetching Usage Detail URL:', url);
-  //     const response = await axiosInstance.get(url);
-      
-  //     if (response.data.success) {
-  //       setData(response.data.data);
-  //       setCurrentPage(response.data.pagination.currentPage);
-  //       setTotalPages(response.data.pagination.totalPages);
-  //     } else {
-  //       throw new Error('API returned unsuccessful response');
-  //     }
-  //   } catch (err) {
-  //     setError(err.message);
-  //     console.error('Error fetching data:', err);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-
-
-  //Date filter working
 const convertDateFormat = (dateStr) => {
   const [day, month, year] = dateStr.split('-');
   return `${year}-${month}-${day}`;
@@ -136,6 +80,7 @@ const convertDateFormat = (dateStr) => {
   const fetchData = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);
+      setError(null);
       const params = new URLSearchParams();
   
       if (searchParams.center) {
@@ -189,14 +134,23 @@ const convertDateFormat = (dateStr) => {
         setCurrentPage(response.data.pagination.currentPage);
         setTotalPages(response.data.pagination.totalPages);
       } else {
-        throw new Error('API returned unsuccessful response');
+        const errorMessage = response.data.message || 'API returned unsuccessful response';
+      setError(errorMessage);
+      console.error('Backend error:', response.data);
       }
     } catch (err) {
-      setError(err.message);
-      console.error('Error fetching data:', err);
       if (err.response) {
+        const errorMessage = err.response.data?.message || 
+                            err.response.data?.error || 
+                            `Error ${err.response.status}: ${err.response.statusText}`;
+        setError(errorMessage);
         console.error('Error response:', err.response.data);
-        console.error('Error status:', err.response.status);
+      } else if (err.request) {
+        setError('No response received from server. Please check your network connection.');
+        console.error('Error request:', err.request);
+      } else {
+        setError(err.message || 'An error occurred while fetching data');
+        console.error('Error message:', err.message);
       }
     } finally {
       setLoading(false);

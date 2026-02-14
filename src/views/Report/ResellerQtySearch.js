@@ -12,8 +12,9 @@ import PropTypes from 'prop-types'
 import '../../css/form.css'
 import Select from "react-select";
 import axiosInstance from 'src/axiosInstance';
+import DatePicker from 'src/utils/DatePicker';
 
-const ResellerStockSearch = ({ visible, onClose, onSearch, resellers, products }) => {
+const ResellerQtySearch = ({ visible, onClose, onSearch, resellers, products }) => {
   const [searchData, setSearchData] = useState({
     product: '',
     reseller: '',
@@ -56,6 +57,24 @@ const ResellerStockSearch = ({ visible, onClose, onSearch, resellers, products }
     fetchCenters();
   }, [searchData.reseller]);
 
+
+  const handleDateChange = (dateValue) => {
+    if (dateValue && dateValue.includes(' to ')) {
+      const [startDate, endDate] = dateValue.split(' to ');
+      setSearchData(prev => ({ 
+        ...prev, 
+        startDate: startDate,
+        endDate: endDate
+      }));
+    } else {
+      setSearchData(prev => ({ 
+        ...prev, 
+        startDate: '',
+        endDate: ''
+      }));
+    }
+  }
+
   const handleSearch = () => {
     onSearch(searchData);
     onClose();
@@ -68,6 +87,12 @@ const ResellerStockSearch = ({ visible, onClose, onSearch, resellers, products }
     onClose();
   };
 
+  const getDateDisplayValue = () => {
+    if (searchData.startDate && searchData.endDate) {
+      return `${searchData.startDate} to ${searchData.endDate}`;
+    }
+    return '';
+  }
   return (
     <CModal size="lg" visible={visible} onClose={onClose}>
       <CModalHeader>
@@ -183,7 +208,18 @@ const ResellerStockSearch = ({ visible, onClose, onSearch, resellers, products }
               classNamePrefix="react-select"
             />
           </div>
-          <div className="form-group"></div>
+          {/* <div className="form-group"></div> */}
+          <div className="form-group">
+            <label className="form-label" htmlFor="date">
+              Date
+            </label>
+            <DatePicker
+              value={getDateDisplayValue()}
+              onChange={handleDateChange}
+              placeholder="Select Date Range"
+              className="no-radius-input date-input"
+            />
+        </div>
         </div>
       </CModalBody>
 
@@ -206,7 +242,7 @@ const ResellerStockSearch = ({ visible, onClose, onSearch, resellers, products }
   );
 };
 
-ResellerStockSearch.propTypes = {
+ResellerQtySearch.propTypes = {
   visible: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSearch: PropTypes.func.isRequired,
@@ -214,4 +250,4 @@ ResellerStockSearch.propTypes = {
   products: PropTypes.array.isRequired
 };
 
-export default ResellerStockSearch;
+export default ResellerQtySearch;

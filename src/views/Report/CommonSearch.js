@@ -117,20 +117,6 @@ const CommonSearch = ({ visible, onClose, onSearch, centers, products }) => {
             <label className="form-label" htmlFor="product">
               Product
             </label>
-            {/* <CFormSelect
-              id="product"
-              name="product"
-              value={searchData.product}
-              onChange={handleChange}
-              className="form-input no-radius-input"
-            >
-              <option value="">SELECT PRODUCT</option>
-              {products.map((product) => (
-                <option key={product._id} value={product._id}>
-                  {product.productTitle}
-                </option>
-              ))}
-            </CFormSelect> */}
             <Select
   id="product"
   name="product"

@@ -3,22 +3,22 @@ import { useContext } from 'react';
 import { AuthContext } from 'src/context/AuthContext';
 
 const usePermission = () => {
-  const { permissions } = useContext(AuthContext);
+  const { permissions, isSuperAdmin} = useContext(AuthContext);
 
-  // Check if user has a permission in a module
   const hasPermission = (module, perm) => {
+    if (isSuperAdmin) return true;
     const moduleObj = permissions.find(p => p.module === module);
     return moduleObj?.permissions.includes(perm);
   };
 
-  // Check if user has any permission from a list
   const hasAnyPermission = (module, perms = []) => {
+    if (isSuperAdmin) return true;
     const moduleObj = permissions.find(p => p.module === module);
     if (!moduleObj) return false;
     return perms.some(p => moduleObj.permissions.includes(p));
   };
 
-  return { hasPermission, hasAnyPermission };
+  return { hasPermission, hasAnyPermission, isSuperAdmin};
 };
 
 export default usePermission;

@@ -1,3 +1,4 @@
+
 import React from 'react'
 import { Translation } from 'react-i18next'
 
@@ -104,6 +105,8 @@ const TransferToTesting = React.lazy(() => import('./views/testing-material/Tran
 const TestingStock = React.lazy(() => import('./views/testing-material/TestingStock'))
 const TestingProfile = React.lazy(() => import('./views/testing-material/TestingProfile'))
 const TestMaterial = React.lazy(() => import('./views/testing-material/TestMaterial'))
+const AuditLogs = React.lazy(() => import('./views/auditLogs/AuditLogs'))
+const ResellerQty = React.lazy(() => import('./views/Report/ResellerForwardedQty'))
 const routes = [
 
   { path: '/', exact: true, name: <Translation>{(t) => t('home')}</Translation> },
@@ -668,6 +671,18 @@ const routes = [
     name:<Translation>{(t) => t('Test Material')}</Translation>,
     element: TestMaterial 
   },
+  {
+    path:'/auditLogs',
+    exact:true,
+    name:<Translation>{(t) => t('Audit Logs')}</Translation>,
+    element: AuditLogs 
+  },
+  {
+    path:'/reseller-qty',
+    exact:true,
+    name:<Translation>{(t) => t('Reseller Forwarded Qty')}</Translation>,
+    element: ResellerQty
+  }
 ]
 
 export default routes

@@ -177,6 +177,14 @@ const permissionModules = [
       { label: 'Accept Testing Request', name: 'accept_testing_request', description: 'Accept Testing Request' },
     ]
   },
+  {
+    module: 'Audit Logs',
+    permissions: [
+      { label: 'View all audit logs', name: 'view_audit_logs_all', description: 'View all audit logs' },
+      { label: 'View audit logs own center', name: 'view_audit_logs_own_center', description: 'View audit logs own center' },
+      { label: 'View own audit logs', name: 'view_audit_logs_own', description: 'View own audit logs' },
+    ]
+  },
 ];
 
 const AddRole = () => {
