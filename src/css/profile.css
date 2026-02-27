@@ -232,6 +232,9 @@
 .status-badge.rejected {
   background-color: #dd4b39;
 }
+.status-badge.reject {
+  background-color: #dd4b39;
+}
 .status-badge.incompleted {
   background-color: #f39c12;
 }

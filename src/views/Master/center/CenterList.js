@@ -177,7 +177,7 @@ const CenterList = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading branch: {error}
+       {error}
       </div>
     );
   }

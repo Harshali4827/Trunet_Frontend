@@ -1026,7 +1026,7 @@ const StockPurchase = () => {
                   <CTableHeaderCell scope="col" onClick={() => handleSort('vendor.businessName')} className="sortable-header">
                     Vendor {getSortIcon('vendor.businessName')}
                   </CTableHeaderCell>
-                  {userRole === 'admin' &&   <CTableHeaderCell scope="col" className="sortable-header">
+                  {(userRole === 'admin' || userRole === 'superadmin') &&   <CTableHeaderCell scope="col" className="sortable-header">
                     Action
                   </CTableHeaderCell>
                    }
@@ -1056,7 +1056,7 @@ const StockPurchase = () => {
                             {customer.voucherNo}
                         </CTableDataCell>
                         <CTableDataCell>{customer.vendor?.businessName || 'N/A'}</CTableDataCell>
-                        {userRole === 'admin' && 
+                        {(userRole === 'admin' || userRole === 'superadmin') && 
                         <CTableDataCell>
                           <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
                           {customer.status === 'pending' && (

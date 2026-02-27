@@ -357,7 +357,7 @@ const handleApproveAdmin = async () => {
 //reject admin
 const handleRejectAdmin = async () => {
   try {
-    const response = await axiosInstance.post(`/stocktransfer/${id}/reject/admin`);
+    const response = await axiosInstance.patch(`/stocktransfer/${id}/admin/reject`);
     if (response.data.success) {
       setAlert({ type: 'success', message: 'Data reject successfully', visible: true });
       setTimeout(() => window.location.reload(), 1000);

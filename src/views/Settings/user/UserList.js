@@ -330,7 +330,21 @@ const UserList = () => {
                   <CTableRow key={item._id}>
                     <CTableDataCell>{item.fullName}</CTableDataCell>
                     <CTableDataCell>{item.role?.roleTitle || ''}</CTableDataCell>
-                    <CTableDataCell>{item.center?.centerName || ''}</CTableDataCell>
+                    {/* <CTableDataCell>{item.center?.centerName || ''}</CTableDataCell> */}
+                    <CTableDataCell>
+  {item.accessibleCenters && item.accessibleCenters.length > 0 ? (
+    <div className="centers-list">
+      {item.accessibleCenters.map((center, index) => (
+        <span key={center._id}>
+          {center.centerName}
+          {index < item.accessibleCenters.length - 1 && ', '}
+        </span>
+      ))}
+    </div>
+  ) : (
+    item.center?.centerName || ''
+  )}
+</CTableDataCell>
                     <CTableDataCell>{item.username || ''}</CTableDataCell>
                     <CTableDataCell>
                          <a 

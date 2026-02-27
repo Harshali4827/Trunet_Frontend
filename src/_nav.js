@@ -720,14 +720,14 @@ const getNav = (permissions = []) => {
     }
 
 
-    if (hasPermission(permissions, 'AuditLogs', ['view_audit_logs_all','view_audit_logs_own_center','view_audit_logs_own'])) {
-      _nav.push({
-        component: CNavItem,
-        name: <Translation>{(t) => t('Audit Logs')}</Translation>,
-        to: '/auditLogs',
-        icon: <i className="fa fa-history nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px' }} />,
-      })
-    }
+    // if (hasPermission(permissions, 'AuditLogs', ['view_audit_logs_all','view_audit_logs_own_center','view_audit_logs_own'])) {
+    //   _nav.push({
+    //     component: CNavItem,
+    //     name: <Translation>{(t) => t('Audit Logs')}</Translation>,
+    //     to: '/auditLogs',
+    //     icon: <i className="fa fa-history nav-icon" style={{ width: '20px', color:'#b8c7ce', fontSize:'14px' }} />,
+    //   })
+    // }
   }
 
   return _nav

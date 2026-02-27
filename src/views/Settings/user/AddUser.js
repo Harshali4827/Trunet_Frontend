@@ -29,6 +29,7 @@ const AddUser = () => {
   const [loading, setLoading] = useState(false);
   const user = JSON.parse(localStorage.getItem('user')) || {};
   const userRole = (user?.role?.roleTitle || '').toLowerCase();
+  
   const fetchCenters = async () => {
     try {
       const res = await axiosInstance.get('/centers/main-warehouse');
