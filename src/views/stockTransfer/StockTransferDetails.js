@@ -948,22 +948,25 @@ const handleIncomplete = async () => {
         <CCardBody className="profile-body p-0">
   <table className="customer-details-table">
     <tbody>
-      {/* <tr className="table-row" style={{backgroundColor:"#d9edf7"}}>
-        <td className="profile-label-cell">Status:</td>
-        <td className="profile-value-cell">Transfer Approved by SSV TELECOM PVT LTD at {formatDateTime(data.adminApproval?.approvedAt || '')}</td>
 
-        <td className="profile-label-cell"></td>
-        <td className="profile-value-cell"></td>
-
-        <td className="profile-label-cell"></td>
-        <td className="profile-value-cell"></td>
-      </tr> */}
-
-<tr className="table-row" style={{ backgroundColor: "#d9edf7" }}>
+{/*<tr className="table-row" style={{ backgroundColor: "#d9edf7" }}>
   <td className="profile-label-cell">Status:</td>
   <td className="profile-value-cell" colSpan={5}>
     <strong>Transfer Approved by SSV TELECOM PVT LTD at{" "}</strong>
     {formatDateTime(data.adminApproval?.approvedAt || '')}
+  </td>
+</tr>*/}
+<tr className="table-row" style={{ backgroundColor: "#d9edf7" }}>
+  <td className="profile-label-cell">Status:</td>
+  <td className="profile-value-cell" colSpan={5}>
+    {data.status === 'Submitted' ? (
+      <strong>Transfer Pending from SSV TELECOM PVT LTD</strong>
+    ) : (
+      <>
+        <strong>Transfer Approved by SSV TELECOM PVT LTD at{" "}</strong>
+        {formatDateTime(data.adminApproval?.approvedAt || '')}
+      </>
+    )}
   </td>
 </tr>
 
@@ -1091,10 +1094,10 @@ const handleIncomplete = async () => {
       {data.status === 'Shipped' && userRole !== 'admin' && isFromCenterUser &&(
         <>
           <CButton className="btn-action btn-update me-2" onClick={handleOpenUpdateShipment}>
-            Update Shipment
+          <i className="fa fa-truck me-1"></i> Update Shipment
           </CButton>
           <CButton className="btn-action btn-reject me-2" onClick={handleCancelShipment}>
-            Cancel Shipment
+          <i className="fa fa-ban me-1"></i> Cancel Shipment
           </CButton>
           <CButton className="btn-action btn-reject me-2" onClick={handleReject}>
             Reject Request
@@ -1157,11 +1160,17 @@ const handleIncomplete = async () => {
             <CTableBody>
               {data.products?.length > 0 ? (
                 data.products.map(item => {
-                  // const approvedItem = approvedProducts.find(p => p._id === item._id) || {};
                   const approvedItem = approvedProducts.find(p => p.productId === item.product._id) || {};
-
+                  
+                  const receivedQty = productReceipts.find(p => p.productId === item.product?._id)?.receivedQuantity || 
+                  item.receivedQuantity || 0;
+                  const approvedQty = approvedItem.approvedQty || item.approvedQuantity || 0;
+                  const shouldShowMismatch = data.status === 'Incompleted' || data.status === 'Completed';
+                  const isQuantityMismatch = shouldShowMismatch && (Number(receivedQty) !== Number(approvedQty));
                   return (
-                    <CTableRow key={item._id}>
+                    <CTableRow key={item._id}
+                     className={isQuantityMismatch ? 'bg-quantity-mismatch' : ''}
+                    >
                       <CTableDataCell>{item.product?.productTitle || ''}</CTableDataCell>
                       <CTableDataCell>{item.centerStockQuantity || 0}</CTableDataCell>
                       <CTableDataCell>{item.quantity || 0}</CTableDataCell>

@@ -24,6 +24,7 @@ import { confirmDelete, showSuccess } from 'src/utils/sweetAlerts';
 import SearchCustomerModel from './SearchCustomerModel';
 import Pagination from 'src/utils/Pagination';
 import usePermission from 'src/utils/usePermission';
+import { Menu, MenuItem } from '@mui/material';
 
 const CustomersList = () => {
   const [customers, setCustomers] = useState([]);
@@ -37,6 +38,9 @@ const CustomersList = () => {
   const [dropdownOpen, setDropdownOpen] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [menuId, setMenuId] = useState(null);
 
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
@@ -130,6 +134,15 @@ const CustomersList = () => {
     fetchCustomers(activeSearch, page);
   };
   
+  const handleMenuClick = (event, id) => {
+    setAnchorEl(event.currentTarget);
+    setMenuId(id);
+  };
+  
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
+    setMenuId(null);
+  };
 
   const handleSort = (key) => {
     let direction = 'ascending';
@@ -247,14 +260,6 @@ const CustomersList = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
-  // if (loading) {
-  //   return (
-  //     <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
-  //       <CSpinner color="primary" />
-  //     </div>
-  //   );
-  // }
 
   if (error) {
     return (
@@ -406,7 +411,7 @@ const CustomersList = () => {
                     <CTableDataCell>{customer.mobile}</CTableDataCell>
                     <CTableDataCell>{customer.email}</CTableDataCell>
                     <CTableDataCell>{customer.city}</CTableDataCell>
-                    <CTableDataCell>
+                    {/* <CTableDataCell>
                     {hasAnyPermission('Customer', ['manage_customer_all_center','manage_customer_own_center']) && (
                       <div className="dropdown-container" ref={el => dropdownRefs.current[customer._id] = el}>
                         <CButton 
@@ -436,7 +441,34 @@ const CustomersList = () => {
                         )}
                       </div>
                     )}
-                    </CTableDataCell>
+                    </CTableDataCell> */}
+                     <CTableDataCell>
+                        {hasAnyPermission('Customer', ['manage_customer_all_center','manage_customer_own_center']) && (
+                          <>
+                            <CButton 
+                              size="sm"
+                              className='option-button btn-sm'
+                              onClick={(event) => handleMenuClick(event, customer._id)}
+                            >
+                              <CIcon icon={cilSettings} />
+                              Options
+                            </CButton>
+                            <Menu
+                              id={`action-menu-${customer._id}`}
+                              anchorEl={anchorEl}
+                              open={menuId === customer._id}
+                              onClose={handleCloseMenu}
+                            >
+                              <MenuItem onClick={() => handleEditCustomer(customer._id)}>
+                                <CIcon icon={cilPencil} className="me-2" /> Edit
+                              </MenuItem>
+                              <MenuItem onClick={() => handleDeleteCustomer(customer._id)}>
+                                <CIcon icon={cilTrash} className="me-2" /> Delete
+                              </MenuItem>
+                            </Menu>
+                          </>
+                        )}
+                      </CTableDataCell>
                   </CTableRow>
                 ))
               ) : (

@@ -339,3 +339,6 @@
   height: 30px;
   border-radius: 0;
 }
+.bg-quantity-mismatch td{
+  background-color: #d9edf7 !important;
+}

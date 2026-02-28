@@ -534,7 +534,7 @@ const handleMarkIncomplete = async (remark) => {
         item.receivedQuantity === undefined || 
         item.receivedQuantity === null || 
         item.receivedQuantity === '' ||
-        isNaN(Number(item.receivedQuantity))  // Check if it's not a valid number
+        isNaN(Number(item.receivedQuantity))
       );
 
       if (missingReceipts.length > 0) {
@@ -547,10 +547,9 @@ const handleMarkIncomplete = async (remark) => {
       }
     }
     
-    // Rest of your function remains the same...
     const receivedProducts = productReceipts.map(item => ({
       productId: item.productId,
-      receivedQuantity: Number(item.receivedQuantity) || 0,  // This will convert "" to 0
+      receivedQuantity: Number(item.receivedQuantity) || 0,
       receivedRemark: item.receivedRemark || '',
     }));
     
@@ -871,10 +870,10 @@ const handleIncomplete = async () => {
             {data.status === 'Shipped' && userCenterType === 'outlet' &&  (userRole === 'admin' || userRole === 'superadmin') && isWarehouse &&(
               <>
                 <CButton className="btn-action btn-update me-2" onClick={handleOpenUpdateShipment}>
-                  Update Shipment
+                <i className="fa fa-truck me-1"></i>Update Shipment
                 </CButton>
                 <CButton className="btn-action btn-reject me-2" onClick={handleCancelShipment}>
-                  Cancel Shipment
+                <i className="fa fa-ban me-1"></i> Cancel Shipment
                 </CButton>
                 <CButton className="btn-action btn-reject me-2" onClick={openRejectionModal}>
                   Reject Request
@@ -937,8 +936,18 @@ const handleIncomplete = async () => {
                   const hasTransferredSerials = item.product?.trackSerialNumber === "Yes" && 
                     item.transferredSerials && item.transferredSerials.length > 0;
                   
+                    const receivedQty = productReceipts.find(p => p.productId === item.product?._id)?.receivedQuantity || 
+                    item.receivedQuantity || 0;
+
+                    const approvedQty = approvedItem.approvedQty || item.approvedQuantity || 0;
+                    
+                    const shouldShowMismatch = data.status === 'Incompleted' || data.status === 'Completed';
+
+                    const isQuantityMismatch = shouldShowMismatch && (Number(receivedQty) !== Number(approvedQty));
                   return (
-                    <CTableRow key={item._id}>
+                    <CTableRow key={item._id}
+                    className={isQuantityMismatch ? 'bg-quantity-mismatch' : ''}
+                    >
                       <CTableDataCell>{item.product?.productTitle || ''}</CTableDataCell>
                       <CTableDataCell>{item.centerStockQuantity || 0}</CTableDataCell>
                       <CTableDataCell>{item.quantity || 0}</CTableDataCell>
