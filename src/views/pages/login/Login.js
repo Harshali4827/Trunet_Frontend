@@ -89,7 +89,21 @@ const Login = () => {
           setError(response.data.message || 'Login failed')
         }
         
-      } catch (error) {
+      } 
+      
+      // catch (error) {
+      // } finally {
+      //   setLoading(false)
+      // }
+      catch (error) {
+        console.error('Login error:', error)
+        if (error.response && error.response.data) {
+          setError(error.response.data.message || 'Login failed. Please try again.')
+        } else if (error.request) {
+          setError('No response from server. Please check your connection.')
+        } else {
+          setError('An error occurred. Please try again.')
+        }
       } finally {
         setLoading(false)
       }
