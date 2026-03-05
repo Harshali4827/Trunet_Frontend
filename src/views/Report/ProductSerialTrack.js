@@ -69,8 +69,6 @@ const ProductSerialTrack = () => {
       }
       
       params.append('page', page);
-      params.append('limit', 10);
-      
       const url = `/reports/serialreport?${params.toString()}`;
       const response = await axiosInstance.get(url);
       
@@ -246,7 +244,7 @@ const ProductSerialTrack = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading data: {error}
+       {error}
       </div>
     );
   }

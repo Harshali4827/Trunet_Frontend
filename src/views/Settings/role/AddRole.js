@@ -121,6 +121,24 @@ const permissionModules = [
     ]
   },
   {
+    module: 'Roles and Permissions',
+    permissions: [
+      { label: 'Create Role', name: 'create_role', description: 'Create Role' },
+      { label: 'View Role', name: 'view_role', description: 'View Role' },
+      { label: 'Update Role', name: 'update_role', description: 'Update Role' },
+      { label: 'Delete Role', name: 'delete_role', description: 'Delete Role' },
+    ]
+  },
+  {
+    module: 'User',
+    permissions: [
+      { label: 'Create User', name: 'create_user', description: 'Create User' },
+      { label: 'View User', name: 'view_user', description: 'View User' },
+      { label: 'Update User', name: 'update_user', description: 'Update User' },
+      { label: 'Delete User', name: 'delete_user', description: 'Delete User' },
+    ]
+  },
+  {
     module: 'Shifting',
     permissions: [
       { label: 'View Shifting Own Center', name: 'view_shifting_own_center', description: 'View Shifting Own Center' },
@@ -319,9 +337,20 @@ const AddRole = () => {
       }
       setTimeout(() => navigate('/role-list'), 1500);
     } catch (error) {
-      console.error('Error saving role:', error);
-      setAlert({ type: 'danger', message: 'Failed to save data. Please try again!' });
-    }
+      console.error('Error saving Data:', error)
+    
+      let message = 'Failed to save Data. Please try again!'
+    
+      if (error.response) {
+        message = error.response.data?.message || error.response.data?.error || message
+      } else if (error.request) {
+        message = 'No response from server. Please check your connection.'
+      } else {
+        message = error.message
+      }
+    
+      setAlert({ type: 'danger', message })
+    }    
   };
 
   const handleBack = () => navigate('/role-list');
@@ -365,6 +394,7 @@ const AddRole = () => {
             </div>
 
             <div className="permission-section">
+            <div className="table-fixed-header-container">
               <table className="table table-bordered mt-4">
                 <thead>
                   <tr className="bg-light">
@@ -418,6 +448,7 @@ const AddRole = () => {
                   ))}
                 </tbody>
               </table>
+              </div>
             </div>
 
             <div className="form-footer">
