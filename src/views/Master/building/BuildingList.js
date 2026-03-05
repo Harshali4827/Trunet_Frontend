@@ -217,7 +217,7 @@ const BuildingList = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading buildings: {error}
+      {error}
       </div>
     );
   }
@@ -284,7 +284,7 @@ const BuildingList = () => {
             </div>
           </div>
           <div className="responsive-table-wrapper">
-          <CTable striped bordered hover responsive className='responsive-table'>
+          <CTable striped bordered hover className='responsive-table'>
             <CTableHead>
               <CTableRow>
                 <CTableHeaderCell scope="col" onClick={() => handleSort('buildingName')} className="sortable-header">

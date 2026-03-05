@@ -318,7 +318,7 @@ const ProductList = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading products: {error}
+       {error}
       </div>
     );
   }
@@ -514,9 +514,6 @@ const ProductList = () => {
                     Status {getSortIcon('status')}
                   </CTableHeaderCell>
                   <CTableHeaderCell scope="col">
-                    Image
-                  </CTableHeaderCell>
-                  <CTableHeaderCell scope="col">
                     Action
                   </CTableHeaderCell>
                 </CTableRow>
@@ -535,15 +532,6 @@ const ProductList = () => {
                         <span className={`badge ${product.status === 'Enable' ? 'bg-success' : 'bg-danger'}`}>
                           {product.status || ''}
                         </span>
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        {product.productImage && (
-                          <img 
-                            src={`/${product.productImage}`} 
-                            alt={product.productTitle}
-                            style={{ width: '50px', height: '50px', objectFit: 'cover' }}
-                          />
-                        )}
                       </CTableDataCell>
                       <CTableDataCell>
                         <div className="dropdown-container" ref={el => dropdownRefs.current[product._id] = el}>

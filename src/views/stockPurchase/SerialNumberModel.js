@@ -49,7 +49,7 @@ const SerialNumberModal = ({ visible, onClose, product, selectedRow, onSave }) =
         <CButton color="secondary" onClick={onClose}>
           Close
         </CButton>
-        <CButton className="btn-primary" onClick={handleSave}>
+        <CButton className="reset-button" onClick={handleSave}>
           Save Serial Numbers
         </CButton>
       </CModalFooter>

@@ -458,14 +458,15 @@ const AddUser = () => {
                       onChange={handleChange}
                     >
                       <option value="">SELECT</option>
-                      {/* <option value="Enable">Enable</option>
-                      <option value="Disable">Disable</option> */}
-                       {!isEditing && <option value="Enable">Enable</option>}
+                      <option value="Enable">Enable</option>
+                      <option value="Disable">Disable</option>
+
+                       {/* {!isEditing && <option value="Enable">Enable</option>}
  
                       {isEditing && userRole === 'superadmin' && (
                           <option value="Enable">Enable</option>
                       )}
-                     <option value="Disable">Disable</option>
+                     <option value="Disable">Disable</option> */}
                     </select>
                     {errors.status && <span className="error">{errors.status}</span>}
                   </div>

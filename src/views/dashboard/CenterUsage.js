@@ -80,8 +80,8 @@ const CenterUsage = () => {
     paddingLeft: '0.5rem',
     paddingRight: '0.5rem',
     marginTop: '1.5rem',
-    marginLeft: '1.5rem',
-    marginRight: '1.5rem',
+    // marginLeft: '1.5rem',
+    // marginRight: '1.5rem',
     height: '720px'
   };
 

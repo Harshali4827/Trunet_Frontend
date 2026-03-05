@@ -110,8 +110,8 @@ const LoginHistory = () => {
       style={{
         marginTop: "1rem",
         paddingBottom: "2.5rem",
-        paddingLeft: "1.5rem",
-        paddingRight: "1.5rem",
+        // paddingLeft: "1.5rem",
+        // paddingRight: "1.5rem",
         transition: "all 0.3s ease",
       }}
     >
