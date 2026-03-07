@@ -398,6 +398,7 @@ const getNav = (permissions = []) => {
     const reportItems = []
     reportItems.push({ component: CNavItem, name: 'Available Stock', to: '/available-stock' })
     reportItems.push({ component: CNavItem, name: 'Reseller Stock', to: '/reseller-stock' })
+    reportItems.push({ component: CNavItem, name: 'Reseller QTY', to: '/reseller-qty' })
     reportItems.push({ component: CNavItem, name: 'Field Stock', to: '/filled-stock' })
     reportItems.push({ component: CNavItem, name: 'Transaction Report', to: '/transaction-report' })
     reportItems.push({ component: CNavItem, name: 'Purchase Detail', to: '/purchase-detail' })

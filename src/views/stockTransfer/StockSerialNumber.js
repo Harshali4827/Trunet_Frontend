@@ -405,7 +405,7 @@ const StockSerialNumber = ({
   onSerialNumbersUpdate,
   warehouseId = ''
 }) => {
-  // Convert approvedQty to number to handle both string and number inputs
+
   const approvedQtyNumber = Number(approvedQty) || 0;
   
   const [availableSerials, setAvailableSerials] = useState([]);
@@ -593,7 +593,7 @@ const StockSerialNumber = ({
           </div>
         ) : (
           <>
-            <CTable bordered striped responsive>
+            <CTable bordered striped>
               <CTableHead>
                 <CTableRow>
                   <CTableHeaderCell width="15%">SR.</CTableHeaderCell>

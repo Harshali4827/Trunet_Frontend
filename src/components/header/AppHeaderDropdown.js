@@ -250,7 +250,7 @@ const AppHeaderDropdown = () => {
             <p
               style={{
                 color: '#ffffffcc',
-                fontSize: '17px',
+                fontSize: '15px',
                 marginTop: '10px',
               }}
             >
@@ -260,7 +260,6 @@ const AppHeaderDropdown = () => {
               }
             </p>
             
-            {/* Show accessible centers count in profile header */}
             {accessibleCenters.length > 1 && (
               <div className="mt-2">
                 <small className="text-white-50">

@@ -406,11 +406,8 @@ const convertDateFormat = (dateStr) => {
       if (activeSearch.outlet) {
         params.append('outlet', activeSearch.outlet);
       }
-      
-      // params.append('limit', 10000);
-      
+      // params.append('export','true');
       const url = params.toString() ? `/reports/usages?${params.toString()}` : '/reports/usages';
-      
       console.log('Export URL with filters:', url);
       console.log('Export Date params:', {
         startDate: activeSearch.startDate,

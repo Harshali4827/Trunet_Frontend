@@ -61,7 +61,6 @@ const PurchaseDetail = () => {
       params.append('startDate', convertDateFormat(startDateStr));
       params.append('endDate', convertDateFormat(endDateStr));
     }
-    
     params.append('page', page);
     const url = params.toString() ? `/reports/purchased?${params.toString()}` : '/reports/purchased';
     const response = await axiosInstance.get(url);
@@ -272,7 +271,7 @@ const PurchaseDetail = () => {
         params.append('startDate', convertDateFormat(startDateStr));
         params.append('endDate', convertDateFormat(endDateStr));
       }
-      
+      params.append('export','true');
       const apiUrl = params.toString() 
         ? `/reports/purchased?${params.toString()}` 
         : '/reports/purchased';

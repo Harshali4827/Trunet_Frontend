@@ -223,7 +223,6 @@ const UsageSummary = () => {
     try {
       setLoading(true);
       
-      // Use activeSearch filters instead of fetching all data
       const params = new URLSearchParams();
       
       if (activeSearch.center) {
@@ -244,7 +243,7 @@ const UsageSummary = () => {
         params.append('startDate', convertDateFormat(activeSearch.startDate));
         params.append('endDate', convertDateFormat(activeSearch.endDate));
       }
-      
+      // params.append('export','true');
       const apiUrl = params.toString()
         ? `/reports/usages/summary?${params.toString()}`
         : '/reports/usages/summary';

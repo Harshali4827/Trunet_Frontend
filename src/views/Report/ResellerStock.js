@@ -221,8 +221,7 @@ const ResellerStock = () => {
         params.append('sourceCenter', activeSearch.center);
       }
       
-      params.append('page', 1);
-      params.append('limit', 10000);
+      params.append('exportData', 'true');
       
       const apiUrl = params.toString() 
         ? `/availableStock/reseller?${params.toString()}` 

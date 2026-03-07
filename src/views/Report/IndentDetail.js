@@ -384,8 +384,7 @@ const IndentDetail = () => {
         params.append('startDate', activeSearch.startDate);
         params.append('endDate', activeSearch.endDate);
       }
-      
-      // Get all data without pagination for export
+      // params.append('export','true');
       const apiUrl = `/reports/requests?${params.toString()}`;
       const response = await axiosInstance.get(apiUrl);
       

@@ -234,7 +234,7 @@ const TransferSummary = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading data: {error}
+      {error}
       </div>
     );
   }
@@ -265,7 +265,7 @@ const TransferSummary = () => {
         params.append('startDate', convertDateFormat(activeSearch.startDate));
         params.append('endDate', convertDateFormat(activeSearch.endDate));
       }
-      
+      // params.append('export','true');
       const apiUrl = params.toString() 
         ? `/reports/transfers/summary?${params.toString()}` 
         : '/reports/transfers/summary';

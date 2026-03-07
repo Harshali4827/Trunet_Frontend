@@ -7,6 +7,7 @@ import RejectionReasonModal from './RejectionReasonModal';
 import axiosInstance from 'src/axiosInstance';
 import '../../css/profile.css'
 import '../../css/form.css';
+import companyLogo from '../../assets/images/logo.png'
 import ShipGoodsModal from './ShipGoodsModal';
 import IncompleteRemarkModal from './IncompleteRemarkModal';
 import { formatDate, formatDateTime } from 'src/utils/FormatDateTime';
@@ -15,7 +16,6 @@ import ReceivedSerialNumbers from './ReceivedSerialNumbers';
 import usePermission from 'src/utils/usePermission';
 import ChallanModal from './ChallanModal';
 import Swal from 'sweetalert2';
-
 const StockProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -654,11 +654,377 @@ const handleIncomplete = async () => {
     });
   }
 };
-  const handleApprovedBlur = (productId, value) => {
+const handleApprovedBlur = (productId, value) => {
     if (value === '' || !/^\d+$/.test(value)) {
       setErrors(prev => ({ ...prev, [productId]: 'The input value was not a correct number' }));
     }
+};
+
+const handlePrintIndent = () => {
+  const printWindow = window.open('', '_blank');
+  const logoPath = companyLogo; 
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  let subtotal = 0;
+  const gstRate = 18;
+  
+  const productsWithTotals = data.products.map(item => {
+    const approvedQty = item.approvedQuantity || 0;
+    const salePrice = item.product?.salePrice || 0;
+    const total = approvedQty * salePrice;
+    const gstAmount = (total * gstRate) / 100;
+    const amountWithGst = total + gstAmount;
+    
+    subtotal += total;
+    
+    return {
+      ...item,
+      approvedQty,
+      salePrice,
+      total,
+      gstAmount,
+      amountWithGst
+    };
+  });
+
+  const totalGst = (subtotal * gstRate) / 100;
+  const grandTotal = subtotal + totalGst;
+  const indentDate = data.date ? new Date(data.date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }) : '';
+
+  // Helper functions for date formatting
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
+
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Indent Invoice - ${data.orderNumber || ''}</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin-left: 200px;
+          margin-right: 200px;
+          margin-top:20px;
+        }
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+        }
+        .logo {
+          width: 200px;
+          height: 200px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: 15px;
+        }
+        .invoice-details {
+          text-align: right; 
+          flex: 1;
+          padding-left: 20px;
+        }
+        .invoice-details p {
+          margin: 5px 0;
+          font-size: 14px;
+          line-height: 1.4; 
+          color:#000
+        }
+        .invoice-details strong {
+          display: block;
+          font-size: 18px;
+        }
+
+        .indent-info-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+          padding: 10px 15px;
+          background-color: #f5f6f7;
+          border-radius: 5px;
+          font-size: 14px;
+          margin-top: -27px
+        }
+        .indent-info-item {
+          display: flex;
+          align-items: center;
+        }
+        .indent-info-label {
+          font-weight: bold;
+          margin-right: 8px;
+          color: #495057;
+        }
+        .indent-info-value {
+          color: #212529;
+        }
+        
+        .address-section {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 10px;
+        }
+        .address-section p {
+          margin: 3px 0;
+          font-size: 14px;
+          line-height: 1.3; 
+          color:#000
+        }
+        .warehouse-details {
+          text-align: right;
+        }
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  border: 1px solid #ddd;
+  table-layout: fixed;
+}
+
+.info-table td {
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  vertical-align: top;
+}
+
+.info-table .label {
+  font-weight: bold;
+  color: #333;
+  width: 15%;
+  background-color: #f5f5f5;
+  white-space: nowrap; 
+}
+
+.info-table .value {
+  color: #000;
+  width: 35%;
+}
+
+.info-table td[colspan="3"] {
+  width: auto;
+}
+        
+        .products-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 20px;
+          font-size: 13px;
+        }
+        .products-table th {
+          background-color: #333;
+          color: white;
+          padding: 8px;
+          text-align: left;
+          font-weight: 500;
+        }
+        .products-table td {
+          padding: 8px;
+          border: 1px solid #ddd;
+          vertical-align: top;
+        }
+        .products-table tbody tr:nth-child(even) {
+          background-color: #f9f9f9;
+        }
+        .serial-numbers {
+          font-size: 11px;
+          color: #666;
+          max-width: 150px;
+          word-break: break-word;
+        }
+        
+        .footer {
+          display: flex;
+          justify-content: flex-end;
+          margin-top: 25px;
+          page-break-after: always;
+        }
+        
+        .signature {
+          text-align: center;
+          width: 200px;
+        }
+        .signature p {
+          margin: 5px 0;
+          font-size: 12px;
+        }
+        .signature-line {
+          margin-top: 40px;
+          border-top: 1px solid #000;
+          padding-top: 5px;
+        }
+        .print-button {
+          text-align: center;
+          margin: 20px 0;
+        }
+        .print-button button {
+          padding: 10px 30px;
+          background-color: #3c8dbc;
+          color: white;
+          border: none;
+          cursor: pointer;
+          font-size: 16px;
+          margin: 0 10px;
+        }
+        .print-button button:hover {
+          background-color: #3c8dbc;
+        }
+        
+        /* Page break for 14th page */
+        .page-break {
+          page-break-before: always;
+        }
+        
+        @media print {
+          body { margin: 0.5in; }
+          .print-button { display: none; }
+          .products-table th { background-color: #333 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .info-table .label { background-color: #f5f5f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+          <div class="logo">
+            <img src="${logoPath}" alt="Company Logo" style="max-width: 100%; max-height: 100%;">
+          </div>
+          <div class="invoice-details">
+          <strong>Sancfil Technologies Internet Services Pvt Ltd</strong>
+          <p>Address : A1, 1st Floor,</p>
+          <p>Landmark Co.operative Housing Society, Sector 14,</p>
+          <p>Vashi, Navi Mumbai - 400 709</p>
+          <p>Tel: +91 809757810 /8097578176,</p>
+          <p>Email-stock@trunet.co.in</p>
+        </div>
+        </div>
+      
+      <div class="indent-info-bar">
+        <div class="indent-info-item">
+          <span class="indent-info-label">Indent No:</span>
+          <span class="indent-info-value"><strong>${data.orderNumber || ''}</strong></span>
+        </div>
+        <div class="indent-info-item">
+          <span class="indent-info-label">Indent Date:</span>
+          <span class="indent-info-value">${indentDate}</span>
+        </div>
+        <div class="indent-info-item">
+          <strong>${data.status || ''}</strong>
+        </div>
+      </div>
+      
+      <div class="address-section">
+        <div class="center-details">
+          <strong>Center Details</strong>
+          <p><strong>${data.center?.centerName || ''}</strong></p>
+          <p>${data.center?.addressLine1 || ''} ${data.center?.addressLine2 || ''}</p>
+          <p>${data.center?.city || ''}, ${data.center?.state || ''}</p>
+          <p>${data.center?.email || ''}</p>
+        </div>
+        <div class="warehouse-details">
+          <strong>Warehouse Details</strong>
+          <p><strong>${data.warehouse?.centerName || ''}</strong></p>
+          <p>${data.warehouse?.addressLine1 || ''} ${data.warehouse?.addressLine2 || ''}</p>
+          <p>${data.warehouse?.city || ''}, ${data.warehouse?.state || ''}</p>
+          <p>${data.warehouse?.email || ''}</p>
+        </div>
+      </div>
+      <table class="products-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Rate (₹)</th>
+            <th>Total (₹)</th>
+            <th>GST @${gstRate}% (₹)</th>
+            <th>Amount (₹)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${productsWithTotals.map((item, index) => {
+            return `
+              <tr>
+                <td>${index + 1}</td>
+                <td>${item.product?.productTitle || ''}
+                </td>
+                <td>${item.approvedQty}</td>
+                <td>${item.salePrice.toFixed(2)}</td>
+                <td>${item.total.toFixed(2)}</td>
+                <td>${item.gstAmount.toFixed(2)}</td>
+                <td><strong>${item.amountWithGst.toFixed(2)}</strong></td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+      <!-- New table format for info grid with 2 items per row -->
+<table class="info-table">
+  <tr>
+    <td class="label">Approved On</td>
+    <td class="value">${formatDateTime(data.approvalInfo?.approvedAt) || 'March 6, 2026'}</td>
+    <td class="label">Shipment Date</td>
+    <td class="value">${formatDate(data.shippingInfo?.shippedDate) || 'March 6, 2026'}</td>
+  </tr>
+  <tr>
+    <td class="label">Expected Delivery</td>
+    <td class="value">${formatDate(data.shippingInfo?.expectedDeliveryDate) || formatDate(data.shippingInfo?.shippedDate) || 'March 6, 2026'}</td>
+    <td class="label">Completed On</td>
+    <td class="value">${formatDateTime(data.completedOn) || '07 Mar 2026'}</td>
+  </tr>
+  <tr>
+    <td class="label">Shipment Detail</td>
+    <td class="value">${data.shippingInfo?.shipmentDetail || ''}</td>
+    <td class="label">Shipment Remark</td>
+    <td class="value">${data.shippingInfo?.shipmentRemark || ''}</td>
+  </tr>
+  <tr>
+    <td class="label">Remark</td>
+    <td class="value" colspan="3">${data.remark || ''}</td>
+  </tr>
+</table>
+      <!-- Signature on right side -->
+      <div class="footer">
+        <div class="signature">
+          <div class="signature-line"></div>
+          <p>Authorized Signatory</p>
+        </div>
+      </div>
+
+      <!-- Print buttons -->
+      <div class="print-button">
+        <button onclick="window.print()">Print Indent</button>
+        <button onclick="window.close()">Close</button>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(printContent);
+  printWindow.document.close();
+};
 
   if (loading) return <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}><CSpinner color="primary" /></div>;
   if (error) return <div className="alert alert-danger"> {error}</div>;
@@ -697,7 +1063,7 @@ const handleIncomplete = async () => {
               </CButton>
             )}
 
-            <CButton className="print-btn">
+            <CButton className="print-btn" onClick={handlePrintIndent}>
               <i className="fa fa-print me-1"></i> Print Indent
             </CButton>
           </div>
