@@ -737,7 +737,7 @@ const handlePrintIndent = () => {
         }
         .logo {
           width: 200px;
-          height: 200px;
+          height: 170px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -970,7 +970,7 @@ const handlePrintIndent = () => {
                 <td>${index + 1}</td>
                 <td>${item.product?.productTitle || ''}
                 </td>
-                <td>${item.approvedQty}</td>
+                <td>${item.quantity || 0}</td>
                 <td>${item.salePrice.toFixed(2)}</td>
                 <td>${item.total.toFixed(2)}</td>
                 <td>${item.gstAmount.toFixed(2)}</td>
