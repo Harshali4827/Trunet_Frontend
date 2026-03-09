@@ -760,11 +760,8 @@ const SaleInvoices = () => {
         }
       });
     });
-  
-    // Fetch repair costs for all products
     const repairCostMap = await fetchRepairCosts(allProductIds);
     
-    // Log for debugging
     console.log('Product IDs:', allProductIds);
     console.log('Repair cost map size:', repairCostMap.size);
   
@@ -1195,7 +1192,7 @@ const SaleInvoices = () => {
   if (error) {
     return (
       <div className="alert alert-danger" role="alert">
-        Error loading data: {error}
+       {error}
       </div>
     );
   }

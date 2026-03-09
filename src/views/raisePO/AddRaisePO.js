@@ -64,23 +64,20 @@ const AddRaisePO = () => {
     fetchProducts();
   }, []);
 
-  // Function to auto-generate voucher number
   const generateAutoVoucherNumber = async () => {
     setGeneratingVoucher(true);
     try {
       const currentDate = new Date();
       const currentYear = currentDate.getFullYear();
       const currentMonth = currentDate.getMonth() + 1;
-      
-      // Determine financial year (April to March)
+
       let financialYear = '';
       if (currentMonth >= 4) {
         financialYear = `${currentYear.toString().slice(-2)}-${(currentYear + 1).toString().slice(-2)}`;
       } else {
         financialYear = `${(currentYear - 1).toString().slice(-2)}-${currentYear.toString().slice(-2)}`;
       }
-      
-      // Fetch last voucher number for this financial year
+
       const response = await axiosInstance.get('/raisePO/latest-voucher', {
         params: {
           financialYear: financialYear
@@ -91,7 +88,6 @@ const AddRaisePO = () => {
       
       if (response.data.success && response.data.data?.voucherNo) {
         const lastVoucher = response.data.data.voucherNo;
-        // Match pattern: STELE/01/25-26
         const match = lastVoucher.match(/^STELE\/(\d{2})\/\d{2}-\d{2}$/);
         
         if (match && match[1]) {
@@ -109,7 +105,6 @@ const AddRaisePO = () => {
       
     } catch (error) {
       console.error('Error generating voucher number:', error);
-      // Fallback voucher number
       const currentDate = new Date();
       const currentYear = currentDate.getFullYear();
       const currentMonth = currentDate.getMonth() + 1;
@@ -305,8 +300,6 @@ const AddRaisePO = () => {
     setErrors({});
     setSelectionOrder([]);
     selectionCounter.current = 0;
-    
-    // Auto-regenerate voucher number on reset (only for new PO)
     if (!id) {
       generateAutoVoucherNumber();
     }
@@ -365,7 +358,7 @@ const AddRaisePO = () => {
         
         if (errorMessage.includes('duplicate') || errorMessage.includes('already exists')) {
           errorMessage = 'Voucher number already exists. Please try again with a new voucher number.';
-          // Auto-regenerate voucher number if duplicate (only for new PO)
+
           if (!id) {
             setTimeout(() => {
               generateAutoVoucherNumber();

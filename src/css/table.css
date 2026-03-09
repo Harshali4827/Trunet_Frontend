@@ -264,3 +264,6 @@ margin: 0
 .invoice-generated-row td {
 background-color: #f0f8ff !important; 
 }
+.invoice-cancelled-row td{
+background-color: #f2dede !important; 
+}

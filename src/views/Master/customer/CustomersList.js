@@ -45,6 +45,7 @@ const CustomersList = () => {
   const dropdownRefs = useRef({});
   const navigate = useNavigate();
   const { hasAnyPermission } = usePermission(); 
+  
   // const fetchCustomers = async (searchParams = {}, page = 1) => {
   //   try {
   //     setLoading(true);
@@ -70,8 +71,7 @@ const CustomersList = () => {
   //   }
   // };  
   
-
-
+  
   const fetchCustomers = async (searchParams = {}, page = 1) => {
     try {
       setLoading(true);

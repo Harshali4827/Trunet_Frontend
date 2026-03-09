@@ -526,7 +526,6 @@ const handleUpdateShipment = async (shipmentData) => {
 //   }
 // };
 
-
 const handleMarkIncomplete = async (remark) => {
   try {
     if (userCenterType === 'center') {
@@ -673,7 +672,7 @@ const handlePrintIndent = () => {
   const gstRate = 18;
   
   const productsWithTotals = data.products.map(item => {
-    const approvedQty = item.approvedQuantity || 0;
+    const approvedQty = item.quantity || 0;
     const salePrice = item.product?.salePrice || 0;
     const total = approvedQty * salePrice;
     const gstAmount = (total * gstRate) / 100;
@@ -699,7 +698,6 @@ const handlePrintIndent = () => {
     day: 'numeric'
   }) : '';
 
-  // Helper functions for date formatting
   const formatDate = (dateString) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('en-US', {
